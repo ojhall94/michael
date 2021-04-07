@@ -20,7 +20,8 @@ import pandas as pd
 import numpy as np
 import astropy.units as u
 
-from .data import *
+from .data import data_class
+from .SLS import simple_astropy_lombscargle
 
 class janet():
     """ Class managing all i/o for the `michael' package.
@@ -47,13 +48,14 @@ class janet():
             self.verbose = verbose
             self.void = {}
 
-    def get_data(self):
+    def prepare_data(self):
         """
-            This should output data sectors etc
+        This function calls the `data_class()`, which prepares the `eleanor`
+        light curves.
         """
-
-        data.check_eleanor_setup()
-        data.get_sector_info()
+        self.data = data_class(self)
+        self.data.check_eleanor_setup()
+        self.data.build_eleanor_lc(self)
 
     def get_rotation(self):
         """
@@ -81,6 +83,9 @@ class janet():
         #
         # self.output()
 
+
+    def run(self):
+        self.prepare_data()
 
     @staticmethod
     def boot(df):
