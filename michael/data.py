@@ -37,8 +37,8 @@ class data_class():
             self.download_eleanor_data()
 
         # Check which sectors have been downloaded
-        self.sfiles = glob.glob(f'{self.j.output_path}/{self.gaiaid}/*.fits')
-        self.sectors = np.sort([int(f.split('_')[-1][:-5]) for f in self.sfiles])
+        j.sfiles = glob.glob(f'{self.j.output_path}/{self.gaiaid}/*.fits')
+        j.sectors = np.sort([int(f.split('_')[-1][:-5]) for f in self.sfiles])
 
     def download_eleanor_data(self):
         """ Download Eleanor data.
@@ -67,7 +67,7 @@ class data_class():
         a well as the full Eleanor Target Pixel File data.
         """
 
-        datum = eleanor.TargetData(eleanor.Source(fn=f'lc_sector_{self.sectors[0]}.fits',
+        datum = eleanor.TargetData(eleanor.Source(fn=f'lc_sector_{j.sectors[0]}.fits',
                                                  fn_dir=f'{self.j.output_path}/{self.j.gaiaid}/'))
 
         q = datum.quality == 0
@@ -75,11 +75,11 @@ class data_class():
         self.clc = lc.normalize().remove_nans().remove_outliers()
 
         # Store the datum and light curve
-        self.j.void[f'datum_s{sectors[0]}'] = datum
-        self.j.void[f'clc_s{sectors[0]}'] = self.clc
+        self.j.void[f'datum_{sectors[0]}'] = datum
+        self.j.void[f'clc_{sectors[0]}'] = self.clc
 
         # Looping and appending all sectors
-        for s in self.sectors[1:]:
+        for s in j.sectors[1:]:
             datum = eleanor.TargetData(eleanor.Source(fn=f'lc_sector_{s}.fits',
                                                      fn_dir=f'{self.j.output_path}/{self.j.gaiaid}/'))
             q = datum.quality == 0
@@ -87,7 +87,7 @@ class data_class():
             self.clc = self.clc.append(lc.normalize().remove_nans().remove_outliers())
 
             # Store the datum and light curve
-            self.j.void[f'datum_s{s}'] = datum
-            self.j.void[f'clc_s{s}'] = lc.normalize().remove_nans().remove_outliers()
+            self.j.void[f'datum_{s}'] = datum
+            self.j.void[f'clc_{s}'] = lc.normalize().remove_nans().remove_outliers()
 
         self.j.void[f'clc_all'] = self.clc

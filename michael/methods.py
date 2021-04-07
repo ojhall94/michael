@@ -9,7 +9,7 @@ from scipy.optimize import curve_fit
 
 from .utils import *
 
-def simple_astropy_lombscargle(janet, sector='all'):
+def simple_astropy_lombscargle(j, sector='all'):
     """
     Following the criteria in Feinstein+2020:
         1) Period must be less than 12 days
@@ -28,7 +28,7 @@ def simple_astropy_lombscargle(janet, sector='all'):
     Parameters
     ----------
 
-    janet: class
+    j: class
         The `janet` class containing the metadata on our star.
 
     sector: int
@@ -37,7 +37,7 @@ def simple_astropy_lombscargle(janet, sector='all'):
 
     """
     if j.verbose:
-        print(f'### Running Simple Astropy Lomb-Scargle on Sector {sector} on star {j.gaiaid}###')
+        print(f'### Running Simple Astropy Lomb-Scargle on Sector {sector} on star {j.gaiaid} ###')
 
     # Call the relevant light curve
     clc = j.void[f'clc_{sector}']
@@ -51,6 +51,11 @@ def simple_astropy_lombscargle(janet, sector='all'):
     s = (pg.period.value > 0.6*max_period) & (pg.period.value < 1.4*max_period)
     p = pg[s].period.value
     P = pg[s].power.value
+
+    # Store the periodogram for plotting
+    j.void[f'pg_{sector}'] = pg
+    j.void[f'p_{sector}'] = p
+    j.void[f'P_{sector}'] = P
 
     # Fit a Gaussian
     ## Params are mu, sigma, Amplitude
@@ -83,5 +88,14 @@ def simple_astropy_lombscargle(janet, sector='all'):
             j.results.loc[sector, 'SLS'] = popt[0]
             j.results.loc[sector, 'e_SLS'] = popt[1]
 
+    # Save the gaussian fit
+    j.void[f'popt_{sector}'] = popt
+
+
     if j.verbose:
-        print('### Completed Simple Astropy Lomb-Scargle for Sector {sector} on star {j.gaiaid}###')
+        print('### Completed Simple Astropy Lomb-Scargle for Sector {sector} on star {j.gaiaid} ###')
+
+    _safety(j)
+
+def simple_wavelet(j, sector='all'):
+    return 0

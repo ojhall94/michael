@@ -21,15 +21,17 @@ import numpy as np
 import astropy.units as u
 
 from .data import data_class
-from .SLS import simple_astropy_lombscargle
+from .methods import simple_astropy_lombscargle
+from .plotting import plot
 
 class janet():
     """ Class managing all i/o for the `michael' package.
 
     Examples
     --------
-
-
+    from michael import janet
+    j = janet.boot(df).get_rotation()
+    j.view()
 
     Parameters
     ----------
@@ -55,37 +57,31 @@ class janet():
         """
         self.data = data_class(self)
         self.data.check_eleanor_setup()
-        self.data.build_eleanor_lc(self)
+        self.data.build_eleanor_lc()
 
     def get_rotation(self):
         """
         This needs some polish to get multiple methods working.
         """
-        #
-        # # Loop over all sectors.
-        # # This runs even if a star has only a single sector
-        # if sectors == 'complete':
-        #     if len(list(self.sectors)) > 1:
-        #         for sector in list(self.sectors) + ['all']:
-        #             self.build_eleanor_lc(sector = sector)
-        #             self.simple_astropy_lombscargle(sector = sector)
-        #     else:
-        #         self.build_eleanor_lc(sector = 'all')
-        #         self.simple_astropy_lombscargle(sector = 'all')
-        #
-        # # One run only
-        # else:
-        #     self.build_eleanor_lc(sector = sectors)
-        #     self.simple_astropy_lombscargle(sector = sectors)
-        #
-        # # Validate the results
-        # self.validate_rotation()
-        #
-        # self.output()
+        # Loop over all sectors.
+        for sector in list(self.sectors) + ['all']:
+            simple_astropy_lombscargle(self, sector = sector)
+            simple_wavelet(self, sector = sector)
+
+    def view(self):
+        """
+        Calls `michael`'s plotting functions.
+
+        Eventually there will be some extra kwargs to add
+        """
+        plot(self)
 
 
     def run(self):
         self.prepare_data()
+        self.get_rotation()
+        #self.validate_rotation()
+        self.view()
 
     @staticmethod
     def boot(df):
