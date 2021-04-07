@@ -1,0 +1,8 @@
+numpy
+matplotlib
+seaborn
+pandas
+eleanor
+lightkurve
+astropy
+tqdm
