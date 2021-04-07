@@ -5,5 +5,6 @@ import os
 PACKAGEDIR = os.path.abspath(os.path.dirname(__file__))
 
 from .version import __version__
+from .janet import janet
 
-print('Hi there. Welcome to the good place')
+print('Hi there. Welcome to the good place.')
