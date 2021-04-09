@@ -7,7 +7,7 @@ import astropy.units as u
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 
-from .utils import *
+from .utils import _gaussian_fn, _safety
 
 def simple_astropy_lombscargle(j, sector='all'):
     """
@@ -93,7 +93,7 @@ def simple_astropy_lombscargle(j, sector='all'):
 
 
     if j.verbose:
-        print('### Completed Simple Astropy Lomb-Scargle for Sector {sector} on star {j.gaiaid} ###')
+        print(f'### Completed Simple Astropy Lomb-Scargle for Sector {sector} on star {j.gaiaid} ###')
 
     _safety(j)
 

@@ -47,6 +47,7 @@ class janet():
             self.ra = ra
             self.dec = dec
             self.results = pd.DataFrame()
+            self.output_path = output_path
             self.verbose = verbose
             self.void = {}
 
@@ -64,9 +65,12 @@ class janet():
         This needs some polish to get multiple methods working.
         """
         # Loop over all sectors.
-        for sector in list(self.sectors) + ['all']:
-            simple_astropy_lombscargle(self, sector = sector)
-            simple_wavelet(self, sector = sector)
+        if len(self.sectors) == 1:
+            simple_astropy_lombscargle(self, sector='all')
+        else:
+            for sector in list(self.sectors) + ['all']:
+                simple_astropy_lombscargle(self, sector = sector)
+            # simple_wavelet(self, sector = sector)
 
     def view(self):
         """
@@ -83,11 +87,20 @@ class janet():
         #self.validate_rotation()
         self.view()
 
+    def __repr__(self):
+        repr = "Hi there! I'm Janet 🌵\n"
+
+        if len(self.void) == 0:
+            repr += "I don't have any data or results in storage right now. Try running `janet.prepare_data()` to get started! ✨"
+        return repr
+
+
     @staticmethod
-    def boot(df):
+    def boot(df, index=0):
         """
         Sets up Janet quickly.
         """
-        return Janet(
-            gaiaid = df['source_id'], ra = df['ra'], dec = df['dec'], verbose=True
+        return janet(
+            gaiaid = df.loc[index, 'source_id'], ra = df.loc[index, 'ra'], dec = df.loc[index, 'dec'],
+            output_path = '/Users/oliver hall/Research/unicorn/data', verbose=True
         )
