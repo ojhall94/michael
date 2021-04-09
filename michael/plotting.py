@@ -41,7 +41,7 @@ def plot(j):
     # Plot Sector 0 LC
     ax01 = fig.add_subplot(gs[0, 1:])
     ax01.set_title(f'Full TESS LC, Sectors: {j.sectors}. Normalized, outliers removed.')
-    j.void[f'clc_{sec0}'].plot(ax=ax01, c='k', lw=1)
+    j.void[f'clc_{sec0}'].plot(ax=ax01, lw=1)
     ax01.set_xlim(j.void[f'clc_{sec0}'].time.min().value, j.void[f'clc_{sec0}'].time.max().value)
 
     # Plot all periodograms

@@ -7,6 +7,8 @@ import astropy.units as u
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 
+import jazzhands
+
 from .utils import _gaussian_fn, _safety
 
 def simple_astropy_lombscargle(j, sector='all'):
@@ -98,4 +100,48 @@ def simple_astropy_lombscargle(j, sector='all'):
     _safety(j)
 
 def simple_wavelet(j, sector='all'):
-    return 0
+    """
+    We use the 'jazzhands' Python package to perform our wavelet analysis.
+    The `jazzhands` package performs a wavelet analysis based on the procedures
+    set out in Foster (1996) and Torrence & Compo (1998).
+
+    After the wavelet is calculated, we collapse it along the x-axis. We fit the
+    largest peak in the resulting spectrum using Scipy.Optimize.curve_fit. The
+    resulting mean and width of the Gaussian function approximating the peak is
+    reported as the period and associated uncertainty.
+
+    Parameters
+    ----------
+
+    j: class
+        The `janet` class containing the metadata on our star.
+
+    sector: int
+        The sector for which to calculate the simple astropy lombscargle period.
+        If 'all', calculates for all sectors stitched together.
+
+    """
+
+    if j.verbose:
+        print(f'### Running Simple Astropy Lomb-Scargle on Sector {sector} on star {j.gaiaid} ###')
+
+    # Call the relevant light curve
+    clc = j.void[f'clc_{sector}']
+
+    t = clc.time.value
+    f = clc.flux.value
+    wt = jazzhands.WaveletTransformer(t, f)
+    _, _ wwz, wwa = wt.auto_compute(nu_min = 1./12., nu_max = 1./0.2)
+
+    j.void[f'wt_{sector}'] = wt
+    j.void[f'wwz_{sector}'] = wwz
+    j.void[f'wwa_{sector}'] = wwa
+
+    """
+    TO DO: Fit the peak, then run some tests!
+    """
+
+    if j.verbose:
+        print(f'### Completed Simple Astropy Lomb-Scargle for Sector {sector} on star {j.gaiaid} ###')
+
+    _safety(j)
