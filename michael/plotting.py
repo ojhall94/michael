@@ -70,7 +70,6 @@ def plot(j):
         j.void[f'pg_{s}'].plot(ax=ax11,lw=1, zorder=0)
     ax11.set_xlabel('Period [d]')
     ax11.set_title('LS Fit to All Sectors')
-    ax11.s
 
     # Plot the phase folded light curve
     ax2 = fig.add_subplot(gs[2, :])
