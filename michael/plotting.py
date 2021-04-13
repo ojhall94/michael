@@ -17,8 +17,8 @@ _label_fontsize=24
 def plot(j):
     cmap = sns.color_palette('viridis', 8)
 
-    fig = plt.figure(figsize=(20, 20))
-    gs = GridSpec(3,3, figure=fig)
+    fig = plt.figure(figsize=(20, 30))
+    gs = GridSpec(4,3, figure=fig)
 
     ## Plotting
     if len(j.sectors) == 1:
@@ -47,12 +47,12 @@ def plot(j):
     # Plot all periodograms
     ax10 = fig.add_subplot(gs[1, :2])
     j.void[f'pg_all'].plot(ax=ax10, view='period', label=f'All Sectors',lw=1, zorder=2, c='k')
-    for s in j.sectors:
-        j.void[f'pg_{s}'].plot(ax=ax10, view='period',
-        label=f'Sector {s}', #lw=int(5/(j.results.loc[s, 'f_SLS']+1)),
-        lw=1, zorder=2)
+    if len(j.sectors) >= 2:
+        for s in j.sectors:
+            j.void[f'pg_{s}'].plot(ax=ax10, view='period',
+            label=f'Sector {s}', lw=1, zorder=2)
     ax10.axvline(j.void['popt_all'][0], c=cmap[4], lw=5, ls='--', zorder=1, label=f'P = {j.results.loc["all", "SLS"]:.2f} days')
-    ax10.set_xlim(j.void[f'pg_{s}'].period.min().value, j.void[f'pg_{s}'].period.max().value)
+    ax10.set_xlim(j.void[f'pg_all'].period.min().value, j.void[f'pg_all'].period.max().value)
     ax10.set_ylim(0)
     ax10.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
     ax10.set_xscale('log')
@@ -63,21 +63,43 @@ def plot(j):
     ax11.get_yaxis().set_visible(False)
     ax11.plot(j.void['p_all'], j.void['P_all'], lw=1, c='k', zorder=1)
     ax11.plot(j.void['p_all'],
-            _gaussian_fn(j.void['p_all'], *j.void['popt_all']), ls='--', lw=10, c=cmap[5], zorder=2)
+            _gaussian_fn(j.void['p_all'], *j.void['popt_all']), ls='--', lw=10, c=cmap[5], zorder=2,
+            label = rf'$\sigma$ = {j.results.loc["all", "e_SLS"]:.2f} days')
     ax11.set_xlim(j.void['popt_all'][0] - 5*j.void['popt_all'][1],
                     j.void['popt_all'][0] + 5*j.void['popt_all'][1])
-    for s in j.sectors:
-        j.void[f'pg_{s}'].plot(ax=ax11,lw=1, zorder=0)
+    if len(j.sectors) >= 2:
+        for s in j.sectors:
+            j.void[f'pg_{s}'].plot(ax=ax11,lw=1, zorder=0)
+    ax11.legend(loc='best', fontsize=_label_fontsize)
     ax11.set_xlabel('Period [d]')
     ax11.set_title('LS Fit to All Sectors')
 
+    # Wavelet
+    axw1 = fig.add_subplot(gs[2, :2])
+    c = axw1.contourf(j.void['wt'].taus, 1./j.void['wt'].nus, j.void['wwz'])
+    axw1.set_yscale('log')
+    axw1.set_ylabel('Period [days]')
+    axw1.set_xlabel('Time [JD]')
+    fig.colorbar(c, ax=axw1, label='WWZ', pad=.01, aspect=60)
+    axw1.set_title('Wavelet Transform')
+
+    axw2 = fig.add_subplot(gs[2, 2:], sharey=axw1)
+    w =  np.sum(j.void['wwz'], axis=1)
+    d = 1/j.void['wt'].nus
+    axw2.plot(w, d)
+    axw2.plot(_gaussian_fn(d, *j.void['wavelet_popt']), d, ls='--', lw=10)
+    axw2.set_xlabel('Summed WWZ')
+
     # Plot the phase folded light curve
-    ax2 = fig.add_subplot(gs[2, :])
+    ax2 = fig.add_subplot(gs[3, :])
     fold = j.void['clc_all'].fold(period=j.results.loc['all', 'SLS'])
     fold.scatter(ax=ax2, c='k', s=5, label='Folded LC')
     fold.bin(bins=int(len(fold)/50)).plot(ax=ax2, zorder=2, lw=5, c=cmap[5], label='Binned LC')
     ax2.legend(loc='upper left', fontsize=_label_fontsize)
-    ax2.set_title(f'All Sectors folded on Period: {j.results.loc["all", "SLS"]:.2f} days')
+    ax2.set_title(rf'All Sectors folded on Period: {j.results.loc["all", "SLS"]:.2f} $\pm$ {j.results.loc["all", "e_SLS"]:.2f} days')
+
+
+
 
     # Polish
     ax00.minorticks_on()

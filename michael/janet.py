@@ -21,7 +21,7 @@ import numpy as np
 import astropy.units as u
 
 from .data import data_class
-from .methods import simple_astropy_lombscargle
+from .methods import simple_astropy_lombscargle, simple_wavelet
 from .plotting import plot
 
 class janet():
@@ -60,17 +60,19 @@ class janet():
         self.data.check_eleanor_setup()
         self.data.build_eleanor_lc()
 
-    def get_rotation(self):
+    def get_rotation(self, period_range = (0.2, 12.)):
         """
         This needs some polish to get multiple methods working.
         """
         # Loop over all sectors.
         if len(self.sectors) == 1:
-            simple_astropy_lombscargle(self, sector='all')
+            simple_astropy_lombscargle(self, sector='all', period_range = period_range)
+
         else:
             for sector in list(self.sectors) + ['all']:
-                simple_astropy_lombscargle(self, sector = sector)
-            # simple_wavelet(self, sector = sector)
+                simple_astropy_lombscargle(self, sector = sector, period_range = period_range)
+
+        simple_wavelet(self, period_range = period_range)
 
     def view(self):
         """

@@ -4,6 +4,7 @@ The `methods` script contains functions for estimating the period of a star.
 
 import lightkurve as lk
 import astropy.units as u
+import numpy as np
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 
@@ -11,7 +12,7 @@ import jazzhands
 
 from .utils import _gaussian_fn, _safety
 
-def simple_astropy_lombscargle(j, sector='all'):
+def simple_astropy_lombscargle(j, sector, period_range):
     """
     Following the criteria in Feinstein+2020:
         1) Period must be less than 12 days
@@ -44,7 +45,7 @@ def simple_astropy_lombscargle(j, sector='all'):
     # Call the relevant light curve
     clc = j.void[f'clc_{sector}']
 
-    pg = clc.to_periodogram(maximum_period = 12., normalization='psd', oversample_factor=100,
+    pg = clc.to_periodogram(minimum_period = period_range[0], maximum_period = period_range[1], normalization='psd', oversample_factor=100,
                                 freq_unit = 1/u.day)
 
     # Select the region around the highest peak
@@ -99,11 +100,13 @@ def simple_astropy_lombscargle(j, sector='all'):
 
     _safety(j)
 
-def simple_wavelet(j, sector='all'):
+def simple_wavelet(j, period_range):
     """
     We use the 'jazzhands' Python package to perform our wavelet analysis.
     The `jazzhands` package performs a wavelet analysis based on the procedures
     set out in Foster (1996) and Torrence & Compo (1998).
+
+    #TO DO: needs an expansion of the WWZ, what does it mean?
 
     After the wavelet is calculated, we collapse it along the x-axis. We fit the
     largest peak in the resulting spectrum using Scipy.Optimize.curve_fit. The
@@ -120,28 +123,51 @@ def simple_wavelet(j, sector='all'):
         The sector for which to calculate the simple astropy lombscargle period.
         If 'all', calculates for all sectors stitched together.
 
+    period_range: tuple
+        The lower and upper limit on period range to search for a rotational
+        signal. Default is (0.2, 12.) based on the McQuillan et al. (2014)
+        search range and the limitations of TESS earthshine.
+
     """
 
     if j.verbose:
-        print(f'### Running Simple Astropy Lomb-Scargle on Sector {sector} on star {j.gaiaid} ###')
+        print(f'### Running Wavelet Estimation on star {j.gaiaid} ###')
 
     # Call the relevant light curve
-    clc = j.void[f'clc_{sector}']
+    clc = j.void[f'clc_all']
 
     t = clc.time.value
     f = clc.flux.value
     wt = jazzhands.WaveletTransformer(t, f)
-    _, _ wwz, wwa = wt.auto_compute(nu_min = 1./12., nu_max = 1./0.2)
+    _, _, wwz, wwa = wt.auto_compute(nu_min = 1./12., nu_max = 1./0.2)
 
-    j.void[f'wt_{sector}'] = wt
-    j.void[f'wwz_{sector}'] = wwz
-    j.void[f'wwa_{sector}'] = wwa
+    j.void[f'wt'] = wt
+    j.void[f'wwz'] = wwz
+    j.void[f'wwa'] = wwa
 
-    """
-    TO DO: Fit the peak, then run some tests!
-    """
+    # Create data to fit
+    w = np.sum(wwz, axis=1)
+    p = 1/wt.nus
+
+    max_w = np.max(w)
+    max_p = p[np.argmax(w)]
+
+    s = (p > 0.6*max_p) & (p < 1.4*max_p)
+    w = w[s]
+    p = p[s]
+
+    # Fit a Gaussian
+    ## Params are mu, sigma, Amplitude
+    popt, pcov = curve_fit(_gaussian_fn, p, w, p0 = [max_p, 0.1*max_p, max_w],
+                            bounds = ([0.8*max_p, 0., 0.9*max_w],[1.2*max_p, 0.25*max_p, 1.1*max_w]))
+
+    j.results.loc['all', 'SW'] = popt[0]
+    j.results.loc['all', 'e_SW'] = popt[1]
+
+    # Save the gaussian fit
+    j.void[f'wavelet_popt'] = popt
 
     if j.verbose:
-        print(f'### Completed Simple Astropy Lomb-Scargle for Sector {sector} on star {j.gaiaid} ###')
+        print(f'### Completed Wavelet Estimation on star {j.gaiaid} ###')
 
     _safety(j)
