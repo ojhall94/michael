@@ -147,6 +147,7 @@ def simple_wavelet(j, period_range):
 
     # Create data to fit
     w = np.sum(wwz, axis=1)
+    w /= w.max() #Normalize
     p = 1/wt.nus
 
     max_w = np.max(w)
