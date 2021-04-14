@@ -139,7 +139,7 @@ def simple_wavelet(j, period_range):
     t = clc.time.value
     f = clc.flux.value
     wt = jazzhands.WaveletTransformer(t, f)
-    _, _, wwz, wwa = wt.auto_compute(nu_min = 1./12., nu_max = 1./0.2)
+    _, _, wwz, wwa = wt.auto_compute(nu_min = 1./period_range[1], nu_max = 1./period_range[0])
 
     j.void[f'wt'] = wt
     j.void[f'wwz'] = wwz

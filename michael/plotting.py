@@ -41,11 +41,12 @@ def plot(j):
     # Plot Sector 0 LC
     ax01 = fig.add_subplot(gs[0, 1:])
     ax01.set_title(f'Full TESS LC, Sectors: {j.sectors}. Normalized, outliers removed.')
-    #TODO: add the single sector case
-
     if len(j.sectors) >= 2:
         for s in j.sectors:
             j.void[f'clc_{s}'].plot(ax=ax01, lw=1)
+    else:
+        j.void[f'clc_all'].plot(ax=ax01, lw=1, c='k')
+
     ax01.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
 
     # Plot all periodograms
@@ -78,15 +79,23 @@ def plot(j):
     ax11.set_xlabel('Period [d]')
     ax11.set_title('LS Fit to All Sectors')
 
-    # Wavelet
+    # Wavelet contourfplot
     axw1 = fig.add_subplot(gs[2, :2])
-    c = axw1.contourf(j.void['wt'].taus, 1./j.void['wt'].nus, j.void['wwz'])
+    c = axw1.contourf(j.void['wt'].taus, 1./j.void['wt'].nus, j.void['wwz'],
+                        vmin=0., vmax = np.nanpercentile(j.void['wwz'].flatten(), [99]))
     axw1.set_yscale('log')
     axw1.set_ylabel('Period [days]')
     axw1.set_xlabel('Time [JD]')
-    fig.colorbar(c, ax=axw1, label='WWZ', pad=.01, aspect=60)
+    fig.colorbar(c, ax=axw1, label='WWZ', pad=.01, aspect=60, extend='max')
+    if len(j.sectors) >= 2:
+        for s in j.sectors[1:]:
+            axw1.axvline(j.void[f'clc_{s}'].time.min().value, c='w', ls='--', lw=3)
+        for s in j.sectors:
+            axw1.text(x = j.void[f'clc_{s}'].time.min().value*1.05, y = np.log10((1./j.void['wt'].nus).max() * 0.95), s=f'Sector {s}', c='w', fontsize=_label_fontsize)
+
     axw1.set_title('Wavelet Transform')
 
+    # Collapsed Wavelet and fit
     axw2 = fig.add_subplot(gs[2, 2:], sharey=axw1)
     w =  np.sum(j.void['wwz'], axis=1)
     d = 1/j.void['wt'].nus
@@ -97,13 +106,19 @@ def plot(j):
     # Plot the phase folded light curve
     ax2 = fig.add_subplot(gs[3, :])
     fold = j.void['clc_all'].fold(period=j.results.loc['all', 'SLS'])
-    fold.scatter(ax=ax2, c='k', s=5, label='Folded LC')
-    fold.bin(bins=int(len(fold)/50)).plot(ax=ax2, zorder=2, lw=5, c=cmap[5], label='Binned LC')
-    ax2.legend(loc='upper left', fontsize=_label_fontsize)
+    if len(j.sectors) >= 2:
+        for s in j.sectors:
+            j.void[f'clc_{s}'].fold(period=j.results.loc['all', 'SLS']).scatter(s=50, label=f'Sector {s} Folded', ax=ax2, zorder=1)
+    else:
+        fold.scatter(ax=ax2, c='k', s=50, label='Folded LC', zorder=1)
+
+    fold.bin(bins=int(len(fold)/50)).plot(ax=ax2, zorder=4, lw=5, c=cmap[5], label='Binned LC')
+    fold.bin(bins=int(len(fold)/50)).plot(ax=ax2, zorder=3, lw=10, c='w')
+
+    ax2.axhline(1., c='k', zorder=2, ls='--')
+    ax2.set_xlim(fold.phase.min().value, fold.phase.max().value)
+    ax2.legend(loc='best', fontsize=_label_fontsize)
     ax2.set_title(rf'All Sectors folded on Period: {j.results.loc["all", "SLS"]:.2f} $\pm$ {j.results.loc["all", "e_SLS"]:.2f} days')
-
-
-
 
     # Polish
     ax00.minorticks_on()
@@ -111,7 +126,7 @@ def plot(j):
     ax10.minorticks_on()
     ax11.minorticks_on()
     ax2.minorticks_on()
-    fig.tight_layout()
+    # fig.tight_layout()
 
 
     plt.savefig(f'{j.output_path}/{j.gaiaid}/output.pdf', rasterized=True)
