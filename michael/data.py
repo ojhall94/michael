@@ -40,6 +40,8 @@ class data_class():
         # Check which sectors have been downloaded
         self.j.sfiles = glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')
         self.j.sectors = np.sort([int(f.split('_')[-1][:-5]) for f in self.j.sfiles])
+        if any(np.diff(self.j.sectors) > 1):
+            self.j.gaps = True
 
     def download_eleanor_data(self):
         """ Download Eleanor data.

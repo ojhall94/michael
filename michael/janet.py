@@ -50,6 +50,7 @@ class janet():
             self.output_path = output_path
             self.verbose = verbose
             self.void = {}
+            self.gaps = False
 
     def prepare_data(self):
         """
@@ -64,12 +65,16 @@ class janet():
         """
         This needs some polish to get multiple methods working.
         """
+        sectorlist = list(self.sectors)
+        if not self.gaps:
+            sectorlist += ['all']
+
         # Loop over all sectors.
         if len(self.sectors) == 1:
             simple_astropy_lombscargle(self, sector='all', period_range = period_range)
 
         else:
-            for sector in list(self.sectors) + ['all']:
+            for sector in sectorlist:
                 simple_astropy_lombscargle(self, sector = sector, period_range = period_range)
 
         simple_wavelet(self, period_range = period_range)

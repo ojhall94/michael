@@ -20,14 +20,6 @@ def plot(j):
     fig = plt.figure(figsize=(20, 30))
     gs = GridSpec(4,3, figure=fig)
 
-    ## Plotting
-    if len(j.sectors) == 1:
-        sec0 = 'all'
-        sectors = ['all']
-    else:
-        sec0 = j.sectors[0]
-        sectors = [str(s) for s in j.sectors] + ['all']
-
     # Plot Sector 0 TPF
     ax00 = fig.add_subplot(gs[0, :1])
     ax00.set_title(f'Frame 0 Sector {j.sectors[0]}')
@@ -38,7 +30,7 @@ def plot(j):
     ax00.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
     ax00.legend(loc='upper left', fontsize=_label_fontsize)
 
-    # Plot Sector 0 LC
+    # Plot all LCs
     ax01 = fig.add_subplot(gs[0, 1:])
     ax01.set_title(f'Full TESS LC, Sectors: {j.sectors}. Normalized, outliers removed.')
     if len(j.sectors) >= 2:
@@ -51,7 +43,8 @@ def plot(j):
 
     # Plot all periodograms
     ax10 = fig.add_subplot(gs[1, :2])
-    j.void[f'pg_all'].plot(ax=ax10, view='period', label=f'All Sectors',lw=1, zorder=2, c='k')
+    if not j.gaps:
+        j.void[f'pg_all'].plot(ax=ax10, view='period', label=f'All Sectors',lw=1, zorder=2, c='k')
     if len(j.sectors) >= 2:
         for s in j.sectors:
             j.void[f'pg_{s}'].plot(ax=ax10, view='period',
