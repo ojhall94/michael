@@ -125,7 +125,7 @@ class janet():
             # If there is a LS value for 'all', consider this the default best
             self.results.loc['best', 'SLS'] = self.results.loc['all', 'SLS']
             self.results.loc['best', 'e_SLS'] = self.results.loc['all', 'e_SLS']
-            self.results.loc['best', 's_SLS'] = 'all
+            self.results.loc['best', 's_SLS'] = 'all'
             self.results.loc['best', 'f_SLS'] = self.results.loc['all', 'f_SLS']
 
         else:
@@ -143,7 +143,7 @@ class janet():
             idx = sigfrac.idxmin()
             self.results.loc['best', 'SLS'] = self.results.loc[idx, 'SLS']
             self.results.loc['best', 'e_SLS'] = self.results.loc[idx, 'e_SLS']
-            self.results.loc['best', 's_SLS'] = int(idx)
+            self.results.loc['best', 's_SLS'] = str(int(idx))
             self.results.loc['best', 'f_SLS'] = self.results.loc[idx, 'f_SLS']
 
         # Validate Wavelet vs LombScargle

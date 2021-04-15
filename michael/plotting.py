@@ -22,7 +22,6 @@ def plot(j):
 
     best_sls = j.results.loc['best', 's_SLS']
 
-
     # Plot Sector 0 TPF
     ax00 = fig.add_subplot(gs[0, :1])
     ax00.set_title(f'Frame 0 Sector {j.sectors[0]}')
@@ -59,7 +58,12 @@ def plot(j):
     ax10.set_xscale('log')
     ax10.set_title('All Lomb Scargle Periodograms')
 
-    # Plot Sector All PG Fit
+    # Plot Sector PG Fit
+    if best_sls == 'all':
+        text = 'All Sectors'
+    else:
+        text = f'Sector {best_sls}'
+
     ax11 = fig.add_subplot(gs[1, 2:], sharey=ax10)
     ax11.get_yaxis().set_visible(False)
     ax11.plot(j.void[f'p_{best_sls}'], j.void[f'P_{best_sls}'], lw=1, c='k', zorder=1)
@@ -73,7 +77,7 @@ def plot(j):
             j.void[f'pg_{s}'].plot(ax=ax11,lw=1, zorder=0)
     ax11.legend(loc='best', fontsize=_label_fontsize)
     ax11.set_xlabel('Period [d]')
-    ax11.set_title('Fit to LSP All Sectors')
+    ax11.set_title(f'Fit to LSP {text}')
 
     # Wavelet contourfplot
     axw1 = fig.add_subplot(gs[2, :2])
