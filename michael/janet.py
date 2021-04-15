@@ -121,25 +121,30 @@ class janet():
         34 - No robust matches, WS-obtained value (ditto for other combos)
         """
         # Validate LombScargle
-        if np.isfinite(self.reults.loc['all', 'SLS']):
+        if np.isfinite(self.results.loc['all', 'SLS']):
             # If there is a LS value for 'all', consider this the default best
             self.results.loc['best', 'SLS'] = self.results.loc['all', 'SLS']
             self.results.loc['best', 'e_SLS'] = self.results.loc['all', 'e_SLS']
+            self.results.loc['best', 's_SLS'] = 'all
+            self.results.loc['best', 'f_SLS'] = self.results.loc['all', 'f_SLS']
 
         else:
             # If onlys single-sector cases are available, pick the value with
             # the lowest fractional uncertainty on an unflagged value
-            s = j.results['f_SLS'] == 0
-            if len(j.results[s]) > 0:
-                sigfrac = j.results[s]['e_SLS'] / j.results[s]['SLS']
+            s = self.results['f_SLS'] == 0
+            if len(self.results[s]) > 0:
+                sigfrac = self.results[s]['e_SLS'] / self.results[s]['SLS']
 
             # It may be the case that there are only flagged values. In this
             # case, ignore the flags
             else:
-                sigfrac = j.results['e_SLS'] / j.results[s]['SLS']
-                idx = sigfrac.idxmin()
-                self.results.loc['best', 'SLS'] = self.results.loc[idx, 'SLS']
-                self.results.loc['best', 'SLS'] = self.results.loc[idx, 'SLS']
+                sigfrac = self.results['e_SLS'] / self.results[s]['SLS']
+
+            idx = sigfrac.idxmin()
+            self.results.loc['best', 'SLS'] = self.results.loc[idx, 'SLS']
+            self.results.loc['best', 'e_SLS'] = self.results.loc[idx, 'e_SLS']
+            self.results.loc['best', 's_SLS'] = int(idx)
+            self.results.loc['best', 'f_SLS'] = self.results.loc[idx, 'f_SLS']
 
         # Validate Wavelet vs LombScargle
         self.results.loc['best', 'SW'] = self.results.loc['all', 'SW']
@@ -149,7 +154,7 @@ class janet():
         best = self.results.loc['best']
 
         # If they agree, then pick the one with the best fractional uncertainty
-        if np.diff(best[['SLS', 'SW']]) > np.sum(best[['e_SLS', 'e_SW']]):
+        if np.diff(best[['SLS', 'SW']]) < np.sum(best[['e_SLS', 'e_SW']]):
             frac = best[['e_SLS', 'e_SW']].values /  best[['SLS', 'SW']].values
             s = np.argmin(frac)
             self.results.loc['best', 'overall'] = best[['SLS', 'SW'][s]]
@@ -158,27 +163,36 @@ class janet():
 
         # If they disagree, see if there are any matches with another sector
         else:
-            sls = j.results.loc[j.sectors,['SLS', 'e_SLS', 'f_SLS']]
-            sls = sls[sls.f_SLS == 0]
+            if len(self.sectors) >= 2:
+                sls = self.results.loc[self.sectors,['SLS', 'e_SLS', 'f_SLS']]
+            else:
+                sls = self.results.loc['all',['SLS', 'e_SLS', 'f_SLS']]
 
             swb = self.results.loc['best', 'SW']
             e_swb = self.results.loc['best', 'e_SW']
 
             # An agreement within 1 Sigma has been found
-            if any(np.abs(sls.SLS.values - swb) - (e_swb + sls.e_SLS) < 0):
-                match = sls[np.abs(sls.SLS.values - swb) - (e_swb + sls.e_SLS) < 0]
+            if np.any(np.abs(sls.SLS - swb) - (e_swb + sls.e_SLS) < 0):
+                match = sls[np.abs(sls.SLS - swb) - (e_swb + sls.e_SLS) < 0]
                 frac = match.e_SLS / match.SLS
                 bestmatch = frac.idxmin()
 
-                #See whether SW or SLS has the most well-constrained value
-                vals = np.array([sls.loc[bestmatch, 'SLS'], swb])
-                e_vals = np.array([sls.loc[bestmatch, 'e_SLS'], e_swb])
-                frac = e_vals.values / vals.values
-                s = np.argmin(frac)
+                # No matching results found without a flag, Wavelet assumed bests
+                if sls.loc[bestmatch, 'f_SLS'] != 0:
+                    self.results.loc['best', 'overall'] = self.results.loc['best', 'SW']
+                    self.results.loc['best', 'e_overall'] = self.results.loc['best', 'e_SW']
+                    self.results.loc['best', 'f_overall'] = 34
 
-                self.results.loc['best', 'overall'] = vals[s]
-                self.results.loc['best', 'e_overall'] = vals[s]
-                self.results.loc['best', 'f_overall'] = s + 1 + 16
+                else:
+                    #See whether SW or SLS has the most well-constrained value
+                    vals = np.array([sls.loc[bestmatch, 'SLS'], swb])
+                    e_vals = np.array([sls.loc[bestmatch, 'e_SLS'], e_swb])
+                    frac = e_vals / vals
+                    s = np.argmin(frac)
+
+                    self.results.loc['best', 'overall'] = vals[s]
+                    self.results.loc['best', 'e_overall'] = e_vals[s]
+                    self.results.loc['best', 'f_overall'] = s + 1 + 16
 
             # No matching results found, Wavelet assumed best
             else:
@@ -199,7 +213,7 @@ class janet():
     def run(self):
         self.prepare_data()
         self.get_rotation()
-        #self.validate_rotation()
+        self.validate_rotation()
         self.view()
 
     def __repr__(self):

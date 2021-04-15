@@ -20,6 +20,9 @@ def plot(j):
     fig = plt.figure(figsize=(20, 30))
     gs = GridSpec(4,3, figure=fig)
 
+    best_sls = j.results.loc['best', 's_SLS']
+
+
     # Plot Sector 0 TPF
     ax00 = fig.add_subplot(gs[0, :1])
     ax00.set_title(f'Frame 0 Sector {j.sectors[0]}')
@@ -49,8 +52,8 @@ def plot(j):
         for s in j.sectors:
             j.void[f'pg_{s}'].plot(ax=ax10, view='period',
             label=f'Sector {s}', lw=1, zorder=2)
-    ax10.axvline(j.void['popt_all'][0], c=cmap[4], lw=5, ls='--', zorder=1, label=f'P = {j.results.loc["all", "SLS"]:.2f} d')
-    ax10.set_xlim(j.void[f'pg_all'].period.min().value, j.void[f'pg_all'].period.max().value)
+    ax10.axvline(j.results.loc["best", "SLS"], c=cmap[4], lw=5, ls='--', zorder=1, label=f'P = {j.results.loc["best", "SLS"]:.2f} d')
+    ax10.set_xlim(j.void[f'pg_{best_sls}'].period.min().value, j.void[f'pg_{best_sls}'].period.max().value)
     ax10.set_ylim(0)
     ax10.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
     ax10.set_xscale('log')
@@ -59,12 +62,12 @@ def plot(j):
     # Plot Sector All PG Fit
     ax11 = fig.add_subplot(gs[1, 2:], sharey=ax10)
     ax11.get_yaxis().set_visible(False)
-    ax11.plot(j.void['p_all'], j.void['P_all'], lw=1, c='k', zorder=1)
-    ax11.plot(j.void['p_all'],
-            _gaussian_fn(j.void['p_all'], *j.void['popt_all']), ls='--', lw=10, c=cmap[5], zorder=2,
-            label = rf'$\sigma$ = {j.results.loc["all", "e_SLS"]:.2f} d')
-    ax11.set_xlim(j.void['popt_all'][0] - 5*j.void['popt_all'][1],
-                    j.void['popt_all'][0] + 5*j.void['popt_all'][1])
+    ax11.plot(j.void[f'p_{best_sls}'], j.void[f'P_{best_sls}'], lw=1, c='k', zorder=1)
+    ax11.plot(j.void[f'p_{best_sls}'],
+            _gaussian_fn(j.void[f'p_{best_sls}'], *j.void[f'popt_{best_sls}']), ls='--', lw=10, c=cmap[5], zorder=2,
+            label = rf'$\sigma$ = {j.results.loc["best", "e_SLS"]:.2f} d')
+    ax11.set_xlim(j.void[f'popt_{best_sls}'][0] - 5*j.void[f'popt_{best_sls}'][1],
+                    j.void[f'popt_{best_sls}'][0] + 5*j.void[f'popt_{best_sls}'][1])
     if len(j.sectors) >= 2:
         for s in j.sectors:
             j.void[f'pg_{s}'].plot(ax=ax11,lw=1, zorder=0)
@@ -117,10 +120,10 @@ def plot(j):
 
     # Plot the phase folded light curve
     ax2 = fig.add_subplot(gs[3, :2])
-    fold = j.void['clc_all'].fold(period=j.results.loc['all', 'SLS'])
+    fold = j.void['clc_all'].fold(period=j.results.loc['best', 'overall'])
     if len(j.sectors) >= 2:
         for s in j.sectors:
-            j.void[f'clc_{s}'].fold(period=j.results.loc['all', 'SLS']).scatter(s=75, label=f'Sector {s} Folded', ax=ax2, zorder=1)
+            j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall']).scatter(s=75, label=f'Sector {s} Folded', ax=ax2, zorder=1)
     else:
         fold.scatter(ax=ax2, c='k', s=75, label='Folded LC', zorder=1)
     fold.bin(bins=int(len(fold)/50)).plot(ax=ax2, zorder=4, lw=5, c=cmap[4], label='Binned LC')
@@ -128,8 +131,8 @@ def plot(j):
 
     ax2.axhline(1., c='k', zorder=2, ls='-')
     ax2.set_xlim(fold.phase.min().value, fold.phase.max().value)
-    ax2.legend(loc='best', fontsize=_label_fontsize)
-    ax2.set_title(rf'All Sectors folded on Period: {j.results.loc["all", "SLS"]:.2f} $\pm$ {j.results.loc["all", "e_SLS"]:.2f} days')
+    ax2.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
+    ax2.set_title(rf'All Sectors folded on Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} days')
 
     # Polish
     ax00.minorticks_on()
