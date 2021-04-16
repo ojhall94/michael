@@ -83,6 +83,10 @@ def validate_WS_vs_SLS(j):
             j.results.loc['best', 'e_overall'] = j.results.loc['best', 'e_SW']
             j.results.loc['best', 'f_overall'] = 34
 
+def validate_best_vs_ACF(j):
+    # Validate the ACF vs the best value
+    return 0
+
 def validator(j):
     """
     This function will validate the measured rotation rates and determine
@@ -109,6 +113,8 @@ def validator(j):
 
     ## Validating the ACF Period vs the 'Best Overall' Period
     - TO DO
+        Something like, verify the ACF has the same value as the best? if not,
+        search for a corresponding peak and flag as maybe a harmonic?
 
     ## Validating the Gaussian Process (GP) period
     - As the GP is the most statistically intensive measurement of the
@@ -123,9 +129,14 @@ def validator(j):
     16 - Validation done using a SLS value that wasn't 'best'
     32 - No robust matches
     34 - No robust matches, WS-obtained value (ditto for other combos)
+    64 - No ACF measured
+    128 - ACF indicates that 'best' period is a potential harmonic
     """
     # Validate LombScargle
     validate_SLS(j)
 
-    #Validate Wavelet VS Lomb Scargle
+    # Validate Wavelet VS Lomb Scargle
     validate_WS_vs_SLS(j)
+
+    # Validate ACF vs the 'best' period
+    validate_best_vs_ACF(j)

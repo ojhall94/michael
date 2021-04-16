@@ -80,6 +80,8 @@ class janet():
 
         simple_wavelet(self, period_range = period_range)
 
+        simple_ACF(self, period_range = period_range)
+
     def validate_rotation(self):
         validator(self)
 

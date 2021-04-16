@@ -191,9 +191,9 @@ def simple_ACF(j, period_range):
     will use it as a check on the SLS and WS period estimates.
 
     First, we take the autocorrelation of the time series, and shifting the
-    time series over itself by 12 days. We then take a periodogram of the
-    ACF, and use the period of the peak of highest power as the first-guess
-    ACF period.
+    time series over itself by 12 days (unless overruled by the user). We then
+    take a periodogram of the ACF, and use the period of the peak of highest
+    power as the first-guess ACF period.
 
     The ACF is then smoothed by convolving with a Gaussian Kernel with a
     standard deviation of 0.1x the first-guess ACF period. We use a peak-
@@ -230,7 +230,7 @@ def simple_ACF(j, period_range):
     acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
     lag = clc.time.value - clc.time.value.min()
     acflc = lk.LightCurve(time=lag, flux=acf)
-    acflc = acflc[acflc.time.value <= 12.]
+    acflc = acflc[(acflc.time.value >= period_range[0]) & (acflc.time.value <= period_range[1])]
 
     # Normalize the ACF
     acflc /= acflc.flux.value.max()
@@ -247,6 +247,10 @@ def simple_ACF(j, period_range):
     # Identify the first 10 maxima above a threshold of 0.05
     peaks, _ = find_peaks(acfsmoo, height = 0.01)
 
+    # Save the metadata
+    j.void['acflc'] = acflc
+    j.void['acfsmoo'] = acfsmoo
+    j.void['peaks'] = peaks
 
     # The first of these maxima (with the shortest period) corresponds to Prot
     if len(peaks) >= 1:
