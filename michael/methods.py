@@ -100,7 +100,7 @@ def simple_astropy_lombscargle(j, sector, period_range):
     sig_rms = np.sqrt(np.mean((clc.flux.value - 1)**2))
     sig_ps = 4 * sig_rms**2 / len(clc)
     if popt[2] < 4 * sig_ps:
-        j.reuslts.loc[sector, 'f_SLS'] += 4
+        j.results.loc[sector, 'f_SLS'] += 4
 
     # Save the gaussian fit
     j.void[f'popt_{sector}'] = popt
@@ -185,7 +185,10 @@ def simple_wavelet(j, period_range):
 
 def simple_ACF(j, period_range):
     """
-
+    For the ACF estimator, we follow the guidelines presented in Garcia et al.
+    (2014), which builds upon the work by McQuillan et al. (2013a, b). In these
+    works, the ACF approach is considered to be superior to the Lomb Scargle
+    Periodogram.
 
     Parameters
     ----------
