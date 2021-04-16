@@ -14,11 +14,16 @@ from .utils import _gaussian_fn, _safety
 
 def simple_astropy_lombscargle(j, sector, period_range):
     """
-    Following the criteria in Feinstein+2020:
+    Following some criteria from Feinstein+2020 [1-3] and Nielsen+2013 [4]
         1) Period must be less than 12 days
             - Set maximum LombScargle period to 12 days
         2) The FWHM of the Gaussian fit to the peak power must be < 40% peak period
         3) Secondary peak must be 10% weaker than the primary peak
+        4) Peak must be at least 4x above the time-series RMS noise, where
+
+        $\sigma_{\textrm PS} = 4\sigma^2_{\textrm RMS} / N$
+
+        where $N$ is the number of data points in the light curve.
 
     We calculate a periodogram using Lightkurve. We set the maximum period to 12 (to comply with
     condition (1). We set the normalization to 'psd' to reduce the dynamic range, making the
@@ -91,9 +96,14 @@ def simple_astropy_lombscargle(j, sector, period_range):
             j.results.loc[sector, 'SLS'] = popt[0]
             j.results.loc[sector, 'e_SLS'] = popt[1]
 
+    ## Condition (4)
+    sig_rms = np.sqrt(np.mean((clc.flux.value - 1)**2))
+    sig_ps = 4 * sig_rms**2 / len(clc)
+    if popt[2] < 4 * sig_ps:
+        j.reuslts.loc[sector, 'f_SLS'] += 4
+
     # Save the gaussian fit
     j.void[f'popt_{sector}'] = popt
-
 
     if j.verbose:
         print(f'### Completed Simple Astropy Lomb-Scargle for Sector {sector} on star {j.gaiaid} ###')
@@ -170,5 +180,35 @@ def simple_wavelet(j, period_range):
 
     if j.verbose:
         print(f'### Completed Wavelet Estimation on star {j.gaiaid} ###')
+
+    _safety(j)
+
+def simple_ACF(j, period_range):
+    """
+
+
+    Parameters
+    ----------
+
+    j: class
+        The `janet` class containing the metadata on our star.
+
+    sector: int
+        The sector for which to calculate the simple astropy lombscargle period.
+        If 'all', calculates for all sectors stitched together.
+
+    period_range: tuple
+        The lower and upper limit on period range to search for a rotational
+        signal. Default is (0.2, 12.) based on the McQuillan et al. (2014)
+        search range and the limitations of TESS earthshine.
+
+    """
+
+    if j.verbose:
+        print(f'### Running ACF Estimation on star {j.gaiaid} ###')
+
+
+    if j.verbose:
+        print(f'### Completed ACF Estimation on star {j.gaiaid} ###')
 
     _safety(j)
