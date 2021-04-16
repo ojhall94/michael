@@ -186,13 +186,27 @@ def simple_wavelet(j, period_range):
 def simple_ACF(j, period_range):
     """
     For the ACF estimator, we follow the guidelines presented in Garcia et al.
-    (2014), which builds upon the work by McQuillan et al. (2013a, b). In these
-    works, the ACF approach is considered to be superior to the Lomb Scargle
-    Periodogram.
+    (2014), which builds upon the work by McQuillan et al. (2013a, b). There is
+    no easy way to reliably estimate an uncertainty for the ACF, so instead we
+    will use it as a check on the SLS and WS period estimates.
+
+    First, we take the autocorrelation of the time series, and shifting the
+    time series over itself by 12 days. We then take a periodogram of the
+    ACF, and use the period of the peak of highest power as the first-guess
+    ACF period.
+
+    The ACF is then smoothed by convolving with a Gaussian Kernel with a
+    standard deviation of 0.1x the first-guess ACF period. We use a peak-
+    finding algorithm to identify any peaks in the smoothed spectrum above
+    an arbitrary threshold of 0.05.
+
+    If peaks are found, the first (lowest period) peak is used as the ACF period.
+
+    If no peaks are found, no value is reported and a flag is raised when
+    validating the rotation periods.
 
     Parameters
     ----------
-
     j: class
         The `janet` class containing the metadata on our star.
 
@@ -210,6 +224,38 @@ def simple_ACF(j, period_range):
     if j.verbose:
         print(f'### Running ACF Estimation on star {j.gaiaid} ###')
 
+    clc = j.void['clc_all']
+
+    # Calculate the ACF between 0 and 12 days.
+    acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
+    lag = clc.time.value - clc.time.value.min()
+    acflc = lk.LightCurve(time=lag, flux=acf)
+    acflc = acflc[acflc.time.value <= 12.]
+
+    # Normalize the ACF
+    acflc /= acflc.flux.value.max()
+
+    # Estimate a first-guess period
+    acfpg = acflc.to_periodogram()
+    first_guess = acfpg.period_at_max_power()
+
+    # Smooth the ACF
+    sd = np.ceil(0.1*first_guess.value / np.median(np.diff(acflc.time.value)))
+    gauss = Gaussian1DKernel(sd)
+    acfsmoo = convolve(acflc.flux.value, gauss, boundary='extend')
+
+    # Identify the first 10 maxima above a threshold of 0.05
+    peaks, _ = find_peaks(acfsmoo, height = 0.01)
+
+
+    # The first of these maxima (with the shortest period) corresponds to Prot
+    if len(peaks) >= 1:
+        acf_period = acflc. time.values[peaks[0]]
+        j.results.loc['all', 'ACF'] = acf_period
+
+    # No peaks found
+    else:
+        j.results.loc['all', 'ACF'] = np.nan
 
     if j.verbose:
         print(f'### Completed ACF Estimation on star {j.gaiaid} ###')
