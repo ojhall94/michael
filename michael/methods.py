@@ -7,6 +7,8 @@ import astropy.units as u
 import numpy as np
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
+from astropy.convolution import Gaussian1DKernel
+from astropy.convolution import convolve
 
 import jazzhands
 
@@ -230,14 +232,17 @@ def simple_ACF(j, period_range):
     acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
     lag = clc.time.value - clc.time.value.min()
     acflc = lk.LightCurve(time=lag, flux=acf)
-    acflc = acflc[(acflc.time.value >= period_range[0]) & (acflc.time.value <= period_range[1])]
+    acflc = acflc[(acflc.time.value <= period_range[1])]
 
     # Normalize the ACF
     acflc /= acflc.flux.value.max()
 
+    # Make the lowe rcut
+    acflc = acflc[(acflc.time.value >= period_range[0])]
+
     # Estimate a first-guess period
     acfpg = acflc.to_periodogram()
-    first_guess = acfpg.period_at_max_power()
+    first_guess = acfpg.period_at_max_power
 
     # Smooth the ACF
     sd = np.ceil(0.1*first_guess.value / np.median(np.diff(acflc.time.value)))
@@ -254,7 +259,7 @@ def simple_ACF(j, period_range):
 
     # The first of these maxima (with the shortest period) corresponds to Prot
     if len(peaks) >= 1:
-        acf_period = acflc. time.values[peaks[0]]
+        acf_period = acflc. time.value[peaks[0]]
         j.results.loc['all', 'ACF'] = acf_period
 
     # No peaks found

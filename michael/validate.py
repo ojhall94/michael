@@ -130,7 +130,8 @@ def validator(j):
     32 - No robust matches
     34 - No robust matches, WS-obtained value (ditto for other combos)
     64 - No ACF measured
-    128 - ACF indicates that 'best' period is a potential harmonic
+    128 - ACF does not match 'best' period within 2 sigma
+    256 - ACF indicates that 'best' period is a potential harmonic
     """
     # Validate LombScargle
     validate_SLS(j)

@@ -21,7 +21,7 @@ import numpy as np
 import astropy.units as u
 
 from .data import data_class
-from .methods import simple_astropy_lombscargle, simple_wavelet
+from .methods import *
 from .validate import validator
 from .plotting import plot
 
@@ -94,9 +94,9 @@ class janet():
         plot(self)
 
 
-    def run(self):
+    def run(self, period_range = (0.2, 12.)):
         self.prepare_data()
-        self.get_rotation()
+        self.get_rotation(period_range = period_range)
         self.validate_rotation()
         self.view()
 

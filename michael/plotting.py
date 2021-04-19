@@ -17,8 +17,8 @@ _label_fontsize=24
 def plot(j):
     cmap = sns.color_palette('viridis', 8)
 
-    fig = plt.figure(figsize=(20, 30))
-    gs = GridSpec(4,3, figure=fig)
+    fig = plt.figure(figsize=(20, 37))
+    gs = GridSpec(5,3, figure=fig)
 
     best_sls = j.results.loc['best', 's_SLS']
 
@@ -42,7 +42,8 @@ def plot(j):
         j.void[f'clc_all'].plot(ax=ax01, lw=1, c='k')
 
     ax01.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
-
+    ax01.set_ylabel('Normalised Flux')
+    
     # Plot all periodograms
     ax10 = fig.add_subplot(gs[1, :2])
     if not j.gaps:
@@ -120,10 +121,34 @@ def plot(j):
     axw2.set_xlim(j.void['wavelet_popt'][0] - 5*j.void['wavelet_popt'][1],
                     j.void['wavelet_popt'][0] + 5*j.void['wavelet_popt'][1])
 
+    # Plot the ACF
+    acf = fig.add_subplot(gs[3, :2])
+    j.void['acflc'].plot(ax=acf, c='k', zorder=3)
+    acf.plot(j.void['acflc'].time.value, j.void['acfsmoo'], lw=4, ls='--', c=cmap[3],
+            label = 'Smoothed ACF', zorder=4)
+    acf.set_ylim(j.void['acflc'].flux.value.min(), j.void['acflc'].flux.value.max()+0.1)
+    acf.set_xlim(j.void['acflc'].time.value.min(), j.void['acflc'].time.value.max())
+    if len(j.void['peaks']) >= 1:
+        acf.axvline(j.void['acflc'].time.value[j.void['peaks'][0]], c=cmap[4],
+                        label = f'P = {j.results.loc["all", "ACF"]:.2f} d',
+                        lw = 4, ls=':', zorder=5)
+    acf.axvspan(j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
+                j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'], color=cmap[6], zorder=2,
+                label=f'P = {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d',
+                alpha=.5)
+    acf.axvspan(j.results.loc['best', 'overall'] - 2*j.results.loc['best', 'e_overall'],
+                j.results.loc['best', 'overall'] + 2*j.results.loc['best', 'e_overall'], color=cmap[7], zorder=1,
+                label=r'$2\sigma$', alpha=.5)
+    acf.set_title("Autocorrelation Function for all Sectors")
+    acf.set_ylabel('Normalised ACF')
+    acf.axhline(0.01, label='Detection threshold', c='k', zorder=0)
+    acf.legend(loc='best')
+
     # Plot the results compared
+    res = fig.add_subplot(gs[3, 2:])
 
     # Plot the phase folded light curve
-    ax2 = fig.add_subplot(gs[3, :2])
+    ax2 = fig.add_subplot(gs[4, :])
     fold = j.void['clc_all'].fold(period=j.results.loc['best', 'overall'])
     if len(j.sectors) >= 2:
         for s in j.sectors:
@@ -132,11 +157,11 @@ def plot(j):
         fold.scatter(ax=ax2, c='k', s=75, label='Folded LC', zorder=1)
     fold.bin(bins=int(len(fold)/50)).plot(ax=ax2, zorder=4, lw=5, c=cmap[4], label='Binned LC')
     fold.bin(bins=int(len(fold)/50)).plot(ax=ax2, zorder=3, lw=10, c='w')
-
+    ax2.set_ylabel('Normalised Flux')
     ax2.axhline(1., c='k', zorder=2, ls='-')
     ax2.set_xlim(fold.phase.min().value, fold.phase.max().value)
     ax2.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
-    ax2.set_title(rf'All Sectors folded on Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} days')
+    ax2.set_title(rf'All Sectors folded on Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
 
     # Polish
     ax00.minorticks_on()
@@ -145,9 +170,10 @@ def plot(j):
     ax11.minorticks_on()
     axw1.minorticks_on()
     axw2.minorticks_on()
+    acf.minorticks_on()
     ax2.minorticks_on()
     fig.tight_layout()
 
 
-    plt.savefig(f'{j.output_path}/{j.gaiaid}/output.pdf', rasterized=True)
-    plt.savefig(f'{j.output_path}/{j.gaiaid}/output.png', dpi = 300)
+    # plt.savefig(f'{j.output_path}/{j.gaiaid}/output.pdf', rasterized=True)
+    # plt.savefig(f'{j.output_path}/{j.gaiaid}/output.png', dpi = 300)
