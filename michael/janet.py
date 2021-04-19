@@ -24,6 +24,7 @@ from .data import data_class
 from .methods import *
 from .validate import validator
 from .plotting import plot
+from .utils import _decode
 
 class janet():
     """ Class managing all i/o for the `michael' package.
@@ -93,12 +94,37 @@ class janet():
         """
         plot(self)
 
+    def decode(self, flag):
+        """
+        Converts the 'f_overall' flag into human-readable strings.
+
+        This function takes the 'f_overall' integer value in the results table.
+        This does not work for the flag associated with any of the individual
+        rotation estimates (such as the 'f_SLS' flag).
+
+        If `michael` is run using the `verbose=True` kwarg, the decoded flag
+        will be printed at the end of the run.
+        """
+        if flag > 512:
+            print("Our flags don't go this high. Please see the `validator()`\
+                    function docstring for more information")
+        else:
+            print(f'\n------ Decoding Overall Period Flag {flag} ------')
+            print(_decode(flag))
+            print('No other flags raised. \n')
+
+
+
 
     def run(self, period_range = (0.2, 12.)):
         self.prepare_data()
         self.get_rotation(period_range = period_range)
         self.validate_rotation()
         self.view()
+
+        if self.verbose:
+            self.decode(self.results.loc['best', 'f_overall'].astype(int))
+
 
     def __repr__(self):
         repr = "Hi there! I'm Janet 🌵\n"

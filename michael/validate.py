@@ -85,7 +85,20 @@ def validate_WS_vs_SLS(j):
 
 def validate_best_vs_ACF(j):
     # Validate the ACF vs the best value
-    return 0
+
+    # Flag if the ACF does not match the 'best' period within 2 sigma
+    condition = np.abs(j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
+                < 2*j.results.loc['best','e_overall']
+    if not condition:
+        j.results.loc['best', 'f_overall'] += 128
+
+    # Flag if the ACF appears to be a harmonic of the 'best' period
+    condition = (np.abs(0.5*j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
+                < 2*j.results.loc['best', 'e_overall']) or\
+                (np.abs(2*j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
+                            < 2*j.results.loc['best', 'e_overall'])
+    if condition:
+        j.results.loc['best', 'f_overall'] += 256
 
 def validator(j):
     """
