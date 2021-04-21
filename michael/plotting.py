@@ -150,7 +150,7 @@ def plot(j):
     res.set_ylabel('Period [d]')
     res.errorbar(2, j.results.loc['all', 'SW'], yerr = j.results.loc['all', 'e_SW'],
                 c='k', fmt='o')
-    res.axhline(j.results.loc['all', 'ACF'],  label='ACF', c='k', ls=':', lw=5,
+    res.axhline(j.results.loc['all', 'ACF'],  label='ACF', c=cmap[3], ls=':', lw=5,
                zorder =1, alpha=.8)
     if len(j.sectors) >= 2:
         xs = np.linspace(0.75, 1.25, len(j.sectors)+1)
@@ -170,7 +170,7 @@ def plot(j):
     res.set_xticklabels(labels, rotation=45)
     res.axhspan(j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
                 j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
-                color=cmap[3], alpha=.5, zorder=0,
+                color=cmap[6], alpha=.5, zorder=0,
                label = 'Best Period')
     if np.any(j.results[['SLS', 'SW', 'ACF']] > 1.9*j.results.loc['best', 'overall']) or\
         np.any(j.results[['SLS', 'SW', 'ACF']] < 0.6*j.results.loc['best', 'overall']):
@@ -183,6 +183,7 @@ def plot(j):
                     2*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
                     color=cmap[7], alpha=.5, zorder=0)
     res.legend(loc='best')
+    res.set_ylim(top=12)
 
 
 
