@@ -7,6 +7,8 @@ import astropy.units as u
 import numpy as np
 from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
+from astropy.convolution import Gaussian1DKernel
+from astropy.convolution import convolve
 
 import jazzhands
 
@@ -14,11 +16,16 @@ from .utils import _gaussian_fn, _safety
 
 def simple_astropy_lombscargle(j, sector, period_range):
     """
-    Following the criteria in Feinstein+2020:
+    Following some criteria from Feinstein+2020 [1-3] and Nielsen+2013 [4]
         1) Period must be less than 12 days
             - Set maximum LombScargle period to 12 days
         2) The FWHM of the Gaussian fit to the peak power must be < 40% peak period
         3) Secondary peak must be 10% weaker than the primary peak
+        4) Peak must be at least 4x above the time-series RMS noise, where
+
+        $\sigma_{\textrm PS} = 4\sigma^2_{\textrm RMS} / N$
+
+        where $N$ is the number of data points in the light curve.
 
     We calculate a periodogram using Lightkurve. We set the maximum period to 12 (to comply with
     condition (1). We set the normalization to 'psd' to reduce the dynamic range, making the
@@ -91,9 +98,14 @@ def simple_astropy_lombscargle(j, sector, period_range):
             j.results.loc[sector, 'SLS'] = popt[0]
             j.results.loc[sector, 'e_SLS'] = popt[1]
 
+    ## Condition (4)
+    sig_rms = np.sqrt(np.mean((clc.flux.value - 1)**2))
+    sig_ps = 4 * sig_rms**2 / len(clc)
+    if popt[2] < 4 * sig_ps:
+        j.results.loc[sector, 'f_SLS'] += 4
+
     # Save the gaussian fit
     j.void[f'popt_{sector}'] = popt
-
 
     if j.verbose:
         print(f'### Completed Simple Astropy Lomb-Scargle for Sector {sector} on star {j.gaiaid} ###')
@@ -170,5 +182,91 @@ def simple_wavelet(j, period_range):
 
     if j.verbose:
         print(f'### Completed Wavelet Estimation on star {j.gaiaid} ###')
+
+    _safety(j)
+
+def simple_ACF(j, period_range):
+    """
+    For the ACF estimator, we follow the guidelines presented in Garcia et al.
+    (2014), which builds upon the work by McQuillan et al. (2013a, b). There is
+    no easy way to reliably estimate an uncertainty for the ACF, so instead we
+    will use it as a check on the SLS and WS period estimates.
+
+    First, we take the autocorrelation of the time series, and shifting the
+    time series over itself by 12 days (unless overruled by the user). We then
+    take a periodogram of the ACF, and use the period of the peak of highest
+    power as the first-guess ACF period.
+
+    The ACF is then smoothed by convolving with a Gaussian Kernel with a
+    standard deviation of 0.1x the first-guess ACF period. We use a peak-
+    finding algorithm to identify any peaks in the smoothed spectrum above
+    an arbitrary threshold of 0.05.
+
+    If peaks are found, the first (lowest period) peak is used as the ACF period.
+
+    If no peaks are found, no value is reported and a flag is raised when
+    validating the rotation periods.
+
+    Parameters
+    ----------
+    j: class
+        The `janet` class containing the metadata on our star.
+
+    sector: int
+        The sector for which to calculate the simple astropy lombscargle period.
+        If 'all', calculates for all sectors stitched together.
+
+    period_range: tuple
+        The lower and upper limit on period range to search for a rotational
+        signal. Default is (0.2, 12.) based on the McQuillan et al. (2014)
+        search range and the limitations of TESS earthshine.
+
+    """
+
+    if j.verbose:
+        print(f'### Running ACF Estimation on star {j.gaiaid} ###')
+
+    clc = j.void['clc_all']
+
+    # Calculate the ACF between 0 and 12 days.
+    acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
+    lag = clc.time.value - clc.time.value.min()
+    acflc = lk.LightCurve(time=lag, flux=acf)
+    acflc = acflc[(acflc.time.value <= period_range[1])]
+
+    # Normalize the ACF
+    acflc /= acflc.flux.value.max()
+
+    # Make the lowe rcut
+    acflc = acflc[(acflc.time.value >= period_range[0])]
+
+    # Estimate a first-guess period
+    acfpg = acflc.to_periodogram()
+    first_guess = acfpg.period_at_max_power
+
+    # Smooth the ACF
+    sd = np.ceil(0.1*first_guess.value / np.median(np.diff(acflc.time.value)))
+    gauss = Gaussian1DKernel(sd)
+    acfsmoo = convolve(acflc.flux.value, gauss, boundary='extend')
+
+    # Identify the first 10 maxima above a threshold of 0.05
+    peaks, _ = find_peaks(acfsmoo, height = 0.01)
+
+    # Save the metadata
+    j.void['acflc'] = acflc
+    j.void['acfsmoo'] = acfsmoo
+    j.void['peaks'] = peaks
+
+    # The first of these maxima (with the shortest period) corresponds to Prot
+    if len(peaks) >= 1:
+        acf_period = acflc. time.value[peaks[0]]
+        j.results.loc['all', 'ACF'] = acf_period
+
+    # No peaks found
+    else:
+        j.results.loc['all', 'ACF'] = np.nan
+
+    if j.verbose:
+        print(f'### Completed ACF Estimation on star {j.gaiaid} ###')
 
     _safety(j)

@@ -32,8 +32,8 @@ class data_class():
 
         # Check for existing data
         if len(glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')) > 0:
-            print(f'Already have data loaded for Gaia ID {self.j.gaiaid}.')
-            print(f'If you want to check for new data, run `janet.Update()`.')
+            print(f'Already have data downloaded for Gaia ID {self.j.gaiaid}.')
+            print(f'If you want to check for new data, run `janet.update()`.')
         else:
             self.download_eleanor_data()
 
