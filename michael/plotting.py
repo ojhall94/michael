@@ -34,7 +34,7 @@ def plot(j):
 
     # Plot all LCs
     ax01 = fig.add_subplot(gs[0, 1:])
-    ax01.set_title(f'Full TESS LC, Sectors: {j.sectors}. Normalized, outliers removed.')
+    ax01.set_title(f'Full TESS LC, Sectors: {j.sectors}. Normalised, outliers removed.')
     if len(j.sectors) >= 2:
         for s in j.sectors:
             j.void[f'clc_{s}'].plot(ax=ax01, lw=1)
@@ -43,7 +43,7 @@ def plot(j):
 
     ax01.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
     ax01.set_ylabel('Normalised Flux')
-    
+
     # Plot all periodograms
     ax10 = fig.add_subplot(gs[1, :2])
     if not j.gaps:
@@ -129,7 +129,7 @@ def plot(j):
     acf.set_ylim(j.void['acflc'].flux.value.min(), j.void['acflc'].flux.value.max()+0.1)
     acf.set_xlim(j.void['acflc'].time.value.min(), j.void['acflc'].time.value.max())
     if len(j.void['peaks']) >= 1:
-        acf.axvline(j.void['acflc'].time.value[j.void['peaks'][0]], c=cmap[4],
+        acf.axvline(j.void['acflc'].time.value[j.void['peaks'][0]], c=cmap[3],
                         label = f'P = {j.results.loc["all", "ACF"]:.2f} d',
                         lw = 4, ls=':', zorder=5)
     acf.axvspan(j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
@@ -146,6 +146,45 @@ def plot(j):
 
     # Plot the results compared
     res = fig.add_subplot(gs[3, 2:])
+    res.set_title('Period Estimates')
+    res.set_ylabel('Period [d]')
+    res.errorbar(2, j.results.loc['all', 'SW'], yerr = j.results.loc['all', 'e_SW'],
+                c='k', fmt='o')
+    res.axhline(j.results.loc['all', 'ACF'],  label='ACF', c='k', ls=':', lw=5,
+               zorder =1, alpha=.8)
+    if len(j.sectors) >= 2:
+        xs = np.linspace(0.75, 1.25, len(j.sectors)+1)
+        for idx, sector in enumerate(j.sectors):
+            res.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
+                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o')
+        res.errorbar(xs[-1], j.results.loc['all', 'SLS'],
+                    yerr = j.results.loc['all', 'e_SLS'],
+                    fmt='o', c='k')
+    else:
+        res.errorbar(1., j.results.loc['all', 'SLS'],
+                    yerr = j.results.loc['all', 'e_SLS'],
+                    fmt='o', c='k')
+    labels = ['SLS', 'SW']
+    x = [1., 2.]
+    res.set_xticks(x)
+    res.set_xticklabels(labels, rotation=45)
+    res.axhspan(j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
+                j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
+                color=cmap[3], alpha=.5, zorder=0,
+               label = 'Best Period')
+    if np.any(j.results[['SLS', 'SW', 'ACF']] > 1.9*j.results.loc['best', 'overall']) or\
+        np.any(j.results[['SLS', 'SW', 'ACF']] < 0.6*j.results.loc['best', 'overall']):
+
+        res.axhspan(0.5*j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
+                    0.5*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
+                    color=cmap[7], alpha=.5, zorder=0,
+                   label = '2:1:2 Best')
+        res.axhspan(2*j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
+                    2*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
+                    color=cmap[7], alpha=.5, zorder=0)
+    res.legend(loc='best')
+
+
 
     # Plot the phase folded light curve
     ax2 = fig.add_subplot(gs[4, :])
@@ -161,7 +200,7 @@ def plot(j):
     ax2.axhline(1., c='k', zorder=2, ls='-')
     ax2.set_xlim(fold.phase.min().value, fold.phase.max().value)
     ax2.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
-    ax2.set_title(rf'All Sectors folded on Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
+    ax2.set_title(rf'All Sectors folded on Best Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
 
     # Polish
     ax00.minorticks_on()
@@ -170,10 +209,11 @@ def plot(j):
     ax11.minorticks_on()
     axw1.minorticks_on()
     axw2.minorticks_on()
+    res.grid(axis='y')
+    # res.minorticks_on()
     acf.minorticks_on()
     ax2.minorticks_on()
     fig.tight_layout()
 
-
-    # plt.savefig(f'{j.output_path}/{j.gaiaid}/output.pdf', rasterized=True)
-    # plt.savefig(f'{j.output_path}/{j.gaiaid}/output.png', dpi = 300)
+    plt.savefig(f'{j.output_path}/{j.gaiaid}/output.pdf', rasterized=True)
+    plt.savefig(f'{j.output_path}/{j.gaiaid}/output.png', dpi = 300)

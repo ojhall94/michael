@@ -105,16 +105,13 @@ class janet():
         If `michael` is run using the `verbose=True` kwarg, the decoded flag
         will be printed at the end of the run.
         """
-        if flag > 512:
-            print("Our flags don't go this high. Please see the `validator()`\
-                    function docstring for more information")
+        if flag >= 512:
+            print("Our flags don't go this high. Please see the `validator()`"+
+                    " function docstring for more information")
         else:
             print(f'\n------ Decoding Overall Period Flag {flag} ------')
             print(_decode(flag))
             print('No other flags raised. \n')
-
-
-
 
     def run(self, period_range = (0.2, 12.)):
         self.prepare_data()

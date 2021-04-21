@@ -30,16 +30,17 @@ def _decode(flag):
     """
 
     STRINGS = {
-        1 : "Best rotation is from the Simple Lomb Scargle (SLS) method.",
-        2 : "Best rotation is from the Simple Wavelet (SW) method.",
-        4 : "Best rotation is from the Simple Autocorrelation Function (ACF) method.",
-        8 : "Best rotation is from the Gaussian Process (GP) method.",
-        16 : "Valididation between WS and SLS was done using a SLS period that was not " +
-            "the best SLS rotation, because there was no 2 sigma agreement with the SW period.",
-        32 : "No robust matches were found between the SW period and any unflagged SLS periods.",
-        64 : "No ACF period could be reliably measured (indicating low power or long periods).",
-        128 : "The ACF period does not match the 'best' period within 2 sigma.",
-        256 : "The ACF period is potentially a harmonic of the 'best' period (or vice versa!)",
+        1 : "1: Best rotation is from the Simple Lomb Scargle (SLS) method.",
+        2 : "2: Best rotation is from the Simple Wavelet (SW) method.",
+        4 : "4: Best rotation is from the Simple Autocorrelation Function (ACF) method.",
+        8 : "8: Best rotation is from the Gaussian Process (GP) method.",
+        16 : "16: Valididation between WS and SLS was done using a SLS period that was not " +
+            "the 'best' SLS value (lowest uncertainty without flags), because there was no 2" +
+            " sigma agreement with the SW period.",
+        32 : "32: No robust matches were found between the SW period and any unflagged SLS periods.",
+        64 : "64: No ACF period could be reliably measured (indicating low power or long periods).",
+        128 : "128: The ACF period does not match the 'best' period within 2 sigma.",
+        256 : "256: The ACF period is potentially a harmonic of the 'best' period (or vice versa!)",
     }
 
     val = np.copy(flag)
