@@ -24,7 +24,7 @@ from .data import data_class
 from .methods import *
 from .validate import validator
 from .plotting import plot
-from .utils import _decode
+from .utils import _decode, _safety
 
 class janet():
     """ Class managing all i/o for the `michael' package.
@@ -122,6 +122,7 @@ class janet():
         if self.verbose:
             self.decode(self.results.loc['best', 'f_overall'].astype(int))
 
+        _safety()
 
     def __repr__(self):
         repr = "Hi there! I'm Janet 🌵\n"

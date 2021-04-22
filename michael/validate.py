@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from .utils import _safety
 
 def validate_SLS(j):
     # Validate LombScargle
@@ -27,6 +28,7 @@ def validate_SLS(j):
         j.results.loc['best', 'e_SLS'] = j.results.loc[idx, 'e_SLS']
         j.results.loc['best', 's_SLS'] = str(int(idx))
         j.results.loc['best', 'f_SLS'] = j.results.loc[idx, 'f_SLS']
+    _safety()
 
 def validate_WS_vs_SLS(j):
     # Validate Wavelet vs LombScargle
@@ -82,7 +84,7 @@ def validate_WS_vs_SLS(j):
             j.results.loc['best', 'overall'] = j.results.loc['best', 'SW']
             j.results.loc['best', 'e_overall'] = j.results.loc['best', 'e_SW']
             j.results.loc['best', 'f_overall'] = 34
-
+    _safety()
 def validate_best_vs_ACF(j):
     # Validate the ACF vs the best value
 
@@ -99,6 +101,7 @@ def validate_best_vs_ACF(j):
                             < 2*j.results.loc['best', 'e_overall'])
     if condition:
         j.results.loc['best', 'f_overall'] += 256
+    _safety()
 
 def validator(j):
     """
@@ -154,3 +157,5 @@ def validator(j):
 
     # Validate ACF vs the 'best' period
     validate_best_vs_ACF(j)
+
+    _safety()
