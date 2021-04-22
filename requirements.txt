@@ -3,7 +3,7 @@ matplotlib
 seaborn
 pandas
 eleanor
-lightkurve
+lightkurve >= 2.0.7
 astropy
 tqdm
 scipy
