@@ -6,3 +6,5 @@ eleanor
 lightkurve
 astropy
 tqdm
+scipy
+jazzhands
