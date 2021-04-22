@@ -7,4 +7,4 @@ lightkurve
 astropy
 tqdm
 scipy
-jazzhands
+jazz-hands
