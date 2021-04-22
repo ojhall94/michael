@@ -122,7 +122,7 @@ class janet():
         if self.verbose:
             self.decode(self.results.loc['best', 'f_overall'].astype(int))
 
-        _safety()
+        _safety(j)
 
     def __repr__(self):
         repr = "Hi there! I'm Janet 🌵\n"
