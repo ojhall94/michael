@@ -185,7 +185,7 @@ def plot(j):
                     2*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
                     color=cmap[7], alpha=.5, zorder=0)
     res.legend(loc='best')
-    res.set_ylim(top=12)
+    res.set_ylim(top=13.7)
 
 
 
