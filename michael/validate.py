@@ -85,6 +85,7 @@ def validate_WS_vs_SLS(j):
             j.results.loc['best', 'e_overall'] = j.results.loc['best', 'e_SW']
             j.results.loc['best', 'f_overall'] = 34
     _safety(j)
+    
 def validate_best_vs_ACF(j):
     # Validate the ACF vs the best value
 
