@@ -69,8 +69,15 @@ def simple_astropy_lombscargle(j, sector, period_range):
 
     # Fit a Gaussian
     ## Params are mu, sigma, Amplitude
+    lolim = 0.8*max_period
+    if lolim < period_range[0]:
+        lolim = period_range[0]
+    uplim = 1.2*max_period
+    if uplim > period_range[1]:
+        uplim = period_range[1]
+
     popt, pcov = curve_fit(_gaussian_fn, p, P, p0 = [max_period, 0.1*max_period, max_power],
-                            bounds = ([0.8*max_period, 0., 0.9*max_power],[1.2*max_period, 0.25*max_period, 1.1*max_power]))
+                            bounds = ([lolim, 0., 0.9*max_power],[uplim, 0.25*max_period, 1.1*max_power]))
 
     j.results.loc[sector, 'SLS'] = popt[0]
     j.results.loc[sector, 'e_SLS'] = popt[1]
@@ -91,9 +98,12 @@ def simple_astropy_lombscargle(j, sector, period_range):
         peaks, _ = find_peaks(P, height=0.9*max_power)
         if len(peaks) > 1:
             s = (pg.period.value > 0.8*max_period) & (pg.period.value < 1.2*max_period)
+
+
+
             popt, pcov = curve_fit(_gaussian_fn, pg[s].period.value, pg[s].power.value,
                                     p0 = [max_period, 0.2*max_period, max_power],
-                                    bounds = ([0.8*max_period, 0., 0.9*max_power],[1.2*max_period, 0.25*max_period, 1.1*max_power]))
+                                    bounds = ([lolim, 0., 0.9*max_power],[uplim, 0.25*max_period, 1.1*max_power]))
 
             j.results.loc[sector, 'SLS'] = popt[0]
             j.results.loc[sector, 'e_SLS'] = popt[1]
@@ -171,8 +181,15 @@ def simple_wavelet(j, period_range):
 
     # Fit a Gaussian
     ## Params are mu, sigma, Amplitude
+    lolim = 0.8*max_p
+    if lolim < period_range[0]:
+        lolim = period_range[0]
+    uplim = 1.2*max_p
+    if uplim > period_range[1]:
+        uplim = period_range[1]
+
     popt, pcov = curve_fit(_gaussian_fn, p, w, p0 = [max_p, 0.1*max_p, max_w],
-                            bounds = ([0.8*max_p, 0., 0.9*max_w],[1.2*max_p, 0.25*max_p, 1.1*max_w]))
+                            bounds = ([lolim, 0., 0.9*max_w],[uplim, 0.25*max_p, 1.1*max_w]))
 
     j.results.loc['all', 'SW'] = popt[0]
     j.results.loc['all', 'e_SW'] = popt[1]
