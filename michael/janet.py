@@ -63,7 +63,7 @@ class janet():
         self.data.check_eleanor_setup()
         self.data.build_eleanor_lc()
 
-    def get_rotation(self, period_range = (0.2, 12.)):
+    def get_rotation(self, period_range = (0.2, 13.7)):
         """
         This needs some polish to get multiple methods working.
         """
@@ -113,7 +113,7 @@ class janet():
             print(_decode(flag))
             print('No other flags raised. \n')
 
-    def run(self, period_range = (0.2, 12.)):
+    def run(self, period_range = (0.2, 13.7)):
         self.prepare_data()
         self.get_rotation(period_range = period_range)
         self.validate_rotation()

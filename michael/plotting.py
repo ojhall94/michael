@@ -67,7 +67,7 @@ def plot(j):
 
     ax11 = fig.add_subplot(gs[1, 2:], sharey=ax10)
     ax11.get_yaxis().set_visible(False)
-    ax11.plot(j.void[f'p_{best_sls}'], j.void[f'P_{best_sls}'], lw=1, c='k', zorder=1)
+    # ax11.plot(j.void[f'p_{best_sls}'], j.void[f'P_{best_sls}'], lw=1, c='k', zorder=1)
     ax11.plot(j.void[f'p_{best_sls}'],
             _gaussian_fn(j.void[f'p_{best_sls}'], *j.void[f'popt_{best_sls}']), ls='--', lw=10, c=cmap[5], zorder=2,
             label = rf'$\sigma$ = {j.results.loc["best", "e_SLS"]:.2f} d')

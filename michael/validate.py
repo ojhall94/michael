@@ -21,7 +21,7 @@ def validate_SLS(j):
         # It may be the case that there are only flagged values. In this
         # case, ignore the flags
         else:
-            sigfrac = j.results['e_SLS'] / j.results[s]['SLS']
+            sigfrac = j.results['e_SLS'] / j.results['SLS']
 
         idx = sigfrac.idxmin()
         j.results.loc['best', 'SLS'] = j.results.loc[idx, 'SLS']
