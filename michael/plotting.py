@@ -74,7 +74,7 @@ def plot(j):
     ax11.set_xlim(j.void[f'popt_{best_sls}'][0] - 5*j.void[f'popt_{best_sls}'][1],
                     j.void[f'popt_{best_sls}'][0] + 5*j.void[f'popt_{best_sls}'][1])
     if not j.gaps:
-        j.void[f'pg_all'].plot(ax=ax11, lw=1, zorder=0)
+        j.void[f'pg_all'].plot(ax=ax11, lw=1, c='k', zorder=0)
     if len(j.sectors) >= 2:
         for s in j.sectors:
             j.void[f'pg_{s}'].plot(ax=ax11,lw=1, zorder=0)
