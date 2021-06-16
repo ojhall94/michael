@@ -210,9 +210,8 @@ def simple_ACF(j, period_range):
     will use it as a check on the SLS and WS period estimates.
 
     First, we take the autocorrelation of the time series, and shifting the
-    time series over itself by 12 days (unless overruled by the user). We then
-    take a periodogram of the ACF, and use the period of the peak of highest
-    power as the first-guess ACF period.
+    time series over itself. We then take a periodogram of the ACF, and use the
+    period of the peak of highest power as the first-guess ACF period.
 
     The ACF is then smoothed by convolving with a Gaussian Kernel with a
     standard deviation of 0.1x the first-guess ACF period. We use a peak-
@@ -235,9 +234,8 @@ def simple_ACF(j, period_range):
 
     period_range: tuple
         The lower and upper limit on period range to search for a rotational
-        signal. Default is (0.2, 12.) based on the McQuillan et al. (2014)
+        signal. Default is (0.2, 13.7) based on the McQuillan et al. (2014)
         search range and the limitations of TESS earthshine.
-
     """
 
     if j.verbose:
@@ -249,34 +247,35 @@ def simple_ACF(j, period_range):
     acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
     lag = clc.time.value - clc.time.value.min()
     acflc = lk.LightCurve(time=lag, flux=acf)
-    acflc = acflc[(acflc.time.value <= period_range[1])]
 
     # Normalize the ACF
     acflc /= acflc.flux.value.max()
 
-    # Make the lowe rcut
-    acflc = acflc[(acflc.time.value >= period_range[0])]
+    # Make cut up the ACFLC
+    redacflc = acflc[(acflc.time.value <= period_range[1])]
+    redacflc = redacflc[(redacflc.time.value >= period_range[0])]
 
     # Estimate a first-guess period
     acfpg = acflc.to_periodogram()
     first_guess = acfpg.period_at_max_power
 
     # Smooth the ACF
-    sd = np.ceil(0.1*first_guess.value / np.median(np.diff(acflc.time.value)))
+    sd = np.ceil(0.1*first_guess.value / np.median(np.diff(redacflc.time.value)))
     gauss = Gaussian1DKernel(sd)
-    acfsmoo = convolve(acflc.flux.value, gauss, boundary='extend')
+    acfsmoo = convolve(redacflc.flux.value, gauss, boundary='extend')
 
     # Identify the first 10 maxima above a threshold of 0.05
     peaks, _ = find_peaks(acfsmoo, height = 0.01)
 
     # Save the metadata
     j.void['acflc'] = acflc
+    j.void['redacflc'] = redacflc
     j.void['acfsmoo'] = acfsmoo
     j.void['peaks'] = peaks
 
     # The first of these maxima (with the shortest period) corresponds to Prot
     if len(peaks) >= 1:
-        acf_period = acflc. time.value[peaks[0]]
+        acf_period = redacflc.time.value[peaks[0]]
         j.results.loc['all', 'ACF'] = acf_period
 
     # No peaks found

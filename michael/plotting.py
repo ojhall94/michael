@@ -68,7 +68,6 @@ def plot(j):
 
     ax11 = fig.add_subplot(gs[1, 2:], sharey=ax10)
     ax11.get_yaxis().set_visible(False)
-    # ax11.plot(j.void[f'p_{best_sls}'], j.void[f'P_{best_sls}'], lw=1, c='k', zorder=1)
     ax11.plot(j.void[f'p_{best_sls}'],
             _gaussian_fn(j.void[f'p_{best_sls}'], *j.void[f'popt_{best_sls}']), ls='--', lw=10, c=cmap[5], zorder=2,
             label = rf'$\sigma$ = {j.results.loc["best", "e_SLS"]:.2f} d')
@@ -86,7 +85,6 @@ def plot(j):
     # Wavelet contourfplot
     axw1 = fig.add_subplot(gs[2, :2])
     c = axw1.contourf(j.void['wt'].taus, 1./j.void['wt'].nus, j.void['wwz'])
-    # axw1.set_yscale('log')
     axw1.set_ylabel('Period [d]')
     axw1.set_xlabel('Time [JD]')
     fig.colorbar(c, ax=axw1, label='WWZ', pad=.01, aspect=60)
@@ -114,7 +112,8 @@ def plot(j):
             ws /= ws.max()
             axw2.plot(p, ws, lw=1)
 
-    axw2.plot(p, _gaussian_fn(p, *j.void['wavelet_popt']), ls='--', lw=10, c=cmap[5],
+    pp = np.linspace(p.min(), p.max(), 500)
+    axw2.plot(pp, _gaussian_fn(pp, *j.void['wavelet_popt']), ls='--', lw=10, c=cmap[5],
                 label = rf'$\sigma$ = {j.results.loc["all", "e_SW"]:.2f} d')
     axw2.set_ylabel('Normalized Summed WWZ')
     axw2.set_xlabel('Period [d]')
@@ -127,12 +126,12 @@ def plot(j):
     # Plot the ACF
     acf = fig.add_subplot(gs[3, :2])
     j.void['acflc'].plot(ax=acf, c='k', zorder=3)
-    acf.plot(j.void['acflc'].time.value, j.void['acfsmoo'], lw=4, ls='--', c=cmap[3],
+    acf.plot(j.void['redacflc'].time.value, j.void['acfsmoo'], lw=4, ls='--', c=cmap[3],
             label = 'Smoothed ACF', zorder=4)
     acf.set_ylim(j.void['acflc'].flux.value.min(), j.void['acflc'].flux.value.max()+0.1)
-    acf.set_xlim(j.void['acflc'].time.value.min(), j.void['acflc'].time.value.max())
+    acf.set_xlim(j.void['acflc'].time.value.min(), j.period_range[1]*2)
     if len(j.void['peaks']) >= 1:
-        acf.axvline(j.void['acflc'].time.value[j.void['peaks'][0]], c=cmap[3],
+        acf.axvline(j.void['redacflc'].time.value[j.void['peaks'][0]], c=cmap[3],
                         label = f'P = {j.results.loc["all", "ACF"]:.2f} d',
                         lw = 4, ls=':', zorder=5)
     acf.axvspan(j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
@@ -186,7 +185,7 @@ def plot(j):
                     2*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
                     color=cmap[7], alpha=.5, zorder=0)
     res.legend(loc='best')
-    res.set_ylim(top=13.7)
+    res.set_ylim(bottom = j.period_range[0], top= j.period_range[1])
 
 
 
@@ -219,6 +218,10 @@ def plot(j):
     acf.minorticks_on()
     ax2.minorticks_on()
     fig.tight_layout()
+
+    fig.suptitle(f'Gaia ID: {j.gaiaid}', fontsize=30)
+    plt.subplots_adjust(top=0.95)
+
 
     plt.savefig(f'{j.output_path}/{j.gaiaid}/output.pdf', rasterized=True)
     plt.savefig(f'{j.output_path}/{j.gaiaid}/output.png', dpi = 300)

@@ -97,6 +97,8 @@ class janet():
         if not self.gaps:
             sectorlist += ['all']
 
+        self.period_range = period_range
+
         # Loop over all sectors.
         if len(self.sectors) == 1:
             simple_astropy_lombscargle(self, sector='all', period_range = period_range)
@@ -135,7 +137,7 @@ class janet():
             print("Our flags don't go this high. Please see the `validator()`"+
                     " function docstring for more information")
         else:
-            print(f'\n------ Decoding Overall Period Flag {flag} ------')
+            print(f'\n------ Decoding Overall Period Flag {int(flag)} ------')
             print(_decode(flag))
             print('No other flags raised. \n')
 
