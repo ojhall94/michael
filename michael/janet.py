@@ -141,7 +141,7 @@ class janet():
             print(_decode(flag))
             print('No other flags raised. \n')
 
-    def run(self, period_range = (0.2, 13.7)):
+    def run(self, period_range = (0.2, 27.4)):
         self.prepare_data()
         self.get_rotation(period_range = period_range)
         self.validate_rotation()
