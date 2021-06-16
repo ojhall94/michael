@@ -44,7 +44,7 @@ class janet():
 
     """
 
-    def __init__(self, gaiaid, ra, dec, output_path=None, verbose=True):
+    def __init__(self, gaiaid, ra=None, dec=None, output_path=None, verbose=True):
             self.gaiaid = gaiaid
             self.ra = ra
             self.dec = dec
@@ -62,6 +62,32 @@ class janet():
         self.data = data_class(self)
         self.data.check_eleanor_setup()
         self.data.build_eleanor_lc()
+
+    def flux_override(self, time, flux):
+        """
+        Michael is intended for use with `eleanor` light curves only. However for
+        testing purposes, this `flux_override()` command allows input of a custom
+        light curve.
+
+        After calling this command, the user should call `get_rotation()`,
+        `validate_rotation()` and `view()` manually.
+
+        A single sector, assigned 0, is used in the metadata.
+
+        Parameters
+        ----------
+        time: ndarray
+            The time values in units of days.
+
+        flux: ndarray
+            The flux values in any units.
+        """
+        self.sectors = [0]
+
+        lc = lk.LightCurve(time = time, flux = flux)
+        clc = lc.normalize().remove_nans().remove_outliers()
+        self.void['datum_0'] = None
+        self.void['clc_all'] = clc
 
     def get_rotation(self, period_range = (0.2, 13.7)):
         """
@@ -133,7 +159,7 @@ class janet():
 
 
     @staticmethod
-    def boot(df, index=0, output_path = '/Users/oliver hall/Research/unicorn/data'):
+    def boot(df, index=0, output_path = '/Users/oliver hall/Research/unicorn/data/eleanor'):
         """
         Sets up Janet quickly.
         """

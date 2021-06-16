@@ -23,14 +23,15 @@ def plot(j):
     best_sls = j.results.loc['best', 's_SLS']
 
     # Plot Sector 0 TPF
-    ax00 = fig.add_subplot(gs[0, :1])
-    ax00.set_title(f'Frame 0 Sector {j.sectors[0]}')
-    ax00.set_xlabel('X')
-    ax00.set_ylabel('Y')
-    ax00.imshow(j.void[f'datum_{j.sectors[0]}'].tpf[0], zorder=1)
-    pix = np.where(j.void[f'datum_{j.sectors[0]}'].aperture > 0)
-    ax00.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
-    ax00.legend(loc='upper left', fontsize=_label_fontsize)
+    if j.sectors[0] != 0:
+        ax00 = fig.add_subplot(gs[0, :1])
+        ax00.set_title(f'Frame 0 Sector {j.sectors[0]}')
+        ax00.set_xlabel('X')
+        ax00.set_ylabel('Y')
+        ax00.imshow(j.void[f'datum_{j.sectors[0]}'].tpf[0], zorder=1)
+        pix = np.where(j.void[f'datum_{j.sectors[0]}'].aperture > 0)
+        ax00.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
+        ax00.legend(loc='upper left', fontsize=_label_fontsize)
 
     # Plot all LCs
     ax01 = fig.add_subplot(gs[0, 1:])
@@ -206,7 +207,8 @@ def plot(j):
     ax2.set_title(rf'All Sectors folded on Best Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
 
     # Polish
-    ax00.minorticks_on()
+    if j.sectors[0] != 0:
+        ax00.minorticks_on()
     ax01.minorticks_on()
     ax10.minorticks_on()
     ax11.minorticks_on()
