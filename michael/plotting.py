@@ -129,7 +129,8 @@ def plot(j):
     acf.plot(j.void['redacflc'].time.value, j.void['acfsmoo'], lw=4, ls='--', c=cmap[3],
             label = 'Smoothed ACF', zorder=4)
     acf.set_ylim(j.void['acflc'].flux.value.min(), j.void['acflc'].flux.value.max()+0.1)
-    acf.set_xlim(j.void['acflc'].time.value.min(), 27.)
+    # acf.set_xlim(j.void['acflc'].time.value.min(), 13.7)
+    acf.set_xlim(j.period_range[0], j.period_range[1])
     if len(j.void['peaks']) >= 1:
         acf.axvline(j.void['redacflc'].time.value[j.void['peaks'][0]], c=cmap[3],
                         label = f'P = {j.results.loc["all", "ACF"]:.2f} d',

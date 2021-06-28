@@ -147,6 +147,10 @@ class janet():
         self.validate_rotation()
         self.view()
 
+        # Temporary hack for Unicorn project
+        pg = self.void[f'pg_{self.results.loc["best", "s_SLS"]}']
+        pg.to_table().to_pandas().to_csv(f'{self.output_path}/{self.gaiaid}/periodogram.csv')
+
         if self.verbose:
             self.decode(self.results.loc['best', 'f_overall'].astype(int))
 
