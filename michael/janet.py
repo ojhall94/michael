@@ -84,6 +84,13 @@ class janet():
         """
         self.sectors = [0]
 
+        # Create matching data folders
+        if not os.path.exists(f'{self.output_path}/{self.gaiaid}'):
+            print(f'Making folder {self.output_path}/{self.gaiaid}/...')
+            os.makedirs(f'{self.output_path}/{self.gaiaid}')
+        else:
+            pass
+
         lc = lk.LightCurve(time = time, flux = flux)
         clc = lc.normalize().remove_nans().remove_outliers()
         self.void['datum_0'] = None

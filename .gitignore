@@ -6,8 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# Michael stuff
 *.fits
 */mastDownload/*
+Examples/simtests
 
 # Distribution / packaging
 .Python

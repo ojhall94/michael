@@ -182,11 +182,16 @@ def simple_wavelet(j, period_range):
     # Fit a Gaussian
     ## Params are mu, sigma, Amplitude
     lolim = 0.8*max_p
-    if lolim < period_range[0]:
-        lolim = period_range[0]
     uplim = 1.2*max_p
-    if uplim > period_range[1]:
-        uplim = period_range[1]
+
+    # If the max period somehow lies outside the period range, don't adjust
+    # the period limits
+    if (max_p > period_range[0]) & (max_p < period_range[1]):
+        if lolim < period_range[0]:
+            lolim = period_range[0]
+        if uplim > period_range[1]:
+            uplim = period_range[1]
+
 
     popt, pcov = curve_fit(_gaussian_fn, p, w, p0 = [max_p, 0.1*max_p, max_w],
                             bounds = ([lolim, 0., 0.9*max_w],[uplim, 0.25*max_p, 1.1*max_w]))
