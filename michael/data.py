@@ -25,15 +25,17 @@ class data_class():
 
         # Create matching data folders
         if not os.path.exists(f'{self.j.output_path}/{self.j.gaiaid}'):
-            print(f'Making folder {self.j.output_path}/{self.j.gaiaid}/...')
+            if self.j.verbose:
+                print(f'Making folder {self.j.output_path}/{self.j.gaiaid}/...')
             os.makedirs(f'{self.j.output_path}/{self.j.gaiaid}')
         else:
             pass
 
         # Check for existing data
         if len(glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')) > 0:
-            print(f'Already have data downloaded for Gaia ID {self.j.gaiaid}.')
-            print(f'If you want to check for new data, run `janet.update()`.')
+            if self.j.verbose:
+                print(f'Already have data downloaded for Gaia ID {self.j.gaiaid}.')
+                print(f'If you want to check for new data, run `janet.update()`.')
         else:
             self.download_eleanor_data()
 
