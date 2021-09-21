@@ -1,4 +1,4 @@
-"""
+j = """
 The `janet' class globally handles all of `michael''tasks. It calls all classes
 in the package, e.g.:
 - Downloading data using Eleanor
@@ -152,7 +152,9 @@ class janet():
         self.prepare_data()
         self.get_rotation(period_range = period_range)
         self.validate_rotation()
-        self.view()
+
+        if self.verbose:
+            self.view()
 
         # Temporary hack for Unicorn project
         pg = self.void[f'pg_{self.results.loc["best", "s_SLS"]}']
