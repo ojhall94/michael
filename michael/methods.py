@@ -122,6 +122,46 @@ def simple_astropy_lombscargle(j, sector, period_range):
 
     _safety(j)
 
+def _calculate_wavelet(clc, period_range, sector, j):
+    t = clc.time.value
+    f = clc.flux.value
+    wt = jazzhands.WaveletTransformer(t, f)
+    _, _, wwz, wwa = wt.auto_compute(nu_min = 1./period_range[1], nu_max = 1./period_range[0])
+
+    j.void[f'{sector}_wt'] = wt
+    j.void[f'{sector}_wwz'] = wwz
+    j.void[f'{sector}_wwa'] = wwa
+
+    # Create data to fit
+    w = np.sum(wwz, axis=1)
+    w /= w.max() #Normalize
+    p = 1/wt.nus
+
+    max_w = np.max(w)
+    max_p = p[np.argmax(w)]
+
+    s = (p > 0.6*max_p) & (p < 1.4*max_p)
+    w = w[s]
+    p = p[s]
+
+    # Fit a Gaussian
+    ## Params are mu, sigma, Amplitude
+    lolim = 0.8*max_p
+    uplim = 1.2*max_p
+
+    # If the max period somehow lies outside the period range, don't adjust
+    # the period limits
+    if (max_p > period_range[0]) & (max_p < period_range[1]):
+        if lolim < period_range[0]:
+            lolim = period_range[0]
+        if uplim > period_range[1]:
+            uplim = period_range[1]
+
+
+    popt, pcov = curve_fit(_gaussian_fn, p, w, p0 = [max_p, 0.1*max_p, max_w],
+                            bounds = ([lolim, 0., 0.9*max_w],[uplim, 0.25*max_p, 1.1*max_w]))
+    return popt, pcov
+
 def simple_wavelet(j, period_range):
     """
     We use the 'jazzhands' Python package to perform our wavelet analysis.
@@ -156,51 +196,28 @@ def simple_wavelet(j, period_range):
         print(f'### Running Wavelet Estimation on star {j.gaiaid} ###')
 
     # Call the relevant light curve
-    clc = j.void[f'clc_all']
+    if not j.gaps:
+        clc = j.void[f'clc_all']
 
-    t = clc.time.value
-    f = clc.flux.value
-    wt = jazzhands.WaveletTransformer(t, f)
-    _, _, wwz, wwa = wt.auto_compute(nu_min = 1./period_range[1], nu_max = 1./period_range[0])
+        popt, pcov = _calculate_wavelet(clc, period_range, 'all', j)
 
-    j.void[f'wt'] = wt
-    j.void[f'wwz'] = wwz
-    j.void[f'wwa'] = wwa
+        j.results.loc['all', 'SW'] = popt[0]
+        j.results.loc['all', 'e_SW'] = popt[1]
 
-    # Create data to fit
-    w = np.sum(wwz, axis=1)
-    w /= w.max() #Normalize
-    p = 1/wt.nus
+        # Save the gaussian fit
+        j.void[f'all_wavelet_popt'] = popt
 
-    max_w = np.max(w)
-    max_p = p[np.argmax(w)]
+    else:
+        for sector in list(j.sectors):
+            clc = j.void[f'clc_{sector}']
+            popt, pcov = _calculate_wavelet(clc, period_range, sector, j)
 
-    s = (p > 0.6*max_p) & (p < 1.4*max_p)
-    w = w[s]
-    p = p[s]
+            j.results.loc[sector, 'SW'] = popt[0]
+            j.results.loc[sector, 'e_SW'] = popt[1]
 
-    # Fit a Gaussian
-    ## Params are mu, sigma, Amplitude
-    lolim = 0.8*max_p
-    uplim = 1.2*max_p
+            # Save the gaussian fit
+            j.void[f'{sector}_wavelet_popt'] = popt
 
-    # If the max period somehow lies outside the period range, don't adjust
-    # the period limits
-    if (max_p > period_range[0]) & (max_p < period_range[1]):
-        if lolim < period_range[0]:
-            lolim = period_range[0]
-        if uplim > period_range[1]:
-            uplim = period_range[1]
-
-
-    popt, pcov = curve_fit(_gaussian_fn, p, w, p0 = [max_p, 0.1*max_p, max_w],
-                            bounds = ([lolim, 0., 0.9*max_w],[uplim, 0.25*max_p, 1.1*max_w]))
-
-    j.results.loc['all', 'SW'] = popt[0]
-    j.results.loc['all', 'e_SW'] = popt[1]
-
-    # Save the gaussian fit
-    j.void[f'wavelet_popt'] = popt
 
     if j.verbose:
         print(f'### Completed Wavelet Estimation on star {j.gaiaid} ###')

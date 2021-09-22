@@ -30,11 +30,27 @@ def validate_SLS(j):
         j.results.loc['best', 'f_SLS'] = j.results.loc[idx, 'f_SLS']
     _safety(j)
 
+def validate_SW(j):
+    # Validate LombScargle
+    if np.isfinite(j.results.loc['all', 'SW']):
+        # If there is a SW value for 'all', consider this the default best
+        j.results.loc['best', 'SW'] = j.results.loc['all', 'SW']
+        j.results.loc['best', 'e_SW'] = j.results.loc['all', 'e_SW']
+        j.results.loc['best', 's_SW'] = 'all'
+
+    else:
+        # If onlys single-sector cases are available, pick the value with
+        # the lowest fractional uncertainty
+        sigfrac = j.results['e_SW'] / j.results['SW']
+        idx = sigfrac.idxmin()
+
+        j.results.loc['best', 'SW'] = j.results.loc[idx, 'SW']
+        j.results.loc['best', 'e_SW'] = j.results.loc[idx, 'e_SW']
+        j.results.loc['best', 's_SW'] = str(int(idx))
+    _safety(j)
+
 def validate_WS_vs_SLS(j):
     # Validate Wavelet vs LombScargle
-    j.results.loc['best', 'SW'] = j.results.loc['all', 'SW']
-    j.results.loc['best', 'e_SW'] = j.results.loc['all', 'e_SW']
-
     # Check to see if they agree within 1 sigma
     best = j.results.loc['best']
 
@@ -85,7 +101,7 @@ def validate_WS_vs_SLS(j):
             j.results.loc['best', 'e_overall'] = j.results.loc['best', 'e_SW']
             j.results.loc['best', 'f_overall'] = 34
     _safety(j)
-    
+
 def validate_best_vs_ACF(j):
     # Validate the ACF vs the best value
 

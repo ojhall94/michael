@@ -1,4 +1,4 @@
-j = """
+"""
 The `janet' class globally handles all of `michael''tasks. It calls all classes
 in the package, e.g.:
 - Downloading data using Eleanor
