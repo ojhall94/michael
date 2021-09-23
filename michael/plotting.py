@@ -229,8 +229,8 @@ def _plot_comparison(j, fig, ax):
 def _plot_fold(j, fig, ax):
     fold = j.void['clc_all'].fold(period=j.results.loc['best', 'overall'])
     if len(j.sectors) >= 2:
-        for s in j.sectors:
-            j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall']).scatter(s=75, label=f'Sector {s} Folded', ax=ax, zorder=1)
+        for z, s in enumerate(j.sectors):
+            j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall']).scatter(s=75, label=f'Sector {s} Folded', ax=ax, zorder=len(j.sectors) - z)
     else:
         fold.scatter(ax=ax, c='k', s=75, label='Folded LC', zorder=1)
     fold.bin(bins=int(len(fold)/50)).plot(ax=ax, zorder=4, lw=5, c=cmap[4], label='Binned LC')
