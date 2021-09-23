@@ -169,6 +169,9 @@ def validator(j):
     # Validate LombScargle
     validate_SLS(j)
 
+    # Validate Wavelet
+    validate_SW(j)
+
     # Validate Wavelet VS Lomb Scargle
     validate_WS_vs_SLS(j)
 

@@ -13,15 +13,16 @@ sns.set_context('poster')
 
 from .utils import _gaussian_fn, _safety
 _label_fontsize=24
+cmap = sns.color_palette('viridis', 8)
+
 
 def _plot_tpf(j, fig, ax):
     # Plot Sector 0 TPF
     if j.sectors[0] != 0:
-        ax = fig.add_subplot(gs[0, :1])
         ax.set_title(f'Frame 0 Sector {j.sectors[0]}')
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
-        ax.imshow(j.void[f'datum_{j.sectors[0]}'].tpf[0], zorder=1)
+        ax.imshow(np.log10(j.void[f'datum_{j.sectors[0]}'].tpf[0]), zorder=1)
         pix = np.where(j.void[f'datum_{j.sectors[0]}'].aperture > 0)
         ax.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
         ax.legend(loc='upper left', fontsize=_label_fontsize)
@@ -29,15 +30,26 @@ def _plot_tpf(j, fig, ax):
 def _plot_lcs(j, fig, ax):
     ax.set_title(f'Full TESS LC, Sectors: {j.sectors}. Normalised, outliers removed.')
     if len(j.sectors) >= 2:
-        for s in j.sectors:
-            j.void[f'clc_{s}'].plot(ax=ax, lw=1)
+        if not j.gaps:
+            for s in j.sectors:
+                j.void[f'clc_{s}'].plot(ax=ax, lw=1)
+            ax.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
+        else:
+            for z, s in enumerate(j.sectors):
+                lc = j.void[f'clc_{s}']
+                ax.plot(lc.time.value - lc.time.value.min(), lc.flux, label=f'Sector {s}',
+                lw=1, alpha=.5, zorder=len(j.sectors)-z)
+            ax.legend(loc='best')
+            ax.set_xlabel('Normalised Time [JD]')
+
     else:
         j.void[f'clc_all'].plot(ax=ax, lw=1, c='k')
-
-    ax.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
+        ax.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
     ax.set_ylabel('Normalised Flux')
 
 def _plot_periodograms(j, fig, ax):
+    best_sls = j.results.loc['best', 's_SLS']
+
     if not j.gaps:
         j.void[f'pg_all'].plot(ax=ax, view='period', label=f'All Sectors',lw=1, zorder=2, c='k')
     if len(j.sectors) >= 2:
@@ -91,23 +103,31 @@ def _plot_wavelet_contour(j, fig, ax):
 def _plot_wavelet_fit(j, fig, ax):
     if not j.gaps:
         taus = j.void['all_wt'].taus
-        w = np.sum(j.void['all_wwz'], axis=1)
-        w /= w.max()
+        ws = np.sum(j.void['all_wwz'], axis=1)
+        ws /= ws.max()
         p = 1/j.void['all_wt'].nus
-        ax.plot(p, w, lw=1, c='k')
+        ax.plot(p, ws, lw=1, c='k')
 
-    for s in j.sectors:
-        taus = j.void[f'{s}_wt'].taus
-        w = np.sum(j.void[f'{s}_wwz'], axis=1)
-        w /= w.max()
-        p = 1/j.void[f'{s}_wt'].nus
-        ax.plot(p, ws, lw=1)
+        for s in j.sectors:
+            time = j.void[f'clc_{s}'].time.value
+            sel = (taus >= time.min()) & (taus <= time.max())
+            ws = np.sum(j.void['all_wwz'][:, sel], axis=1)
+            ws /= ws.max()
+            ax.plot(p, ws, lw=1)
+
+    else:
+        for s in j.sectors:
+            taus = j.void[f'{s}_wt'].taus
+            ws = np.sum(j.void[f'{s}_wwz'], axis=1)
+            ws /= ws.max()
+            p = 1/j.void[f'{s}_wt'].nus
+            ax.plot(p, ws, lw=1)
 
     best_sw = j.results.loc['best', 's_SW']
     if best_sw == 'all':
         text = 'All Sectors'
     else:
-        text = f'Sector {best_sls}'
+        text = f'Sector {best_sw}'
 
     taus = j.void[f'{best_sw}_wt'].taus
     w = np.sum(j.void[f'{best_sw}_wwz'], axis=1)
@@ -155,6 +175,7 @@ def _plot_comparison(j, fig, ax):
                 c='k', fmt='o')
     ax.axhline(j.results.loc['all', 'ACF'],  label='ACF', c=cmap[3], ls=':', lw=5,
                zorder =1, alpha=.8)
+    # Plot SLS
     if len(j.sectors) >= 2:
         xs = np.linspace(0.75, 1.25, len(j.sectors)+1)
         for idx, sector in enumerate(j.sectors):
@@ -167,6 +188,20 @@ def _plot_comparison(j, fig, ax):
         ax.errorbar(1., j.results.loc['all', 'SLS'],
                     yerr = j.results.loc['all', 'e_SLS'],
                     fmt='o', c='k')
+
+    # Plot SW
+    if not j.gaps:
+        ax.errorbar(2, j.results.loc['all', 'SW'], yerr = j.results.loc['all', 'e_SW'],
+                    c='k', fmt='o')
+    else:
+        xs = np.linspace(1.75, 2.25, len(j.sectors)+1)
+        for idx, sector in enumerate(j.sectors):
+            ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
+                        yerr = j.results.loc[sector, 'e_SW'], fmt='o')
+        ax.errorbar(xs[-1], j.results.loc['all', 'SW'],
+                    yerr = j.results.loc['all', 'e_SW'],
+                    fmt='o', c='k')
+
     labels = ['SLS', 'SW']
     x = [1., 2.]
     ax.set_xticks(x)
@@ -207,12 +242,10 @@ def _plot_fold(j, fig, ax):
     ax.set_title(rf'All Sectors folded on Best Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
 
 def plot(j):
-    cmap = sns.color_palette('viridis', 8)
-
     fig = plt.figure(figsize=(20, 37))
     gs = GridSpec(5,3, figure=fig)
 
-    ax00 = fig.add_subplots(gs[0,0])
+    ax00 = fig.add_subplot(gs[0,0])
     _plot_tpf(j, fig, ax00)
 
     # Plot all LCs
@@ -241,7 +274,7 @@ def plot(j):
 
     # Plot the results compared
     res = fig.add_subplot(gs[3, 2:])
-    _plot_results(j, fig, res)
+    _plot_comparison(j, fig, res)
 
     # Plot the phase folded light curve
     ax2 = fig.add_subplot(gs[4, :])
