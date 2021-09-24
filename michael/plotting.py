@@ -35,13 +35,24 @@ def _plot_lcs(j, fig, ax):
                 j.void[f'clc_{s}'].plot(ax=ax, lw=1)
             ax.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
         else:
-            for z, s in enumerate(j.sectors):
+            xstep = 0
+            xlabels = []
+            xlocs = []
+            for s in j.sectors:
                 lc = j.void[f'clc_{s}']
-                ax.plot(lc.time.value - lc.time.value.min(), lc.flux, label=f'Sector {s}',
-                lw=1, alpha=.5, zorder=len(j.sectors)-z)
+                xvals = lc.time.value - lc.time.value.min() + xstep
+                ax.plot(xvals, lc.flux, label=f'Sector {s}', lw=1)
+                xstep = xvals.max()
+                if s != j.sectors[-1]:
+                    ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10)
+                xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
+                xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
+
+            ax.set_xticks(np.array(xlocs).flatten())
+            ax.set_xticklabels(np.array(xlabels).flatten().astype(int))
             ax.legend(loc='best')
             ax.set_xlabel('Normalised Time [JD]')
-
+        ax.set_xlim(0, xstep)
     else:
         j.void[f'clc_all'].plot(ax=ax, lw=1, c='k')
         ax.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
@@ -87,18 +98,39 @@ def _plot_periodogram_fit(j, fig, ax):
     ax.set_title(f'Fit to LSP {text}')
 
 def _plot_wavelet_contour(j, fig, ax):
-    c = ax.contourf(j.void['wt'].taus, 1./j.void['wt'].nus, j.void['wwz'])
-    ax.set_ylabel('Period [d]')
-    ax.set_xlabel('Time [JD]')
-    fig.colorbar(c, ax=ax, label='WWZ', pad=.01, aspect=60)
-    if len(j.sectors) >= 2:
-        for s in j.sectors[1:]:
-            ax.axvline(j.void[f'clc_{s}'].time.min().value, c='w', ls='-.', lw=3)
+    if not j.gaps:
+        ax.contourf(j.void['all_wt'].taus, 1./j.void['all_wt'].nus, j.void['all_wwz'])
+
+        if len(j.sectors) >= 2:
+            for s in j.sectors[1:]:
+                ax.axvline(j.void[f'clc_{s}'].time.min().value, c='w', ls='-.', lw=3)
+            for s in j.sectors:
+                ax.text(j.void[f'clc_{s}'].time.min().value+1, (1./j.void[f'{s}_wt'].nus).max() * 0.925, f'S{s}', c='w', weight='bold')
+        ax.axhline(j.results.loc['best', 'SW'], ls='--', lw = 3, c='w', label=f'P = {j.results.loc["best", "SW"]:.2f} d')
+
+    else:
+        xstep = 0
+        xlabels = []
+        xlocs = []
         for s in j.sectors:
-            ax.text(j.void[f'clc_{s}'].time.min().value+1, (1./j.void['wt'].nus).max() * 0.925, f'S{s}', c='w', weight='bold')
-    ax.axhline(j.results.loc['all', 'SW'], ls='--', lw = 3, c='w', label=f'P = {j.results.loc["all", "SW"]:.2f} d')
+            xvals = j.void[f'{s}_wt'].taus - j.void[f'{s}_wt'].taus.min() + xstep
+            ax.contourf(xvals, 1./j.void[f'{s}_wt'].nus, j.void[f'{s}_wwz'])
+            ax.text(xstep+1, (1./j.void[f'{s}_wt'].nus).max() * 0.925, f'S{s}', c='w', weight='bold')
+            xstep = xvals.max()
+            if s != j.sectors[-1]:
+                ax.axvline(xstep, c='w', ls='-', lw=10)
+            xlabels.append(np.nanpercentile(j.void[f'{s}_wt'].taus, [25, 50, 75]))
+            xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
+
+
+        ax.axhline(j.results.loc['best', 'SW'], ls='--', lw = 3, c='w', label=f'P = {j.results.loc["best", "SW"]:.2f} d')
+        ax.set_xticks(np.array(xlocs).flatten())
+        ax.set_xticklabels(np.array(xlabels).flatten().astype(int))
+
     ax.set_title('Wavelet Transform')
     ax.legend(loc='best', fontsize=_label_fontsize)
+    ax.set_ylabel('Period [d]')
+    ax.set_xlabel('Time [JD]')
 
 def _plot_wavelet_fit(j, fig, ax):
     if not j.gaps:
@@ -262,7 +294,7 @@ def plot(j):
 
     # Wavelet contourfplot
     axw1 = fig.add_subplot(gs[2, :2])
-    # _plot_wavelet_contour(j, fig, axw1)
+    _plot_wavelet_contour(j, fig, axw1)
 
     # Collapsed Wavelet and fit
     axw2 = fig.add_subplot(gs[2, 2:])
@@ -283,10 +315,10 @@ def plot(j):
     # Polish
     if j.sectors[0] != 0:
         ax00.minorticks_on()
-    ax01.minorticks_on()
+    # ax01.minorticks_on()
     ax10.minorticks_on()
     ax11.minorticks_on()
-    axw1.minorticks_on()
+    # axw1.minorticks_on()
     axw2.minorticks_on()
     res.grid(axis='y')
     # res.minorticks_on()

@@ -23,10 +23,10 @@ def validate_SLS(j):
         else:
             sigfrac = j.results['e_SLS'] / j.results['SLS']
 
-        idx = sigfrac.idxmin()
+        idx = np.array(sigfrac.idxmin())
         j.results.loc['best', 'SLS'] = j.results.loc[idx, 'SLS']
         j.results.loc['best', 'e_SLS'] = j.results.loc[idx, 'e_SLS']
-        j.results.loc['best', 's_SLS'] = str(int(idx))
+        j.results.loc['best', 's_SLS'] = idx.astype(str)
         j.results.loc['best', 'f_SLS'] = j.results.loc[idx, 'f_SLS']
     _safety(j)
 
@@ -42,11 +42,11 @@ def validate_SW(j):
         # If onlys single-sector cases are available, pick the value with
         # the lowest fractional uncertainty
         sigfrac = j.results['e_SW'] / j.results['SW']
-        idx = sigfrac.idxmin()
+        idx = np.array(sigfrac.idxmin())
 
         j.results.loc['best', 'SW'] = j.results.loc[idx, 'SW']
         j.results.loc['best', 'e_SW'] = j.results.loc[idx, 'e_SW']
-        j.results.loc['best', 's_SW'] = str(int(idx))
+        j.results.loc['best', 's_SW'] = idx.astype(str)
     _safety(j)
 
 def validate_WS_vs_SLS(j):
