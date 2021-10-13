@@ -9,6 +9,7 @@ from scipy.signal import find_peaks
 from scipy.optimize import curve_fit
 from astropy.convolution import Gaussian1DKernel
 from astropy.convolution import convolve
+import warnings
 
 import jazzhands
 
@@ -275,7 +276,7 @@ def simple_ACF(j, period_range):
 
     # Cut up and normalize the ACF
     secmin = j.sectors[0]
-    norm_acf = np.abs(acf**2) / np.abs(acf[0]**2)
+    norm_acf = acf/acf.max()
     acflc = lk.LightCurve(time=lag, flux=norm_acf)
     acflc = acflc[acflc.time.value < (j.void[f'clc_{secmin}'].time.value - j.void[f'clc_{secmin}'].time.value.min()).max()]
 
@@ -283,16 +284,18 @@ def simple_ACF(j, period_range):
     acfpg = acflc.to_periodogram()
     first_guess = acfpg.period_at_max_power
 
-    # Make cut up the ACFLC
+    # Limit the search range
+    if not period_range[0] < first_guess.value < period_range[1]:
+        warnings.warn("The highest peak in the ACF lies outside the period range of your search.")
     vizacf = acflc[(acflc.time.value <= period_range[1])]
     vizacf = vizacf[(vizacf.time.value >= period_range[0])]
 
-    # Smooth the full ACF
-    sd = np.ceil(0.1*first_guess.value / np.median(np.diff(vizacf.time.value)))
+    # Smooth the  ACF
+    sd = np.ceil(.1 / np.median(np.diff(vizacf.time.value)))
     gauss = Gaussian1DKernel(sd)
     acfsmoo = convolve(vizacf.flux.value, gauss, boundary='extend')
 
-    # Identify the first 10 maxima above a threshold of 0.05
+    # Identify the first 10 maxima above a threshold of 0.01
     peaks, _ = find_peaks(acfsmoo, height = 0.01)
 
     # Save the metadata

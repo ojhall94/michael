@@ -178,14 +178,13 @@ def _plot_wavelet_fit(j, fig, ax):
                     j.void[f'{best_sw}_wavelet_popt'][0] + 5*j.void[f'{best_sw}_wavelet_popt'][1])
 
 def _plot_acf(j, fig, ax):
-    j.void['acflc'].plot(ax=ax, c='k', zorder=3)
-    ax.plot(j.void['redacflc'].time.value, j.void['acfsmoo'], lw=4, ls='--', c=cmap[3],
+    j.void['vizacf'].plot(ax=ax, c='k', zorder=3)
+    ax.plot(j.void['vizacf'].time.value, j.void['acfsmoo'], lw=4, ls='--', c=cmap[3],
             label = 'Smoothed ACF', zorder=4)
-    ax.set_ylim(j.void['acflc'].flux.value.min(), j.void['acflc'].flux.value.max()+0.1)
-    # acf.set_xlim(j.void['acflc'].time.value.min(), 13.7)
-    ax.set_xlim(j.period_range[0], j.period_range[1])
+    ax.set_ylim(j.void['vizacf'].flux.value.min(), j.void['vizacf'].flux.value.max()+0.1)
+    ax.set_xlim(j.void['vizacf'].time.value.min(), j.void['vizacf'].time.value.max())
     if len(j.void['peaks']) >= 1:
-        ax.axvline(j.void['redacflc'].time.value[j.void['peaks'][0]], c=cmap[3],
+        ax.axvline(j.void['vizacf'].time.value[j.void['peaks'][0]], c=cmap[3],
                         label = f'P = {j.results.loc["all", "ACF"]:.2f} d',
                         lw = 4, ls=':', zorder=5)
     ax.axvspan(j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
@@ -220,7 +219,6 @@ def _plot_comparison(j, fig, ax):
         ax.errorbar(1., j.results.loc['all', 'SLS'],
                     yerr = j.results.loc['all', 'e_SLS'],
                     fmt='o', c='k')
-
     # Plot SW
     if not j.gaps:
         ax.errorbar(2, j.results.loc['all', 'SW'], yerr = j.results.loc['all', 'e_SW'],
@@ -253,10 +251,9 @@ def _plot_comparison(j, fig, ax):
                     2*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
                     color=cmap[7], alpha=.5, zorder=0)
     ax.legend(loc='best')
-    if j.period_range[1] > 3*j.results.loc['best', 'overall']:
-        ax.set_ylim(bottom = j.period_range[0], top= j.results.loc['best', 'overall']*3)
-    else:
-        ax.set_ylim(bottom = j.period_range[0], top= j.period_range[1])
+    res = j.results.loc[j.sectors.astype(int), ['SLS','SW']].to_numpy().flatten()
+    err = j.results.loc[j.sectors.astype(int), ['e_SLS', 'e_SW']].to_numpy().flatten()
+    ax.set_ylim(0.9*np.nanmax(res-err), 1.1*np.nanmax(res+err))
 
 def _plot_fold(j, fig, ax):
     fold = j.void['clc_all'].fold(period=j.results.loc['best', 'overall'])
