@@ -235,6 +235,10 @@ def simple_ACF(j, period_range):
     time series over itself. We then take a periodogram of the ACF, and use the
     period of the peak of highest power as the first-guess ACF period.
 
+    As is done in Mosser & Appourchaux, we rescale the value of the ACF (C) in terms
+    of the noise level in the ACF spectrum as::
+        A = (|C^2| / |C[0]^2|)
+
     The ACF is then smoothed by convolving with a Gaussian Kernel with a
     standard deviation of 0.1x the first-guess ACF period. We use a peak-
     finding algorithm to identify any peaks in the smoothed spectrum above
@@ -268,36 +272,38 @@ def simple_ACF(j, period_range):
     # Calculate the ACF between 0 and 12 days.
     acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
     lag = clc.time.value - clc.time.value.min()
-    acflc = lk.LightCurve(time=lag, flux=acf)
 
-    # Normalize the ACF
-    acflc /= acflc.flux.value.max()
-
-    # Make cut up the ACFLC
-    redacflc = acflc[(acflc.time.value <= period_range[1])]
-    redacflc = redacflc[(redacflc.time.value >= period_range[0])]
+    # Cut up and normalize the ACF
+    secmin = j.sectors[0]
+    norm_acf = np.abs(acf**2) / np.abs(acf[0]**2)
+    acflc = lk.LightCurve(time=lag, flux=norm_acf)
+    acflc = acflc[acflc.time.value < (j.void[f'clc_{secmin}'].time.value - j.void[f'clc_{secmin}'].time.value.min()).max()]
 
     # Estimate a first-guess period
     acfpg = acflc.to_periodogram()
     first_guess = acfpg.period_at_max_power
 
-    # Smooth the ACF
-    sd = np.ceil(0.1*first_guess.value / np.median(np.diff(redacflc.time.value)))
+    # Make cut up the ACFLC
+    vizacf = acflc[(acflc.time.value <= period_range[1])]
+    vizacf = vizacf[(vizacf.time.value >= period_range[0])]
+
+    # Smooth the full ACF
+    sd = np.ceil(0.1*first_guess.value / np.median(np.diff(vizacf.time.value)))
     gauss = Gaussian1DKernel(sd)
-    acfsmoo = convolve(redacflc.flux.value, gauss, boundary='extend')
+    acfsmoo = convolve(vizacf.flux.value, gauss, boundary='extend')
 
     # Identify the first 10 maxima above a threshold of 0.05
     peaks, _ = find_peaks(acfsmoo, height = 0.01)
 
     # Save the metadata
     j.void['acflc'] = acflc
-    j.void['redacflc'] = redacflc
+    j.void['vizacf'] = vizacf
     j.void['acfsmoo'] = acfsmoo
     j.void['peaks'] = peaks
 
     # The first of these maxima (with the shortest period) corresponds to Prot
     if len(peaks) >= 1:
-        acf_period = redacflc.time.value[peaks[0]]
+        acf_period = vizacf.time.value[peaks[0]]
         j.results.loc['all', 'ACF'] = acf_period
 
     # No peaks found
