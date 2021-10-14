@@ -112,6 +112,7 @@ def _plot_wavelet_contour(j, fig, ax):
         xstep = 0
         xlabels = []
         xlocs = []
+
         for s in j.sectors:
             xvals = j.void[f'{s}_wt'].taus - j.void[f'{s}_wt'].taus.min() + xstep
             ax.contourf(xvals, 1./j.void[f'{s}_wt'].nus, j.void[f'{s}_wwz'])
@@ -197,7 +198,7 @@ def _plot_acf(j, fig, ax):
     ax.set_title("Autocorrelation Function for all Sectors")
     ax.set_ylabel('Normalised ACF')
     ax.axhline(0.01, label='Detection threshold', c='k', zorder=0)
-    ax.legend(loc='best')
+    ax.legend(loc='upper right')
 
 def _plot_comparison(j, fig, ax):
     ax.set_title('Period Estimates')
