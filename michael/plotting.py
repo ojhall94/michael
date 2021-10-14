@@ -14,6 +14,7 @@ sns.set_context('poster')
 from .utils import _gaussian_fn, _safety
 _label_fontsize=24
 cmap = sns.color_palette('viridis', 8)
+colmap = sns.color_palette('colorblind', 8)
 
 
 def _plot_tpf(j, fig, ax):
@@ -213,7 +214,7 @@ def _plot_comparison(j, fig, ax):
         xs = np.linspace(0.8, 1.2, len(j.sectors)+1)
         for idx, sector in enumerate(j.sectors):
             ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
-                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=cmap[idx])
+                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=colmap[idx])
         ax.errorbar(xs[-1], j.results.loc['all', 'SLS'],
                     yerr = j.results.loc['all', 'e_SLS'],
                     fmt='o', c='k')
@@ -221,7 +222,7 @@ def _plot_comparison(j, fig, ax):
         xs = np.linspace(0.8, 1.2, len(j.sectors))
         for idx, sector in enumerate(j.sectors):
             ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
-                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=cmap[idx])
+                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=colmap[idx])
 
     # Plot SW
     if not j.gaps:
@@ -231,7 +232,7 @@ def _plot_comparison(j, fig, ax):
         xs = np.linspace(1.8, 2.2, len(j.sectors))
         for idx, sector in enumerate(j.sectors):
             ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
-                        yerr = j.results.loc[sector, 'e_SW'], fmt='o', c=cmap[idx])
+                        yerr = j.results.loc[sector, 'e_SW'], fmt='o', c=colmap[idx])
 
     labels = ['SLS', 'SW']
     x = [1., 2.]
