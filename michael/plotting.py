@@ -213,7 +213,7 @@ def _plot_comparison(j, fig, ax):
         xs = np.linspace(0.8, 1.2, len(j.sectors)+1)
         for idx, sector in enumerate(j.sectors):
             ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
-                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o')
+                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=cmap[idx])
         ax.errorbar(xs[-1], j.results.loc['all', 'SLS'],
                     yerr = j.results.loc['all', 'e_SLS'],
                     fmt='o', c='k')
@@ -221,7 +221,7 @@ def _plot_comparison(j, fig, ax):
         xs = np.linspace(0.8, 1.2, len(j.sectors))
         for idx, sector in enumerate(j.sectors):
             ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
-                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o')
+                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=cmap[idx])
 
     # Plot SW
     if not j.gaps:
@@ -231,7 +231,7 @@ def _plot_comparison(j, fig, ax):
         xs = np.linspace(1.8, 2.2, len(j.sectors))
         for idx, sector in enumerate(j.sectors):
             ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
-                        yerr = j.results.loc[sector, 'e_SW'], fmt='o')
+                        yerr = j.results.loc[sector, 'e_SW'], fmt='o', c=cmap[idx])
 
     labels = ['SLS', 'SW']
     x = [1., 2.]
