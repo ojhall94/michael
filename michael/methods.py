@@ -272,11 +272,11 @@ def simple_ACF(j, period_range):
 
     # Calculate the ACF between 0 and 12 days.
     acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
-    lag = clc.time.value - clc.time.value.min()
+    lag = clc.time.value - np.nanmin(clc.time.value)
 
     # Cut up and normalize the ACF
     secmin = j.sectors[0]
-    norm_acf = acf/acf.max()
+    norm_acf = acf/np.nanmax(acf)
     acflc = lk.LightCurve(time=lag, flux=norm_acf)
     acflc = acflc[acflc.time.value < (j.void[f'clc_{secmin}'].time.value - j.void[f'clc_{secmin}'].time.value.min()).max()]
 

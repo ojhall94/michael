@@ -171,6 +171,7 @@ def _plot_wavelet_fit(j, fig, ax):
     ax.plot(pp, _gaussian_fn(pp, *j.void[f'{best_sw}_wavelet_popt']), ls='--', lw=10, c=cmap[5],
                 label = rf'$\sigma$ = {j.results.loc["best", "e_SW"]:.2f} d')
     ax.set_ylabel('Normalized Summed WWZ')
+    ax.get_yaxis().set_visible(False)
     ax.set_xlabel('Period [d]')
     ax.set_title(f'Fit to Summed WWZ {text}')
     ax.legend(loc='best', fontsize=_label_fontsize)
@@ -208,8 +209,8 @@ def _plot_comparison(j, fig, ax):
     ax.axhline(j.results.loc['all', 'ACF'],  label='ACF', c=cmap[3], ls=':', lw=5,
                zorder =1, alpha=.8)
     # Plot SLS
-    if len(j.sectors) >= 2:
-        xs = np.linspace(0.75, 1.25, len(j.sectors)+1)
+    if not j.gaps:
+        xs = np.linspace(0.8, 1.2, len(j.sectors)+1)
         for idx, sector in enumerate(j.sectors):
             ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
                         yerr = j.results.loc[sector, 'e_SLS'], fmt='o')
@@ -217,21 +218,20 @@ def _plot_comparison(j, fig, ax):
                     yerr = j.results.loc['all', 'e_SLS'],
                     fmt='o', c='k')
     else:
-        ax.errorbar(1., j.results.loc['all', 'SLS'],
-                    yerr = j.results.loc['all', 'e_SLS'],
-                    fmt='o', c='k')
+        xs = np.linspace(0.8, 1.2, len(j.sectors))
+        for idx, sector in enumerate(j.sectors):
+            ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
+                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o')
+
     # Plot SW
     if not j.gaps:
         ax.errorbar(2, j.results.loc['all', 'SW'], yerr = j.results.loc['all', 'e_SW'],
                     c='k', fmt='o')
     else:
-        xs = np.linspace(1.75, 2.25, len(j.sectors)+1)
+        xs = np.linspace(1.8, 2.2, len(j.sectors))
         for idx, sector in enumerate(j.sectors):
             ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
                         yerr = j.results.loc[sector, 'e_SW'], fmt='o')
-        ax.errorbar(xs[-1], j.results.loc['all', 'SW'],
-                    yerr = j.results.loc['all', 'e_SW'],
-                    fmt='o', c='k')
 
     labels = ['SLS', 'SW']
     x = [1., 2.]
