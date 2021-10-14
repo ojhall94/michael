@@ -53,7 +53,7 @@ def _plot_lcs(j, fig, ax):
             ax.set_xticklabels(np.array(xlabels).flatten().astype(int))
             ax.legend(loc='best')
             ax.set_xlabel('Normalised Time [JD]')
-        ax.set_xlim(0, xstep)
+            ax.set_xlim(0, xstep)
     else:
         j.void[f'clc_all'].plot(ax=ax, lw=1, c='k')
         ax.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
@@ -106,7 +106,7 @@ def _plot_wavelet_contour(j, fig, ax):
             for s in j.sectors[1:]:
                 ax.axvline(j.void[f'clc_{s}'].time.min().value, c='w', ls='-.', lw=3)
             for s in j.sectors:
-                ax.text(j.void[f'clc_{s}'].time.min().value+1, (1./j.void[f'{s}_wt'].nus).max() * 0.925, f'S{s}', c='w', weight='bold')
+                ax.text(j.void[f'clc_{s}'].time.min().value+1, (1./j.void[f'all_wt'].nus).max() * 0.925, f'S{s}', c='w', weight='bold')
         ax.axhline(j.results.loc['best', 'SW'], ls='--', lw = 3, c='w', label=f'P = {j.results.loc["best", "SW"]:.2f} d')
 
     else:
