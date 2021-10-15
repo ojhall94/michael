@@ -33,7 +33,7 @@ def _decode(flag):
         2 : "2: Best rotation is from the Simple Wavelet (SW) method.",
         4 : "4: Best rotation is from the Composite Autocorrelation Function (CACF) method.",
         8 : "8: Best rotation is from the Gaussian Process (GP) method.",
-        16 : "16: Only 2 of the 3 estimates of rotation agreed with one another" +
+        16 : "16: Only 2 of the 3 estimates of rotation agreed with one another " +
              "to within 1 sigma.",
         32 : "32: None of the 3 estimates agreed with one another to within 1 "+
              "sigma. The CACF estimate is assumed to be the best in this case.",
