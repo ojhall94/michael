@@ -26,6 +26,7 @@ def _decode(flag):
     64 - No ACF measured
     128 - ACF does not match 'best' period within 2 sigma
     256 - ACF indicates that 'best' period is a potential harmonic
+    512 - One or more sectors disagree strongly across all estimates
     """
 
     STRINGS = {
@@ -40,6 +41,9 @@ def _decode(flag):
         64 : "64: No ACF period could be reliably measured (indicating low power or long periods).",
         128 : "128: The ACF period does not match the 'best' period within 2 sigma.",
         256 : "256: The ACF period is potentially a harmonic of the 'best' period (or vice versa!)",
+        512: "512: One or more sectors disagrees strongly across all estimates with " +
+            "the others. This may indicate signal from a background star present " +
+            "in those sectors.",
     }
 
     val = np.copy(flag)

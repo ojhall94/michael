@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import warnings
 from .utils import _safety
 
 def validate_SLS(j):
@@ -172,6 +173,8 @@ def validate_best(j):
             j.results.loc['best', 'overall'] = best['CACF']
             j.results.loc['best', 'e_overall'] = ebest['e_CACF']
             j.results.loc['best', 'f_overall'] = 4 + 32
+
+            warnings.warn("No estimates could agree. Please inspect the results carefully yourself.")
     _safety(j)
 
 def validate_best_vs_ACF(j):
@@ -191,6 +194,18 @@ def validate_best_vs_ACF(j):
     if condition:
         j.results.loc['best', 'f_overall'] += 256
     _safety(j)
+
+def validate_sectors(j):
+    # Check if any individual sectors are wildly out of line, possibly due to binaries
+    res = j.results.loc[(j.results.index != 'best') & (j.results.index != 'all'), ['SLS','SW','CACF']]
+    err = j.results.loc[(j.results.index != 'best') & (j.results.index != 'all'), ['e_SLS', 'e_SW', 'e_CACF']]
+
+    a = np.abs(np.diff(res,axis=0, n = len(res)-1))
+    b = np.sqrt(np.sum(err**2, axis=0)).values
+
+    # Do any sectors disagree repeatedly over 1 sigma across all sectors?
+    if all(list((a-b > 0)[0])):
+        j.results.loc['best', 'f_overall'] += 512
 
 def validator(j):
     """
@@ -238,6 +253,7 @@ def validator(j):
     64 - No ACF measured
     128 - ACF does not match 'best' period within 2 sigma
     256 - ACF indicates that 'best' period is a potential harmonic
+    512 - One or more sectors disagree strongly across all estimates
     """
     # Validate LombScargle
     validate_SLS(j)
@@ -253,5 +269,7 @@ def validator(j):
 
     # Validate ACF vs the 'best' period
     validate_best_vs_ACF(j)
+
+    # Vadliate individual sectors
 
     _safety(j)

@@ -142,7 +142,7 @@ class janet():
         If `michael` is run using the `verbose=True` kwarg, the decoded flag
         will be printed at the end of the run.
         """
-        if flag >= 512:
+        if flag >= 1024:
             print("Our flags don't go this high. Please see the `validator()`"+
                     " function docstring for more information")
         else:

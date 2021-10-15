@@ -224,16 +224,28 @@ def _plot_comparison(j, fig, ax):
         ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
                     yerr = j.results.loc[sector, 'e_SW'], fmt='o', c=colmap[idx])
 
-    labels = ['SLS', 'SW']
-    x = [1., 2.]
+    # Plot CACF
+    if not j.gaps:
+        xs = np.linspace(2.8, 3.2, len(j.sectors)+1)
+        ax.errorbar(xs[-1], j.results.loc['all', 'CACF'], yerr = j.results.loc['all', 'e_CACF'],
+                    c='k', fmt='o')
+    else:
+        xs = np.linspace(2.8, 3.2, len(j.sectors))
+
+    for idx, sector in enumerate(j.sectors):
+        ax.errorbar(xs[idx], j.results.loc[sector, 'CACF'],
+                    yerr = j.results.loc[sector, 'e_CACF'], fmt='o', c=colmap[idx])
+
+    labels = ['SLS', 'SW', 'CACF']
+    x = [1., 2., 3.]
     ax.set_xticks(x)
     ax.set_xticklabels(labels, rotation=45)
     ax.axhspan(j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
                 j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
                 color=cmap[6], alpha=.5, zorder=0,
                label = 'Best Period')
-    if np.any(j.results[['SLS', 'SW', 'ACF']] > 1.9*j.results.loc['best', 'overall']) or\
-        np.any(j.results[['SLS', 'SW', 'ACF']] < 0.6*j.results.loc['best', 'overall']):
+    if np.any(j.results[['SLS', 'SW', 'CACF','ACF']] > 1.9*j.results.loc['best', 'overall']) or\
+        np.any(j.results[['SLS', 'SW', 'CACF','ACF']] < 0.6*j.results.loc['best', 'overall']):
 
         ax.axhspan(0.5*j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
                     0.5*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
@@ -243,8 +255,8 @@ def _plot_comparison(j, fig, ax):
                     2*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
                     color=cmap[7], alpha=.5, zorder=0)
     ax.legend(loc='best')
-    res = j.results.loc[j.results.index != 'best', ['SLS','SW']].to_numpy().flatten()
-    err = j.results.loc[j.results.index != 'best', ['e_SLS', 'e_SW']].to_numpy().flatten()
+    res = j.results.loc[j.results.index != 'best', ['SLS','SW', 'CACF']].to_numpy().flatten()
+    err = j.results.loc[j.results.index != 'best', ['e_SLS', 'e_SW', 'e_CACF']].to_numpy().flatten()
     ax.set_ylim(0.9*np.nanmin(res-err), 1.1*np.nanmax(res+err))
 
 def _plot_fold(j, fig, ax):
