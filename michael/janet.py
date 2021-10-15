@@ -110,11 +110,13 @@ class janet():
         if len(self.sectors) == 1:
             simple_astropy_lombscargle(self, sector='all', period_range = period_range)
             simple_wavelet(self, sector='all', period_range = period_range)
+            composite_ACF(self, sector='all', period_range = period_range)
 
         else:
             for sector in sectorlist:
                 simple_astropy_lombscargle(self, sector = sector, period_range = period_range)
                 simple_wavelet(self, sector = sector, period_range = period_range)
+                composite_ACF(self, sector= sector, period_range = period_range)
 
         simple_ACF(self, period_range = period_range)
 

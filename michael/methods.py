@@ -212,6 +212,99 @@ def simple_wavelet(j, sector, period_range):
 
     _safety(j)
 
+def composite_ACF(j, sector, period_range):
+    """
+    For the composite ACF (CACF) estimator, we follow the guidelines presented in
+    Ceiller et al. (2016, 2017) and Santos et al. (2020, 2021), amongst others.
+
+    The CACF is the product between a normalised collapsed wavelet spectrum and
+    the normalised simple ACF.
+
+    We fit the first peak in the resulting spectrum using Scipy.Optimize.curve_fit.
+    The resulting mean and width of the Gaussian function approximating the peak is
+    reported as the period and associated uncertainty.
+
+    If no peaks are found, no value is reported and a flag is raised when
+    validating the rotation periods.
+
+    Parameters
+    ----------
+    j: class
+        The `janet` class containing the metadata on our star.
+
+    sector: int
+        The sector for which to calculate the simple astropy lombscargle period.
+        If 'all', calculates for all sectors stitched together.
+
+    period_range: tuple
+        The lower and upper limit on period range to search for a rotational
+        signal. Default is (0.2, 13.7) based on the McQuillan et al. (2014)
+        search range and the limitations of TESS earthshine.
+    """
+    if j.verbose:
+        print(f'### Running Composite ACF estimation for Sector {sector} on star {j.gaiaid} ###')
+
+    # Extract the wavelet information
+    w = np.flip(np.sum(j.void[f'{sector}_wwz'], axis=1))
+    x = np.flip(1./j.void[f'{sector}_wt'].nus)
+    f = interpolate.interp1d(x, w)
+
+    # Calculate the ACF for the relevant sector
+    lc = j.void[f'clc_{sector}']
+    acf = np.correlate(lc.flux.value-1, lc.flux.value-1, mode='full')[len(lc)-1:]
+    lag = lc.time.value - lc.time.value.min()
+    norm_acf = acf/np.nanmax(acf)
+    acflc = lk.LightCurve(time=lag, flux=norm_acf)
+
+    vizacf = acflc[(acflc.time.value <= period_range[1])]
+    vizacf = vizacf[(vizacf.time.value >= period_range[0])]
+
+    # Calculate the composite ACF by interoplating the wavelet onto a new x axis
+    xnew = vizacf.time.value
+    wnew = f(xnew)
+    cacf = vizacf * (wnew/np.nanmax(wnew))
+
+    # Smooth the  CACF
+    sd = np.ceil(.1 / np.median(np.diff(cacf.time.value)))
+    gauss = Gaussian1DKernel(sd)
+    cacfsmoo = convolve(cacf.flux.value, gauss, boundary='extend')
+
+    # Identify the first 10 maxima above a threshold of 0.01
+    cpeaks, _ = find_peaks(cacfsmoo, height = 0.01)
+
+    # No peaks found
+    if len(cpeaks) == 0:
+        j.results.loc[sector, 'CACF'] = np.nan
+
+    # Save the metadata
+    j.void[f'{sector}_vizacf'] = vizacf
+    j.void[f'{sector}_cacf'] = cacf
+    j.void[f'{sector}_cacfsmoo'] = cacfsmoo
+    j.void[f'{sector}_cpeaks'] = cpeaks
+
+    P = cacf[cpeaks[0]]
+
+    lolim = 0.8*P['time'].value
+    if lolim < period_range[0]:
+        lolim = period_range[0]
+    uplim = 1.2*P['time'].value
+    if uplim > period_range[1]:
+        uplim = period_range[1]
+
+    popt, pcov = curve_fit(_gaussian_fn, cacf.time.value, cacfsmoo,
+                           p0 = [P['time'].value, 0.1*P['time'].value, P['flux'].value],
+                           bounds = ([lolim, 0., 0.9*P['flux'].value],
+                                     [uplim, 0.25*P['time'].value, 1.1*P['flux'].value]))
+
+    j.results.loc[sector, 'CACF'] = popt[0]
+    j.results.loc[sector, 'e_CACF'] = popt[1]
+    j.void[f'{sector}_cacf_popt'] = popt
+
+    if j.verbose:
+        print(f'### Completed Composite ACF estimation for Sector {sector} on star {j.gaiaid} ###')
+
+    _safety(j)
+
 def simple_ACF(j, period_range):
     """
     For the ACF estimator, we follow the guidelines presented in Garcia et al.
@@ -222,10 +315,6 @@ def simple_ACF(j, period_range):
     First, we take the autocorrelation of the time series, and shifting the
     time series over itself. We then take a periodogram of the ACF, and use the
     period of the peak of highest power as the first-guess ACF period.
-
-    As is done in Mosser & Appourchaux, we rescale the value of the ACF (C) in terms
-    of the noise level in the ACF spectrum as::
-        A = (|C^2| / |C[0]^2|)
 
     The ACF is then smoothed by convolving with a Gaussian Kernel with a
     standard deviation of 0.1x the first-guess ACF period. We use a peak-
