@@ -207,6 +207,8 @@ def validate_sectors(j):
     if all(list((a-b > 0)[0])):
         j.results.loc['best', 'f_overall'] += 512
 
+    warnings.warn("One or more sectors disagree strongly across all estimates. Please inspect the results carefully yourself.")
+
 def validator(j):
     """
     TODO: THIS DOCSTRING IS OUT OF DATE
@@ -271,5 +273,6 @@ def validator(j):
     validate_best_vs_ACF(j)
 
     # Vadliate individual sectors
+    validate_sectors(j)
 
     _safety(j)

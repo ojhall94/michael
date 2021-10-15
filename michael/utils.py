@@ -48,7 +48,7 @@ def _decode(flag):
 
     val = np.copy(flag)
     message = ''
-    keys = np.flip(2**np.arange(9))
+    keys = np.flip(2**np.arange(10))
 
     for key in keys:
         if val >= key:
