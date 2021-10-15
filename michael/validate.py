@@ -119,9 +119,60 @@ def validate_WS_vs_SLS(j):
             j.results.loc['best', 'f_overall'] = 34
     _safety(j)
 
-def validate_best_vs_CACF(j):
-    #TODO:
-    return 0
+def validate_best(j):
+    # Validate the best estimates against one another
+    # Check to see if they agree closely with one another
+    best = j.results.loc['best', ['SLS','SW','CACF']]
+    ebest = j.results.loc['best', ['e_SLS','e_SW','e_CACF']]
+
+    # If they agree, then pick the one with the best fractional uncertainty
+    if np.abs(np.diff(best, 2)) < np.sqrt(np.sum(ebest**2)):
+        frac = ebest.values /  best.values
+        s = np.argmin(frac)
+        j.results.loc['best', 'overall'] = best[s]
+        j.results.loc['best', 'e_overall'] = ebest[s]
+        j.results.loc['best', 'f_overall'] = 2**s
+
+    # If they disagree, see if two of them are in agreement
+    else:
+        # We check in this order, as the priority is SLS -> SW -> CACF
+        a = np.abs(np.diff(best[['SLS','SW']])) < np.sqrt(np.sum(ebest[['e_SLS', 'e_SW']]**2))
+        b = np.abs(np.diff(best[['SLS','CACF']])) < np.sqrt(np.sum(ebest[['e_SLS', 'e_CACF']]**2))
+        c = np.abs(np.diff(best[['SW','CACF']])) < np.sqrt(np.sum(ebest[['e_SW', 'e_CACF']]**2))
+
+        # SLS and SW are in agreement
+        if a:
+            frac = ebest[['e_SLS','e_SW']].values /  best[['SLS','SW']].values
+            s = np.argmin(frac)
+            j.results.loc['best', 'overall'] = best[['SLS','SW']][s]
+            j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_SW']][s]
+            j.results.loc['best', 'f_overall'] = 2**s + 16
+
+        # SLS and CACF are in agreement
+        elif b:
+            frac = ebest[['e_SLS','e_CACF']].values /  best[['SLS','CACF']].values
+            s = np.argmin(frac)
+            j.results.loc['best', 'overall'] = best[['SLS','CACF']][s]
+            j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_CACF']][s]
+            if s == 0:
+                j.results.loc['best', 'f_overall'] = 1 + 16
+            else:
+                 j.results.loc['best', 'f_overall'] = 4 + 16
+
+        # SW and CACF are in agreement
+        elif c:
+            frac = ebest[['e_SW', 'e_CACF']].values /  best[['SW', 'CACF']].values
+            s = np.argmin(frac)
+            j.results.loc['best', 'overall'] = best[['SW', 'CACF']][s]
+            j.results.loc['best', 'e_overall'] = ebest[['e_SW', 'e_CACF']][s]
+            j.results.loc['best', 'f_overall'] = 2**(s+1) + 16
+
+        # There is no agreement whatsover
+        else:
+            j.results.loc['best', 'overall'] = best['CACF']
+            j.results.loc['best', 'e_overall'] = ebest['e_CACF']
+            j.results.loc['best', 'f_overall'] = 4 + 32
+    _safety(j)
 
 def validate_best_vs_ACF(j):
     # Validate the ACF vs the best value
@@ -143,6 +194,8 @@ def validate_best_vs_ACF(j):
 
 def validator(j):
     """
+    TODO: THIS DOCSTRING IS OUT OF DATE
+
     This function will validate the measured rotation rates and determine
     a value that it considers to be the best. It does this following a flow-
     chart, starting with the Lomb Scargle periodogram results.
@@ -177,12 +230,11 @@ def validator(j):
     ## Flag values
     Overall flag values are:
     1 - SLS-obtained value
-    2 - WS-obtained value
-    4 - ACF-obtained value
+    2 - SW-obtained value
+    4 - CACF-obtained value
     8 - GP-obtained value
-    16 - Validation done using a SLS value that wasn't 'best'
-    32 - No robust matches
-    34 - No robust matches, WS-obtained value (ditto for other combos)
+    16 - Only two out of three estimates agreed
+    32 - No robust matches, CACF assumed best
     64 - No ACF measured
     128 - ACF does not match 'best' period within 2 sigma
     256 - ACF indicates that 'best' period is a potential harmonic
@@ -196,8 +248,8 @@ def validator(j):
     # Validate Composite ACF
     validate_CACF(j)
 
-    # Validate Wavelet VS Lomb Scargle
-    validate_WS_vs_SLS(j)
+    # Validate the three estimates
+    validate_best(j)
 
     # Validate ACF vs the 'best' period
     validate_best_vs_ACF(j)

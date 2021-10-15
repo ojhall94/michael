@@ -18,12 +18,11 @@ def _safety(janet):
 def _decode(flag):
     """
     1 - SLS-obtained value
-    2 - WS-obtained value
-    4 - ACF-obtained value
+    2 - SW-obtained value
+    4 - CACF-obtained value
     8 - GP-obtained value
-    16 - Validation done using a SLS value that wasn't 'best'
-    32 - No robust matches
-    34 - No robust matches, WS-obtained value (ditto for other combos)
+    16 - Only two out of three estimates agreed
+    32 - No robust matches, CACF assumed best
     64 - No ACF measured
     128 - ACF does not match 'best' period within 2 sigma
     256 - ACF indicates that 'best' period is a potential harmonic
@@ -32,12 +31,12 @@ def _decode(flag):
     STRINGS = {
         1 : "1: Best rotation is from the Simple Lomb Scargle (SLS) method.",
         2 : "2: Best rotation is from the Simple Wavelet (SW) method.",
-        4 : "4: Best rotation is from the Simple Autocorrelation Function (ACF) method.",
+        4 : "4: Best rotation is from the Composite Autocorrelation Function (CACF) method.",
         8 : "8: Best rotation is from the Gaussian Process (GP) method.",
-        16 : "16: Valididation between WS and SLS was done using a SLS period that was not " +
-            "the 'best' SLS value (lowest uncertainty without flags), because there was no 2" +
-            " sigma agreement with the SW period.",
-        32 : "32: No robust matches were found between the SW period and any unflagged SLS periods.",
+        16 : "16: Only 2 of the 3 estimates of rotation agreed with one another" +
+             "to within 1 sigma.",
+        32 : "32: None of the 3 estimates agreed with one another to within 1 "+
+             "sigma. The CACF estimate is assumed to be the best in this case.",
         64 : "64: No ACF period could be reliably measured (indicating low power or long periods).",
         128 : "128: The ACF period does not match the 'best' period within 2 sigma.",
         256 : "256: The ACF period is potentially a harmonic of the 'best' period (or vice versa!)",
