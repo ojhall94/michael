@@ -163,7 +163,7 @@ def _calculate_wavelet(clc, period_range, sector, j):
                             bounds = ([lolim, 0., 0.9*max_w],[uplim, 0.25*max_p, 1.1*max_w]))
     return popt, pcov
 
-def simple_wavelet(j, period_range):
+def simple_wavelet(j, sector, period_range):
     """
     We use the 'jazzhands' Python package to perform our wavelet analysis.
     The `jazzhands` package performs a wavelet analysis based on the procedures
@@ -194,34 +194,21 @@ def simple_wavelet(j, period_range):
     """
 
     if j.verbose:
-        print(f'### Running Wavelet Estimation on star {j.gaiaid} ###')
+        print(f'### Running Wavelet Estimation for Sector {sector} on star {j.gaiaid} ###')
 
     # Call the relevant light curve
-    if not j.gaps:
-        clc = j.void[f'clc_all']
+    clc = j.void[f'clc_{sector}']
 
-        popt, pcov = _calculate_wavelet(clc, period_range, 'all', j)
+    popt, pcov = _calculate_wavelet(clc, period_range, sector, j)
 
-        j.results.loc['all', 'SW'] = popt[0]
-        j.results.loc['all', 'e_SW'] = popt[1]
+    j.results.loc[sector, 'SW'] = popt[0]
+    j.results.loc[sector, 'e_SW'] = popt[1]
 
-        # Save the gaussian fit
-        j.void[f'all_wavelet_popt'] = popt
-
-    else:
-        for sector in list(j.sectors):
-            clc = j.void[f'clc_{sector}']
-            popt, pcov = _calculate_wavelet(clc, period_range, sector, j)
-
-            j.results.loc[sector, 'SW'] = popt[0]
-            j.results.loc[sector, 'e_SW'] = popt[1]
-
-            # Save the gaussian fit
-            j.void[f'{sector}_wavelet_popt'] = popt
-
+    # Save the gaussian fit
+    j.void[f'{sector}_wavelet_popt'] = popt
 
     if j.verbose:
-        print(f'### Completed Wavelet Estimation on star {j.gaiaid} ###')
+        print(f'### Completed Wavelet Estimation for Sector {sector} on star {j.gaiaid} ###')
 
     _safety(j)
 

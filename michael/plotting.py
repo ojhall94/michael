@@ -142,20 +142,12 @@ def _plot_wavelet_fit(j, fig, ax):
         p = 1/j.void['all_wt'].nus
         ax.plot(p, ws, lw=1, c='k')
 
-        for s in j.sectors:
-            time = j.void[f'clc_{s}'].time.value
-            sel = (taus >= time.min()) & (taus <= time.max())
-            ws = np.sum(j.void['all_wwz'][:, sel], axis=1)
-            ws /= ws.max()
-            ax.plot(p, ws, lw=1)
-
-    else:
-        for s in j.sectors:
-            taus = j.void[f'{s}_wt'].taus
-            ws = np.sum(j.void[f'{s}_wwz'], axis=1)
-            ws /= ws.max()
-            p = 1/j.void[f'{s}_wt'].nus
-            ax.plot(p, ws, lw=1)
+    for s in j.sectors:
+        taus = j.void[f'{s}_wt'].taus
+        ws = np.sum(j.void[f'{s}_wwz'], axis=1)
+        ws /= ws.max()
+        p = 1/j.void[f'{s}_wt'].nus
+        ax.plot(p, ws, lw=1)
 
     best_sw = j.results.loc['best', 's_SW']
     if best_sw == 'all':
@@ -205,34 +197,32 @@ def _plot_acf(j, fig, ax):
 def _plot_comparison(j, fig, ax):
     ax.set_title('Period Estimates')
     ax.set_ylabel('Period [d]')
-    ax.errorbar(2, j.results.loc['all', 'SW'], yerr = j.results.loc['all', 'e_SW'],
-                c='k', fmt='o')
     ax.axhline(j.results.loc['all', 'ACF'],  label='ACF', c=cmap[3], ls=':', lw=5,
                zorder =1, alpha=.8)
     # Plot SLS
     if not j.gaps:
         xs = np.linspace(0.8, 1.2, len(j.sectors)+1)
-        for idx, sector in enumerate(j.sectors):
-            ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
-                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=colmap[idx])
         ax.errorbar(xs[-1], j.results.loc['all', 'SLS'],
                     yerr = j.results.loc['all', 'e_SLS'],
                     fmt='o', c='k')
     else:
         xs = np.linspace(0.8, 1.2, len(j.sectors))
-        for idx, sector in enumerate(j.sectors):
-            ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
-                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=colmap[idx])
+
+    for idx, sector in enumerate(j.sectors):
+        ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
+                    yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=colmap[idx])
 
     # Plot SW
     if not j.gaps:
-        ax.errorbar(2, j.results.loc['all', 'SW'], yerr = j.results.loc['all', 'e_SW'],
+        xs = np.linspace(1.8, 2.2, len(j.sectors)+1)
+        ax.errorbar(xs[-1], j.results.loc['all', 'SW'], yerr = j.results.loc['all', 'e_SW'],
                     c='k', fmt='o')
     else:
         xs = np.linspace(1.8, 2.2, len(j.sectors))
-        for idx, sector in enumerate(j.sectors):
-            ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
-                        yerr = j.results.loc[sector, 'e_SW'], fmt='o', c=colmap[idx])
+
+    for idx, sector in enumerate(j.sectors):
+        ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
+                    yerr = j.results.loc[sector, 'e_SW'], fmt='o', c=colmap[idx])
 
     labels = ['SLS', 'SW']
     x = [1., 2.]
@@ -253,9 +243,9 @@ def _plot_comparison(j, fig, ax):
                     2*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
                     color=cmap[7], alpha=.5, zorder=0)
     ax.legend(loc='best')
-    res = j.results.loc[j.sectors.astype(int), ['SLS','SW']].to_numpy().flatten()
-    err = j.results.loc[j.sectors.astype(int), ['e_SLS', 'e_SW']].to_numpy().flatten()
-    ax.set_ylim(0.9*np.nanmax(res-err), 1.1*np.nanmax(res+err))
+    res = j.results.loc[j.results.index != 'best', ['SLS','SW']].to_numpy().flatten()
+    err = j.results.loc[j.results.index != 'best', ['e_SLS', 'e_SW']].to_numpy().flatten()
+    ax.set_ylim(0.9*np.nanmin(res-err), 1.1*np.nanmax(res+err))
 
 def _plot_fold(j, fig, ax):
     fold = j.void['clc_all'].fold(period=j.results.loc['best', 'overall'])
