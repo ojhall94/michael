@@ -63,11 +63,11 @@ def _plot_periodograms(j, fig, ax):
     best_sls = j.results.loc['best', 's_SLS']
 
     if not j.gaps:
-        j.void[f'pg_all'].plot(ax=ax, view='period', label=f'All Sectors',lw=1, zorder=2, c='k')
+        j.void[f'pg_all'].plot(ax=ax, view='period', label=f'All Sectors',lw=2, zorder=2, c='k')
     if len(j.sectors) >= 2:
         for s in j.sectors:
             j.void[f'pg_{s}'].plot(ax=ax, view='period',
-            label=f'Sector {s}', lw=1, zorder=2)
+            label=f'Sector {s}', lw=2, zorder=2)
     ax.axvline(j.results.loc["best", "SLS"], c=cmap[4], lw=5, ls='--', zorder=1, label=f'P = {j.results.loc["best", "SLS"]:.2f} d')
     ax.set_xlim(j.void[f'pg_{best_sls}'].period.min().value, j.void[f'pg_{best_sls}'].period.max().value)
     ax.set_ylim(0)
@@ -90,10 +90,10 @@ def _plot_periodogram_fit(j, fig, ax):
     ax.set_xlim(j.void[f'popt_{best_sls}'][0] - 5*j.void[f'popt_{best_sls}'][1],
                     j.void[f'popt_{best_sls}'][0] + 5*j.void[f'popt_{best_sls}'][1])
     if not j.gaps:
-        j.void[f'pg_all'].plot(ax=ax, lw=1, c='k', zorder=0)
+        j.void[f'pg_all'].plot(ax=ax, lw=2, c='k', zorder=0)
     if len(j.sectors) >= 2:
         for s in j.sectors:
-            j.void[f'pg_{s}'].plot(ax=ax,lw=1, zorder=0)
+            j.void[f'pg_{s}'].plot(ax=ax,lw=2, zorder=0)
     ax.legend(loc='best', fontsize=_label_fontsize)
     ax.set_xlabel('Period [d]')
     ax.set_title(f'Fit to LSP {text}')
@@ -140,14 +140,14 @@ def _plot_wavelet_fit(j, fig, ax):
         ws = np.sum(j.void['all_wwz'], axis=1)
         ws /= ws.max()
         p = 1/j.void['all_wt'].nus
-        ax.plot(p, ws, lw=1, c='k')
+        ax.plot(p, ws, lw=2, c='k')
 
     for s in j.sectors:
         taus = j.void[f'{s}_wt'].taus
         ws = np.sum(j.void[f'{s}_wwz'], axis=1)
         ws /= ws.max()
         p = 1/j.void[f'{s}_wt'].nus
-        ax.plot(p, ws, lw=1)
+        ax.plot(p, ws, lw=2)
 
     best_sw = j.results.loc['best', 's_SW']
     if best_sw == 'all':
