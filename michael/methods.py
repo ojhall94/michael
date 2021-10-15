@@ -6,6 +6,7 @@ import lightkurve as lk
 import astropy.units as u
 import numpy as np
 from scipy.signal import find_peaks
+from scipy import interpolate
 from scipy.optimize import curve_fit
 from astropy.convolution import Gaussian1DKernel
 from astropy.convolution import convolve

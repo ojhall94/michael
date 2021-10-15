@@ -31,7 +31,6 @@ def validate_SLS(j):
     _safety(j)
 
 def validate_SW(j):
-    # Validate LombScargle
     if np.isfinite(j.results.loc['all', 'SW']):
         # If there is a SW value for 'all', consider this the default best
         j.results.loc['best', 'SW'] = j.results.loc['all', 'SW']
@@ -47,6 +46,24 @@ def validate_SW(j):
         j.results.loc['best', 'SW'] = j.results.loc[idx, 'SW']
         j.results.loc['best', 'e_SW'] = j.results.loc[idx, 'e_SW']
         j.results.loc['best', 's_SW'] = idx.astype(str)
+    _safety(j)
+
+def validate_CACF(j):
+    if np.isfinite(j.results.loc['all', 'CACF']):
+        # If there is a CACF value for 'all', consider this the default best
+        j.results.loc['best', 'CACF'] = j.results.loc['all', 'CACF']
+        j.results.loc['best', 'e_CACF'] = j.results.loc['all', 'e_CACF']
+        j.results.loc['best', 's_CACF'] = 'all'
+
+    else:
+        # If onlys single-sector cases are available, pick the value with
+        # the lowest fractional uncertainty
+        sigfrac = j.results['e_CACF'] / j.results['CACF']
+        idx = np.array(sigfrac.idxmin())
+
+        j.results.loc['best', 'CACF'] = j.results.loc[idx, 'CACF']
+        j.results.loc['best', 'e_CACF'] = j.results.loc[idx, 'e_CACF']
+        j.results.loc['best', 's_CACF'] = idx.astype(str)
     _safety(j)
 
 def validate_WS_vs_SLS(j):
@@ -101,6 +118,10 @@ def validate_WS_vs_SLS(j):
             j.results.loc['best', 'e_overall'] = j.results.loc['best', 'e_SW']
             j.results.loc['best', 'f_overall'] = 34
     _safety(j)
+
+def validate_best_vs_CACF(j):
+    #TODO:
+    return 0
 
 def validate_best_vs_ACF(j):
     # Validate the ACF vs the best value
@@ -171,6 +192,9 @@ def validator(j):
 
     # Validate Wavelet
     validate_SW(j)
+
+    # Validate Composite ACF
+    validate_CACF(j)
 
     # Validate Wavelet VS Lomb Scargle
     validate_WS_vs_SLS(j)
