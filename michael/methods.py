@@ -284,19 +284,20 @@ def composite_ACF(j, sector, period_range):
     j.void[f'{sector}_cpeaks'] = cpeaks
 
     if len(cpeaks >= 1):
-        P = cacf[cpeaks[0]]
+        Px = cacf[cpeaks[0]]['time'].value
+        Py = cacfsmoo[cpeaks[0]]
 
-        lolim = 0.8*P['time'].value
+        lolim = 0.8*Px
         if lolim < period_range[0]:
             lolim = period_range[0]
-        uplim = 1.2*P['time'].value
+        uplim = 1.2*Px
         if uplim > period_range[1]:
             uplim = period_range[1]
 
         popt, pcov = curve_fit(_gaussian_fn, cacf.time.value, cacfsmoo,
-                               p0 = [P['time'].value, 0.1*P['time'].value, P['flux'].value],
-                               bounds = ([lolim, 0., 0.9*P['flux'].value],
-                                         [uplim, 0.25*P['time'].value, 1.1*P['flux'].value]))
+                               p0 = [Px, 0.1*Px, Py],
+                               bounds = ([lolim, 0., 0.9*Py],
+                                         [uplim, 0.25*Px, 1.1*Py]))
 
         j.results.loc[sector, 'CACF'] = popt[0]
         j.results.loc[sector, 'e_CACF'] = popt[1]
