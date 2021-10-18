@@ -218,9 +218,11 @@ def plot_cacf_fit(j, fig, ax):
     ax.set_xlim(j.void[f'{best_cacf}_cacf_popt'][0] - 5*j.void[f'{best_cacf}_cacf_popt'][1],
                     j.void[f'{best_cacf}_cacf_popt'][0] + 5*j.void[f'{best_cacf}_cacf_popt'][1])
     if not j.gaps:
-        j.void[f'all_cacf'].plot(ax=ax, lw=2, c='k', zorder=0)
+        ax.plot(j.void[f'all_cacf'].time.value, j.void[f'all_cacfsmoo'], c='k', lw=2, zorder=0)
+
     for idx, s in enumerate(j.sectors):
-        j.void[f'{s}_cacf'].plot(ax=ax,lw=2, zorder=0, c = colmap[idx])
+        ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, zorder=0)
+
 
     ax.legend(loc='best', fontsize=_label_fontsize)
     ax.set_xlabel('Period [d]')
