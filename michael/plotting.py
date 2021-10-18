@@ -17,7 +17,7 @@ cmap = sns.color_palette('viridis', 8)
 colmap = sns.color_palette('colorblind', 8)
 
 
-def _plot_tpf(j, fig, ax):
+def plot_tpf(j, fig, ax):
     # Plot Sector 0 TPF
     if j.sectors[0] != 0:
         ax.set_title(f'Frame 0 Sector {j.sectors[0]}')
@@ -28,7 +28,7 @@ def _plot_tpf(j, fig, ax):
         ax.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
         ax.legend(loc='upper left', fontsize=_label_fontsize)
 
-def _plot_lcs(j, fig, ax):
+def plot_lcs(j, fig, ax):
     ax.set_title(f'Full TESS LC, Sectors: {j.sectors}. Normalised, outliers removed.')
     if len(j.sectors) >= 2:
         if not j.gaps:
@@ -59,7 +59,7 @@ def _plot_lcs(j, fig, ax):
         ax.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
     ax.set_ylabel('Normalised Flux')
 
-def _plot_periodograms(j, fig, ax):
+def plot_periodograms(j, fig, ax):
     best_sls = j.results.loc['best', 's_SLS']
 
     if not j.gaps:
@@ -75,7 +75,7 @@ def _plot_periodograms(j, fig, ax):
     ax.set_xscale('log')
     ax.set_title('All Lomb Scargle Periodograms')
 
-def _plot_periodogram_fit(j, fig, ax):
+def plot_periodogram_fit(j, fig, ax):
     best_sls = j.results.loc['best', 's_SLS']
 
     if best_sls == 'all':
@@ -98,7 +98,7 @@ def _plot_periodogram_fit(j, fig, ax):
     ax.set_xlabel('Period [d]')
     ax.set_title(f'Fit to LSP {text}')
 
-def _plot_wavelet_contour(j, fig, ax):
+def plot_wavelet_contour(j, fig, ax):
     if not j.gaps:
         ax.contourf(j.void['all_wt'].taus, 1./j.void['all_wt'].nus, j.void['all_wwz'])
 
@@ -134,7 +134,7 @@ def _plot_wavelet_contour(j, fig, ax):
     ax.set_ylabel('Period [d]')
     ax.set_xlabel('Time [JD]')
 
-def _plot_wavelet_fit(j, fig, ax):
+def plot_wavelet_fit(j, fig, ax):
     if not j.gaps:
         taus = j.void['all_wt'].taus
         ws = np.sum(j.void['all_wwz'], axis=1)
@@ -172,7 +172,66 @@ def _plot_wavelet_fit(j, fig, ax):
     ax.set_xlim(j.void[f'{best_sw}_wavelet_popt'][0] - 5*j.void[f'{best_sw}_wavelet_popt'][1],
                     j.void[f'{best_sw}_wavelet_popt'][0] + 5*j.void[f'{best_sw}_wavelet_popt'][1])
 
-def _plot_acf(j, fig, ax):
+def plot_cacf(j, fig, ax):
+    if not j.gaps:
+        j.void['all_cacf'].plot(ax=ax, c='k', lw=1,  zorder=1, alpha=.5)
+        ax.plot(j.void['all_cacf'].time.value, j.void['all_cacfsmoo'], c='k', lw=2, label='All Sectors', zorder=4)
+
+
+    for idx, s in enumerate(j.sectors):
+        j.void[f'{s}_cacf'].plot(ax=ax, c=colmap[idx], lw=1,  zorder=2, alpha=.5)
+        ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, label=f'Sector {s}', zorder=5)
+
+
+    ax.set_xlim(j.void['vizacf'].time.value.min(), j.void['vizacf'].time.value.max())
+
+    ax.axvspan(j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
+                j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'], color=cmap[6], zorder=2,
+                label=f'P = {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d',
+                alpha=.5)
+    ax.axvspan(j.results.loc['best', 'overall'] - 2*j.results.loc['best', 'e_overall'],
+                j.results.loc['best', 'overall'] + 2*j.results.loc['best', 'e_overall'], color=cmap[7], zorder=1,
+                label=r'$2\sigma$', alpha=.5)
+
+    ax.axvline(j.results.loc['best', 'CACF'], c=cmap[3],
+                    label = f'P = {j.results.loc["best", "CACF"]:.2f} d',
+                    lw = 4, ls=':', zorder=10)
+
+    ax.set_title("(Smoothed) Composite ACF for all Sectors")
+    ax.set_ylabel('Normalised CACF')
+    ax.axhline(0.01, label='Detection threshold', c='k', ls='--', zorder=0)
+    ax.legend(loc='upper right',ncol = int(np.ceil(len(j.sectors)/4)))
+
+def plot_cacf_fit(j, fig, ax):
+    best_cacf = j.results.loc['best', 's_CACF']
+
+    if best_cacf == 'all':
+        text = 'All Sectors'
+    else:
+        text = f'Sector {best_cacf}'
+
+    ax.get_yaxis().set_visible(False)
+    ax.plot(j.void[f'{best_cacf}_cacf'].time.value,
+            _gaussian_fn(j.void[f'{best_cacf}_cacf'].time.value,
+                         *j.void[f'{best_cacf}_cacf_popt']), ls='--', lw=10, c=cmap[5], zorder=2,
+            label = rf'$\sigma$ = {j.results.loc["best", "e_CACF"]:.2f} d')
+    ax.set_xlim(j.void[f'{best_cacf}_cacf_popt'][0] - 5*j.void[f'{best_cacf}_cacf_popt'][1],
+                    j.void[f'{best_cacf}_cacf_popt'][0] + 5*j.void[f'{best_cacf}_cacf_popt'][1])
+    if not j.gaps:
+        j.void[f'all_cacf'].plot(ax=ax, lw=2, c='k', zorder=0)
+    for idx, s in enumerate(j.sectors):
+        j.void[f'{s}_cacf'].plot(ax=ax,lw=2, zorder=0, c = colmap[idx])
+
+    ax.legend(loc='best', fontsize=_label_fontsize)
+    ax.set_xlabel('Period [d]')
+    ax.set_title(f'Fit to CACF {text}')
+
+
+    ax.legend(loc='upper right', fontsize=_label_fontsize)
+    ax.set_xlabel('Period [d]')
+    ax.set_title(f'Fit to CACF {text}')
+
+def plot_acf(j, fig, ax):
     j.void['vizacf'].plot(ax=ax, c='k', zorder=3)
     ax.plot(j.void['vizacf'].time.value, j.void['acfsmoo'], lw=4, ls='--', c=cmap[3],
             label = 'Smoothed ACF', zorder=4)
@@ -194,7 +253,7 @@ def _plot_acf(j, fig, ax):
     ax.axhline(0.01, label='Detection threshold', c='k', zorder=0)
     ax.legend(loc='upper right')
 
-def _plot_comparison(j, fig, ax):
+def plot_comparison(j, fig, ax):
     ax.set_title('Period Estimates')
     ax.set_ylabel('Period [d]')
     ax.axhline(j.results.loc['all', 'ACF'],  label='ACF', c=cmap[3], ls=':', lw=5,
@@ -259,7 +318,7 @@ def _plot_comparison(j, fig, ax):
     err = j.results.loc[j.results.index != 'best', ['e_SLS', 'e_SW', 'e_CACF']].to_numpy().flatten()
     ax.set_ylim(0.9*np.nanmin(res-err), 1.1*np.nanmax(res+err))
 
-def _plot_fold(j, fig, ax):
+def plot_fold(j, fig, ax):
     fold = j.void['clc_all'].fold(period=j.results.loc['best', 'overall'])
     if len(j.sectors) >= 2:
         for z, s in enumerate(j.sectors):
@@ -275,43 +334,51 @@ def _plot_fold(j, fig, ax):
     ax.set_title(rf'All Sectors folded on Best Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
 
 def plot(j):
-    fig = plt.figure(figsize=(20, 37))
-    gs = GridSpec(5,3, figure=fig)
+    fig = plt.figure(figsize=(20, 45))
+    gs = GridSpec(6,3, figure=fig)
 
     ax00 = fig.add_subplot(gs[0,0])
-    _plot_tpf(j, fig, ax00)
+    plot_tpf(j, fig, ax00)
 
     # Plot all LCs
     ax01 = fig.add_subplot(gs[0, 1:])
-    _plot_lcs(j, fig, ax01)
+    plot_lcs(j, fig, ax01)
 
     # Plot all periodograms
     ax10 = fig.add_subplot(gs[1, :2])
-    _plot_periodograms(j, fig, ax10)
+    plot_periodograms(j, fig, ax10)
 
     # Plot Sector PG Fit
     ax11 = fig.add_subplot(gs[1, 2:], sharey=ax10)
-    _plot_periodogram_fit(j, fig, ax11)
+    plot_periodogram_fit(j, fig, ax11)
 
     # Wavelet contourfplot
     axw1 = fig.add_subplot(gs[2, :2])
-    _plot_wavelet_contour(j, fig, axw1)
+    plot_wavelet_contour(j, fig, axw1)
 
     # Collapsed Wavelet and fit
     axw2 = fig.add_subplot(gs[2, 2:])
-    _plot_wavelet_fit(j, fig, axw2)
+    plot_wavelet_fit(j, fig, axw2)
+
+    # Plot the CACF
+    axcf1 = fig.add_subplot(gs[3, :2])
+    plot_cacf(j, fig, axcf1)
+
+    # CACF Fit
+    axcf2 = fig.add_subplot(gs[3, 2:])
+    plot_cacf_fit(j, fig, axcf2)
 
     # Plot the ACF
-    acf = fig.add_subplot(gs[3, :2])
-    _plot_acf(j, fig, acf)
+    acf = fig.add_subplot(gs[4, :2])
+    plot_acf(j, fig, acf)
 
     # Plot the results compared
-    res = fig.add_subplot(gs[3, 2:])
-    _plot_comparison(j, fig, res)
+    res = fig.add_subplot(gs[4, 2:])
+    plot_comparison(j, fig, res)
 
     # Plot the phase folded light curve
-    ax2 = fig.add_subplot(gs[4, :])
-    _plot_fold(j, fig, ax2)
+    ax2 = fig.add_subplot(gs[5, :])
+    plot_fold(j, fig, ax2)
 
     # Polish
     if j.sectors[0] != 0:
@@ -323,6 +390,7 @@ def plot(j):
     axw2.minorticks_on()
     res.grid(axis='y')
     # res.minorticks_on()
+    axcf2.minorticks_on()
     acf.minorticks_on()
     ax2.minorticks_on()
     fig.tight_layout()

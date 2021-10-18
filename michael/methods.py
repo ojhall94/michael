@@ -283,23 +283,29 @@ def composite_ACF(j, sector, period_range):
     j.void[f'{sector}_cacfsmoo'] = cacfsmoo
     j.void[f'{sector}_cpeaks'] = cpeaks
 
-    P = cacf[cpeaks[0]]
+    if len(cpeaks >= 1):
+        P = cacf[cpeaks[0]]
 
-    lolim = 0.8*P['time'].value
-    if lolim < period_range[0]:
-        lolim = period_range[0]
-    uplim = 1.2*P['time'].value
-    if uplim > period_range[1]:
-        uplim = period_range[1]
+        lolim = 0.8*P['time'].value
+        if lolim < period_range[0]:
+            lolim = period_range[0]
+        uplim = 1.2*P['time'].value
+        if uplim > period_range[1]:
+            uplim = period_range[1]
 
-    popt, pcov = curve_fit(_gaussian_fn, cacf.time.value, cacfsmoo,
-                           p0 = [P['time'].value, 0.1*P['time'].value, P['flux'].value],
-                           bounds = ([lolim, 0., 0.9*P['flux'].value],
-                                     [uplim, 0.25*P['time'].value, 1.1*P['flux'].value]))
+        popt, pcov = curve_fit(_gaussian_fn, cacf.time.value, cacfsmoo,
+                               p0 = [P['time'].value, 0.1*P['time'].value, P['flux'].value],
+                               bounds = ([lolim, 0., 0.9*P['flux'].value],
+                                         [uplim, 0.25*P['time'].value, 1.1*P['flux'].value]))
 
-    j.results.loc[sector, 'CACF'] = popt[0]
-    j.results.loc[sector, 'e_CACF'] = popt[1]
-    j.void[f'{sector}_cacf_popt'] = popt
+        j.results.loc[sector, 'CACF'] = popt[0]
+        j.results.loc[sector, 'e_CACF'] = popt[1]
+        j.void[f'{sector}_cacf_popt'] = popt
+
+    else:
+        j.results.loc[sector, 'CACF'] = np.nan
+        j.results.loc[sector, 'e_CACF'] = np.nan
+        j.void[f'{sector}_cacf_popt'] = np.nan
 
     if j.verbose:
         print(f'### Completed Composite ACF estimation for Sector {sector} on star {j.gaiaid} ###')
