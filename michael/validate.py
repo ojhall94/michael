@@ -272,7 +272,8 @@ def validator(j):
     # Validate ACF vs the 'best' period
     validate_best_vs_ACF(j)
 
-    # Vadliate individual sectors
-    validate_sectors(j)
+    # Validate individual sectors
+    if len(j.sectors) > 1:
+        validate_sectors(j)
 
     _safety(j)

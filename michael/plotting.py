@@ -19,7 +19,7 @@ colmap = sns.color_palette('colorblind', 8)
 
 def plot_tpf(j, fig, ax):
     # Plot Sector 0 TPF
-    if j.sectors[0] != 0:
+    if not j.override:
         ax.set_title(f'Frame 0 Sector {j.sectors[0]}')
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
@@ -217,6 +217,8 @@ def plot_cacf_fit(j, fig, ax):
             label = rf'$\sigma$ = {j.results.loc["best", "e_CACF"]:.2f} d')
     ax.set_xlim(j.void[f'{best_cacf}_cacf_popt'][0] - 5*j.void[f'{best_cacf}_cacf_popt'][1],
                     j.void[f'{best_cacf}_cacf_popt'][0] + 5*j.void[f'{best_cacf}_cacf_popt'][1])
+    ax.set_ylim(0.)
+
     if not j.gaps:
         ax.plot(j.void[f'all_cacf'].time.value, j.void[f'all_cacfsmoo'], c='k', lw=2, zorder=0)
 
@@ -225,11 +227,6 @@ def plot_cacf_fit(j, fig, ax):
 
 
     ax.legend(loc='best', fontsize=_label_fontsize)
-    ax.set_xlabel('Period [d]')
-    ax.set_title(f'Fit to CACF {text}')
-
-
-    ax.legend(loc='upper right', fontsize=_label_fontsize)
     ax.set_xlabel('Period [d]')
     ax.set_title(f'Fit to CACF {text}')
 

@@ -53,6 +53,7 @@ class janet():
             self.verbose = verbose
             self.void = {}
             self.gaps = False
+            self.override=False
 
     def prepare_data(self):
         """
@@ -72,7 +73,7 @@ class janet():
         After calling this command, the user should call `get_rotation()`,
         `validate_rotation()` and `view()` manually.
 
-        A single sector, assigned 0, is used in the metadata.
+        This lone light curve is treated as if it's an 'all' sectors light curve.
 
         Parameters
         ----------
@@ -82,7 +83,9 @@ class janet():
         flux: ndarray
             The flux values in any units.
         """
-        self.sectors = [0]
+        self.sectors = np.array(['all'])
+        self.gaps = False
+        self.override = True
 
         # Create matching data folders
         if not os.path.exists(f'{self.output_path}/{self.gaiaid}'):
@@ -93,7 +96,7 @@ class janet():
 
         lc = lk.LightCurve(time = time, flux = flux)
         clc = lc.normalize().remove_nans().remove_outliers()
-        self.void['datum_0'] = None
+        self.void['datum_all'] = None
         self.void['clc_all'] = clc
 
     def get_rotation(self, period_range = (0.2, 13.7)):
