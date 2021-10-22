@@ -81,12 +81,9 @@ class data_class():
 
         # Store the datum and light curve
         self.j.void[f'datum_{self.j.sectors[0]}'] = datum
+        self.j.void[f'clc_{self.j.sectors[0]}'] = self.clc
 
-        if len(self.j.sectors) == 1:
-            self.j.void[f'clc_all'] = self.clc
-        else:
-            self.j.void[f'clc_{self.j.sectors[0]}'] = self.clc
-
+        if len(self.j.sectors) > 1:
             # Looping and appending all sectors
             for s in self.j.sectors[1:]:
                 datum = eleanor.TargetData(eleanor.Source(fn=f'lc_sector_{s}.fits',
@@ -99,4 +96,4 @@ class data_class():
                 self.j.void[f'datum_{s}'] = datum
                 self.j.void[f'clc_{s}'] = lc.normalize().remove_nans().remove_outliers()
 
-            self.j.void[f'clc_all'] = self.clc
+        self.j.void[f'clc_all'] = self.clc

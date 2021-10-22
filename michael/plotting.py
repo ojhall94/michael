@@ -29,6 +29,14 @@ def plot_tpf(j, fig, ax):
         ax.legend(loc='upper left', fontsize=_label_fontsize)
 
 def plot_lcs(j, fig, ax):
+    text = ''
+    if len(j.sectors) > 1:
+        for s in j.sectors[:-1]:
+            text += f'{s}, '
+        text = text[:-2]
+        text += f' & {j.sectors[-1]}'
+    else:
+        text = j.sectors[0]
     ax.set_title(f'Full TESS LC, Sectors: {j.sectors}. Normalised, outliers removed.')
     if len(j.sectors) >= 2:
         if not j.gaps:
@@ -142,12 +150,13 @@ def plot_wavelet_fit(j, fig, ax):
         p = 1/j.void['all_wt'].nus
         ax.plot(p, ws, lw=2, c='k')
 
-    for s in j.sectors:
-        taus = j.void[f'{s}_wt'].taus
-        ws = np.sum(j.void[f'{s}_wwz'], axis=1)
-        ws /= ws.max()
-        p = 1/j.void[f'{s}_wt'].nus
-        ax.plot(p, ws, lw=2)
+    if len(j.sectors) > 1:
+        for s in j.sectors:
+            taus = j.void[f'{s}_wt'].taus
+            ws = np.sum(j.void[f'{s}_wwz'], axis=1)
+            ws /= ws.max()
+            p = 1/j.void[f'{s}_wt'].nus
+            ax.plot(p, ws, lw=2)
 
     best_sw = j.results.loc['best', 's_SW']
     if best_sw == 'all':
@@ -177,10 +186,10 @@ def plot_cacf(j, fig, ax):
         j.void['all_cacf'].plot(ax=ax, c='k', lw=1,  zorder=1, alpha=.5)
         ax.plot(j.void['all_cacf'].time.value, j.void['all_cacfsmoo'], c='k', lw=2, label='All Sectors', zorder=4)
 
-
-    for idx, s in enumerate(j.sectors):
-        j.void[f'{s}_cacf'].plot(ax=ax, c=colmap[idx], lw=1,  zorder=2, alpha=.5)
-        ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, label=f'Sector {s}', zorder=5)
+    if len(j.sectors) > 1:
+        for idx, s in enumerate(j.sectors):
+            j.void[f'{s}_cacf'].plot(ax=ax, c=colmap[idx], lw=1,  zorder=2, alpha=.5)
+            ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, label=f'Sector {s}', zorder=5)
 
 
     ax.set_xlim(j.void['vizacf'].time.value.min(), j.void['vizacf'].time.value.max())
@@ -222,8 +231,9 @@ def plot_cacf_fit(j, fig, ax):
     if not j.gaps:
         ax.plot(j.void[f'all_cacf'].time.value, j.void[f'all_cacfsmoo'], c='k', lw=2, zorder=0)
 
-    for idx, s in enumerate(j.sectors):
-        ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, zorder=0)
+    if len(j.sectors) > 1:
+        for idx, s in enumerate(j.sectors):
+            ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, zorder=0)
 
 
     ax.legend(loc='best', fontsize=_label_fontsize)
@@ -266,9 +276,10 @@ def plot_comparison(j, fig, ax):
     else:
         xs = np.linspace(0.8, 1.2, len(j.sectors))
 
-    for idx, sector in enumerate(j.sectors):
-        ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
-                    yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=colmap[idx])
+    if len(j.sectors) > 1:
+        for idx, sector in enumerate(j.sectors):
+            ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
+                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=colmap[idx])
 
     # Plot SW
     if not j.gaps:
@@ -278,9 +289,10 @@ def plot_comparison(j, fig, ax):
     else:
         xs = np.linspace(1.8, 2.2, len(j.sectors))
 
-    for idx, sector in enumerate(j.sectors):
-        ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
-                    yerr = j.results.loc[sector, 'e_SW'], fmt='o', c=colmap[idx])
+    if len(j.sectors) > 1:
+        for idx, sector in enumerate(j.sectors):
+            ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
+                        yerr = j.results.loc[sector, 'e_SW'], fmt='o', c=colmap[idx])
 
     # Plot CACF
     if not j.gaps:
@@ -290,8 +302,9 @@ def plot_comparison(j, fig, ax):
     else:
         xs = np.linspace(2.8, 3.2, len(j.sectors))
 
-    for idx, sector in enumerate(j.sectors):
-        ax.errorbar(xs[idx], j.results.loc[sector, 'CACF'],
+    if len(j.sectors) > 1:
+        for idx, sector in enumerate(j.sectors):
+            ax.errorbar(xs[idx], j.results.loc[sector, 'CACF'],
                     yerr = j.results.loc[sector, 'e_CACF'], fmt='o', c=colmap[idx])
 
     labels = ['SLS', 'SW', 'CACF']
@@ -318,17 +331,40 @@ def plot_comparison(j, fig, ax):
     ax.set_ylim(0.9*np.nanmin(res-err), 1.1*np.nanmax(res+err))
 
 def plot_fold(j, fig, ax):
-    fold = j.void['clc_all'].fold(period=j.results.loc['best', 'overall'])
-    if len(j.sectors) >= 2:
-        for z, s in enumerate(j.sectors):
-            j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall']).scatter(s=75, label=f'Sector {s} Folded', ax=ax, zorder=len(j.sectors) - z)
+    if len(j.sectors) > 1:
+        if not j.gaps:
+            for idx, s in enumerate(j.sectors):
+                j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall']).scatter(
+                        s=75, label=f'Sector {s} Folded', ax=ax, zorder=len(j.sectors) - idx)
+        else:
+            xstep = 0
+            xlabels = []
+            xlocs = []
+            for s in j.sectors:
+                lc = j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall'])
+                xvals = lc.time.value - lc.time.value.min() + xstep
+                ax.scatter(xvals, lc.flux, s=75, label=f'Sector {s} Folded')
+                xstep = xvals.max()
+                if s != j.sectors[-1]:
+                    ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10)
+                xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
+                xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
+
+                binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/100))
+                if s == j.sectors[-1]:
+                    label = 'Binned LC'
+                else:
+                    label = None
+                binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label=label)
+                binned.plot(ax=ax, zorder=103, lw=10, c='w')
+
     else:
-        fold.scatter(ax=ax, c='k', s=75, label='Folded LC', zorder=1)
-    fold.bin(bins=int(len(fold)/50)).plot(ax=ax, zorder=4, lw=5, c=cmap[4], label='Binned LC')
-    fold.bin(bins=int(len(fold)/50)).plot(ax=ax, zorder=3, lw=10, c='w')
-    ax.set_ylabel('Normalised Flux')
-    ax.axhline(1., c='k', zorder=2, ls='-')
-    ax.set_xlim(fold.phase.min().value, fold.phase.max().value)
+        lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
+        lc.scatter(ax=ax, c='k', s=75, label='All Sectors Folded', zorder=1)
+        binned = lc.bin(bins=int(len(lc)/100))
+        binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
+        binned.plot(ax=ax, zorder=103, lw=10, c='w')
+    ax.legend(loc='best')
     ax.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
     ax.set_title(rf'All Sectors folded on Best Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
 

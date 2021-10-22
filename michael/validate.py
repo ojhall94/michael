@@ -4,6 +4,7 @@ import warnings
 from .utils import _safety
 
 def validate_SLS(j):
+    j.results['s_SLS'] = np.nan
     # Validate LombScargle
     if np.isfinite(j.results.loc['all', 'SLS']):
         # If there is a LS value for 'all', consider this the default best
@@ -25,13 +26,15 @@ def validate_SLS(j):
             sigfrac = j.results['e_SLS'] / j.results['SLS']
 
         idx = np.array(sigfrac.idxmin())
-        j.results.loc['best', 'SLS'] = j.results.loc[idx, 'SLS']
-        j.results.loc['best', 'e_SLS'] = j.results.loc[idx, 'e_SLS']
-        j.results.loc['best', 's_SLS'] = idx.astype(str)
-        j.results.loc['best', 'f_SLS'] = j.results.loc[idx, 'f_SLS']
+        if np.isfinite(idx):
+            j.results.loc['best', 'SLS'] = j.results.loc[idx, 'SLS']
+            j.results.loc['best', 'e_SLS'] = j.results.loc[idx, 'e_SLS']
+            j.results.loc['best', 's_SLS'] = idx.astype(str)
+            j.results.loc['best', 'f_SLS'] = j.results.loc[idx, 'f_SLS']
     _safety(j)
 
 def validate_SW(j):
+    j.results['s_SW'] = np.nan
     if np.isfinite(j.results.loc['all', 'SW']):
         # If there is a SW value for 'all', consider this the default best
         j.results.loc['best', 'SW'] = j.results.loc['all', 'SW']
@@ -44,12 +47,14 @@ def validate_SW(j):
         sigfrac = j.results['e_SW'] / j.results['SW']
         idx = np.array(sigfrac.idxmin())
 
-        j.results.loc['best', 'SW'] = j.results.loc[idx, 'SW']
-        j.results.loc['best', 'e_SW'] = j.results.loc[idx, 'e_SW']
-        j.results.loc['best', 's_SW'] = idx.astype(str)
+        if np.isfinite(idx):
+            j.results.loc['best', 'SW'] = j.results.loc[idx, 'SW']
+            j.results.loc['best', 'e_SW'] = j.results.loc[idx, 'e_SW']
+            j.results.loc['best', 's_SW'] = idx.astype(str)
     _safety(j)
 
 def validate_CACF(j):
+    j.results['s_CACF'] = np.nan
     if np.isfinite(j.results.loc['all', 'CACF']):
         # If there is a CACF value for 'all', consider this the default best
         j.results.loc['best', 'CACF'] = j.results.loc['all', 'CACF']
@@ -62,62 +67,10 @@ def validate_CACF(j):
         sigfrac = j.results['e_CACF'] / j.results['CACF']
         idx = np.array(sigfrac.idxmin())
 
-        j.results.loc['best', 'CACF'] = j.results.loc[idx, 'CACF']
-        j.results.loc['best', 'e_CACF'] = j.results.loc[idx, 'e_CACF']
-        j.results.loc['best', 's_CACF'] = idx.astype(str)
-    _safety(j)
-
-def validate_WS_vs_SLS(j):
-    # Validate Wavelet vs LombScargle
-    # Check to see if they agree within 1 sigma
-    best = j.results.loc['best']
-
-    # If they agree, then pick the one with the best fractional uncertainty
-    if np.diff(best[['SLS', 'SW']]) < np.sum(best[['e_SLS', 'e_SW']]):
-        frac = best[['e_SLS', 'e_SW']].values /  best[['SLS', 'SW']].values
-        s = np.argmin(frac)
-        j.results.loc['best', 'overall'] = best[['SLS', 'SW'][s]]
-        j.results.loc['best', 'e_overall'] = best[['e_SLS', 'e_SW'][s]]
-        j.results.loc['best', 'f_overall'] = s + 1
-
-    # If they disagree, see if there are any matches with another sector
-    else:
-        if len(j.sectors) >= 2:
-            sls = j.results.loc[j.sectors,['SLS', 'e_SLS', 'f_SLS']]
-        else:
-            sls = j.results.loc['all',['SLS', 'e_SLS', 'f_SLS']]
-
-        swb = j.results.loc['best', 'SW']
-        e_swb = j.results.loc['best', 'e_SW']
-
-        # An agreement within 1 Sigma has been found
-        if np.any(np.abs(sls.SLS - swb) - (e_swb + sls.e_SLS) < 0):
-            match = sls[np.abs(sls.SLS - swb) - (e_swb + sls.e_SLS) < 0]
-            frac = match.e_SLS / match.SLS
-            bestmatch = frac.idxmin()
-
-            # No matching results found without a flag, Wavelet assumed bests
-            if sls.loc[bestmatch, 'f_SLS'] != 0:
-                j.results.loc['best', 'overall'] = j.results.loc['best', 'SW']
-                j.results.loc['best', 'e_overall'] = j.results.loc['best', 'e_SW']
-                j.results.loc['best', 'f_overall'] = 34
-
-            else:
-                #See whether SW or SLS has the most well-constrained value
-                vals = np.array([sls.loc[bestmatch, 'SLS'], swb])
-                e_vals = np.array([sls.loc[bestmatch, 'e_SLS'], e_swb])
-                frac = e_vals / vals
-                s = np.argmin(frac)
-
-                j.results.loc['best', 'overall'] = vals[s]
-                j.results.loc['best', 'e_overall'] = e_vals[s]
-                j.results.loc['best', 'f_overall'] = s + 1 + 16
-
-        # No matching results found, Wavelet assumed best
-        else:
-            j.results.loc['best', 'overall'] = j.results.loc['best', 'SW']
-            j.results.loc['best', 'e_overall'] = j.results.loc['best', 'e_SW']
-            j.results.loc['best', 'f_overall'] = 34
+        if np.isfinite(idx):
+            j.results.loc['best', 'CACF'] = j.results.loc[idx, 'CACF']
+            j.results.loc['best', 'e_CACF'] = j.results.loc[idx, 'e_CACF']
+            j.results.loc['best', 's_CACF'] = idx.astype(str)
     _safety(j)
 
 def validate_best(j):
