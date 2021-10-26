@@ -8,8 +8,7 @@ import numpy as np
 from scipy.signal import find_peaks
 from scipy import interpolate
 from scipy.optimize import curve_fit
-from astropy.convolution import Gaussian1DKernel
-from astropy.convolution import convolve
+from scipy.ndimage import gaussian_filter1d
 import warnings
 
 import jazzhands
@@ -266,9 +265,9 @@ def composite_ACF(j, sector, period_range):
     cacf = vizacf * (wnew/np.nanmax(wnew))
 
     # Smooth the  CACF
-    sd = np.ceil(.1 / np.median(np.diff(cacf.time.value)))
-    gauss = Gaussian1DKernel(sd)
-    cacfsmoo = convolve(cacf.flux.value, gauss, boundary='extend')
+    sd = 2.
+    cacfsmoo = gaussian_filter1d(cacf.flux.value, sigma = sd, mode='nearest')
+
 
     # Identify the first 10 maxima above a threshold of 0.01
     cpeaks, _ = find_peaks(cacfsmoo, height = 0.01)
@@ -375,9 +374,8 @@ def simple_ACF(j, period_range):
     vizacf = vizacf[(vizacf.time.value >= period_range[0])]
 
     # Smooth the  ACF
-    sd = np.ceil(.1 / np.median(np.diff(vizacf.time.value)))
-    gauss = Gaussian1DKernel(sd)
-    acfsmoo = convolve(vizacf.flux.value, gauss, boundary='extend')
+    sd = 2.
+    acfsmoo = gaussian_filter1d(vizacf.flux.value, sigma = sd, mode='nearest')
 
     # Identify the first 10 maxima above a threshold of 0.01
     peaks, _ = find_peaks(acfsmoo, height = 0.01)

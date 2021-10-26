@@ -141,6 +141,7 @@ def plot_wavelet_contour(j, fig, ax):
     ax.legend(loc='best', fontsize=_label_fontsize)
     ax.set_ylabel('Period [d]')
     ax.set_xlabel('Time [JD]')
+    ax.set_ylim(j.period_range[0], j.period_range[1])
 
 def plot_wavelet_fit(j, fig, ax):
     if not j.gaps:
@@ -202,7 +203,8 @@ def plot_cacf(j, fig, ax):
                 j.results.loc['best', 'overall'] + 2*j.results.loc['best', 'e_overall'], color=cmap[7], zorder=1,
                 label=r'$2\sigma$', alpha=.5)
 
-    ax.axvline(j.results.loc['best', 'CACF'], c=cmap[3],
+    if np.isfinite(j.results.loc['best','CACF']):
+        ax.axvline(j.results.loc['best', 'CACF'], c=cmap[3],
                     label = f'P = {j.results.loc["best", "CACF"]:.2f} d',
                     lw = 4, ls=':', zorder=10)
 
@@ -336,6 +338,11 @@ def plot_fold(j, fig, ax):
             for idx, s in enumerate(j.sectors):
                 j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall']).scatter(
                         s=75, label=f'Sector {s} Folded', ax=ax, zorder=len(j.sectors) - idx)
+            lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
+            binned = lc.bin(bins=int(len(lc)/100))
+            binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
+            binned.plot(ax=ax, zorder=103, lw=10, c='w')
+            ax.set_xlim(binned.time.value[0], binned.time.value[-1])
         else:
             xstep = 0
             xlabels = []
@@ -357,6 +364,7 @@ def plot_fold(j, fig, ax):
                     label = None
                 binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label=label)
                 binned.plot(ax=ax, zorder=103, lw=10, c='w')
+            ax.set_xlim(0, xstep)
 
     else:
         lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
@@ -364,9 +372,11 @@ def plot_fold(j, fig, ax):
         binned = lc.bin(bins=int(len(lc)/100))
         binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
         binned.plot(ax=ax, zorder=103, lw=10, c='w')
+        ax.set_clim(lc.time.value[0], lc.time.value[-1])
     ax.legend(loc='best')
     ax.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
     ax.set_title(rf'All Sectors folded on Best Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
+    ax.axhline(1.00, lw=5, ls='--', c='k', zorder=100)
 
 def plot(j):
     fig = plt.figure(figsize=(20, 45))
@@ -384,24 +394,31 @@ def plot(j):
     plot_periodograms(j, fig, ax10)
 
     # Plot Sector PG Fit
-    ax11 = fig.add_subplot(gs[1, 2:], sharey=ax10)
-    plot_periodogram_fit(j, fig, ax11)
+    if np.isfinite(j.results.loc['best','SLS']):
+        ax11 = fig.add_subplot(gs[1, 2:], sharey=ax10)
+        plot_periodogram_fit(j, fig, ax11)
+        ax11.minorticks_on()
 
     # Wavelet contourfplot
     axw1 = fig.add_subplot(gs[2, :2])
     plot_wavelet_contour(j, fig, axw1)
 
     # Collapsed Wavelet and fit
-    axw2 = fig.add_subplot(gs[2, 2:])
-    plot_wavelet_fit(j, fig, axw2)
+    if np.isfinite(j.results.loc['best','SW']):
+        axw2 = fig.add_subplot(gs[2, 2:])
+        plot_wavelet_fit(j, fig, axw2)
+        axw2.minorticks_on()
 
     # Plot the CACF
     axcf1 = fig.add_subplot(gs[3, :2])
     plot_cacf(j, fig, axcf1)
 
     # CACF Fit
-    axcf2 = fig.add_subplot(gs[3, 2:])
-    plot_cacf_fit(j, fig, axcf2)
+    if np.isfinite(j.results.loc['best','CACF']):
+        axcf2 = fig.add_subplot(gs[3, 2:])
+        plot_cacf_fit(j, fig, axcf2)
+        axcf2.minorticks_on()
+
 
     # Plot the ACF
     acf = fig.add_subplot(gs[4, :2])
@@ -418,14 +435,8 @@ def plot(j):
     # Polish
     if j.sectors[0] != 0:
         ax00.minorticks_on()
-    # ax01.minorticks_on()
     ax10.minorticks_on()
-    ax11.minorticks_on()
-    # axw1.minorticks_on()
-    axw2.minorticks_on()
     res.grid(axis='y')
-    # res.minorticks_on()
-    axcf2.minorticks_on()
     acf.minorticks_on()
     ax2.minorticks_on()
     fig.tight_layout()
@@ -434,5 +445,5 @@ def plot(j):
     plt.subplots_adjust(top=0.95)
 
 
-    plt.savefig(f'{j.output_path}/{j.gaiaid}/output.pdf', rasterized=True)
+    plt.savefig(f'{j.output_path}/{j.gaiaid}/output.pdf')
     plt.savefig(f'{j.output_path}/{j.gaiaid}/output.png', dpi = 300)

@@ -37,7 +37,8 @@ def _decode(flag):
         16 : "16: Only 2 of the 3 estimates of rotation agreed with one another " +
              "to within 1 sigma.",
         32 : "32: None of the 3 estimates agreed with one another to within 1 "+
-             "sigma. The CACF estimate is assumed to be the best in this case.",
+             "sigma. The CACF estimate is assumed to be the best in this case, "+
+             "if it is available.",
         64 : "64: No ACF period could be reliably measured (indicating low power or long periods).",
         128 : "128: The ACF period does not match the 'best' period within 2 sigma.",
         256 : "256: The ACF period is potentially a harmonic of the 'best' period (or vice versa!)",
