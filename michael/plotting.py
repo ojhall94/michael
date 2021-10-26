@@ -37,7 +37,7 @@ def plot_lcs(j, fig, ax):
         text += f' & {j.sectors[-1]}'
     else:
         text = j.sectors[0]
-    ax.set_title(f'Full TESS LC, Sectors: {j.sectors}. Normalised, outliers removed.')
+    ax.set_title(f'Full TESS LC, Sectors: {text}. Normalised, outliers removed.')
     if len(j.sectors) >= 2:
         if not j.gaps:
             for s in j.sectors:
@@ -339,7 +339,7 @@ def plot_fold(j, fig, ax):
                 j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall']).scatter(
                         s=75, label=f'Sector {s} Folded', ax=ax, zorder=len(j.sectors) - idx)
             lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
-            binned = lc.bin(bins=int(len(lc)/100))
+            binned = lc.bin(bins=int(len(lc)/10))
             binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
             binned.plot(ax=ax, zorder=103, lw=10, c='w')
             ax.set_xlim(binned.time.value[0], binned.time.value[-1])
@@ -357,7 +357,7 @@ def plot_fold(j, fig, ax):
                 xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
                 xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
 
-                binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/100))
+                binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/10))
                 if s == j.sectors[-1]:
                     label = 'Binned LC'
                 else:
@@ -369,10 +369,10 @@ def plot_fold(j, fig, ax):
     else:
         lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
         lc.scatter(ax=ax, c='k', s=75, label='All Sectors Folded', zorder=1)
-        binned = lc.bin(bins=int(len(lc)/100))
+        binned = lc.bin(bins=int(len(lc)/10))
         binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
         binned.plot(ax=ax, zorder=103, lw=10, c='w')
-        ax.set_clim(lc.time.value[0], lc.time.value[-1])
+        ax.set_xlim(lc.time.value[0], lc.time.value[-1])
     ax.legend(loc='best')
     ax.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
     ax.set_title(rf'All Sectors folded on Best Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
