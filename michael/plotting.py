@@ -339,7 +339,7 @@ def plot_fold(j, fig, ax):
                 j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall']).scatter(
                         s=75, label=f'Sector {s} Folded', ax=ax, zorder=len(j.sectors) - idx)
             lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
-            binned = lc.bin(bins=int(len(lc)/10))
+            binned = lc.bin(bins=int(len(lc)/50))
             binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
             binned.plot(ax=ax, zorder=103, lw=10, c='w')
             ax.set_xlim(binned.time.value[0], binned.time.value[-1])
@@ -357,7 +357,7 @@ def plot_fold(j, fig, ax):
                 xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
                 xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
 
-                binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/10))
+                binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/50))
                 if s == j.sectors[-1]:
                     label = 'Binned LC'
                 else:
@@ -369,7 +369,7 @@ def plot_fold(j, fig, ax):
     else:
         lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
         lc.scatter(ax=ax, c='k', s=75, label='All Sectors Folded', zorder=1)
-        binned = lc.bin(bins=int(len(lc)/10))
+        binned = lc.bin(bins=int(len(lc)/50))
         binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
         binned.plot(ax=ax, zorder=103, lw=10, c='w')
         ax.set_xlim(lc.time.value[0], lc.time.value[-1])
