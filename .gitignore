@@ -11,6 +11,8 @@ __pycache__/
 */mastDownload/*
 Examples/simtests
 Examples/PscEri
+Examples/investigate_outliers.ipynb
+
 
 # Distribution / packaging
 .Python
