@@ -103,7 +103,7 @@ def validate_best(j):
             s = np.argmin(frac)
             j.results.loc['best', 'overall'] = best[['SLS','SW']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_SW']][s]
-            j.results.loc['best', 'f_overall'] = 2**s + 16
+            j.results.loc['best', 'f_overall'] = 2**s + 128
 
         # SLS and CACF are in agreement
         elif b:
@@ -112,9 +112,9 @@ def validate_best(j):
             j.results.loc['best', 'overall'] = best[['SLS','CACF']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_CACF']][s]
             if s == 0:
-                j.results.loc['best', 'f_overall'] = 1 + 16
+                j.results.loc['best', 'f_overall'] = 1 + 128
             else:
-                 j.results.loc['best', 'f_overall'] = 4 + 16
+                 j.results.loc['best', 'f_overall'] = 4 + 128
 
         # SW and CACF are in agreement
         elif c:
@@ -122,40 +122,42 @@ def validate_best(j):
             s = np.argmin(frac)
             j.results.loc['best', 'overall'] = best[['SW', 'CACF']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_SW', 'e_CACF']][s]
-            j.results.loc['best', 'f_overall'] = 2**(s+1) + 16
+            j.results.loc['best', 'f_overall'] = 2**(s+1) + 128
 
         # There is no agreement whatsover
         else:
             if np.isfinite(best['CACF']):
                 j.results.loc['best', 'overall'] = best['CACF']
                 j.results.loc['best', 'e_overall'] = ebest['e_CACF']
-                j.results.loc['best', 'f_overall'] = 4 + 32
+                j.results.loc['best', 'f_overall'] = 4 + 256
                 warnings.warn("No estimates could agree. Please inspect the results carefully yourself.")
             elif np.isfinite(best['SW']):
                 frac = ebest[['e_SLS','e_SW']].values /  best[['SLS','SW']].values
                 s = np.argmin(frac)
                 j.results.loc['best', 'overall'] = best[['SLS','SW']][s]
                 j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_SW']][s]
-                j.results.loc['best', 'f_overall'] = 2**s + 32
+                j.results.loc['best', 'f_overall'] = 2**s + 256
                 warnings.warn("No estimates could agree. Please inspect the results carefully yourself.")
     _safety(j)
 
 def validate_best_vs_ACF(j):
     # Validate the ACF vs the best value
+    if np.isfinite(j.results.loc['all', 'ACF']):
+        # Flag if the ACF does not match the 'best' period within 2 sigma
+        condition = np.abs(j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
+                    < 2*j.results.loc['best','e_overall']
+        if not condition:
+            j.results.loc['best', 'f_overall'] += 32
 
-    # Flag if the ACF does not match the 'best' period within 2 sigma
-    condition = np.abs(j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
-                < 2*j.results.loc['best','e_overall']
-    if not condition:
-        j.results.loc['best', 'f_overall'] += 128
-
-    # Flag if the ACF appears to be a harmonic of the 'best' period
-    condition = (np.abs(0.5*j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
-                < 2*j.results.loc['best', 'e_overall']) or\
-                (np.abs(2*j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
-                            < 2*j.results.loc['best', 'e_overall'])
-    if condition:
-        j.results.loc['best', 'f_overall'] += 256
+        # Flag if the ACF appears to be a harmonic of the 'best' period
+        condition = (np.abs(0.5*j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
+                    < 2*j.results.loc['best', 'e_overall']) or\
+                    (np.abs(2*j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
+                                < 2*j.results.loc['best', 'e_overall'])
+        if condition:
+            j.results.loc['best', 'f_overall'] += 64
+    else:
+        j.results.loc['best', 'f_overall'] += 16
     _safety(j)
 
 def validate_sectors(j):
@@ -213,11 +215,11 @@ def validator(j):
     2 - SW-obtained value
     4 - CACF-obtained value
     8 - GP-obtained value
-    16 - Only two out of three estimates agreed
-    32 - No robust matches. CACF assumed best, unless no CACF value available.
-    64 - No ACF measured
-    128 - ACF does not match 'best' period within 2 sigma
-    256 - ACF indicates that 'best' period is a potential harmonic
+    16 - No ACF measured
+    32 - ACF does not match 'best' period within 2 sigma
+    64 - ACF indicates that 'best' period is a potential harmonic
+    128 - Only two out of three estimates agreed
+    256 - No robust matches, CACF assumed best
     512 - One or more sectors disagree strongly across all estimates
     """
     # Validate LombScargle

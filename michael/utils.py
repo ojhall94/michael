@@ -21,11 +21,11 @@ def _decode(flag):
     2 - SW-obtained value
     4 - CACF-obtained value
     8 - GP-obtained value
-    16 - Only two out of three estimates agreed
-    32 - No robust matches, CACF assumed best
-    64 - No ACF measured
-    128 - ACF does not match 'best' period within 2 sigma
-    256 - ACF indicates that 'best' period is a potential harmonic
+    16 - No ACF measured
+    32 - ACF does not match 'best' period within 2 sigma
+    64 - ACF indicates that 'best' period is a potential harmonic
+    128 - Only two out of three estimates agreed
+    256 - No robust matches, CACF assumed best
     512 - One or more sectors disagree strongly across all estimates
     """
 
@@ -34,14 +34,14 @@ def _decode(flag):
         2 : "2: Best rotation is from the Simple Wavelet (SW) method.",
         4 : "4: Best rotation is from the Composite Autocorrelation Function (CACF) method.",
         8 : "8: Best rotation is from the Gaussian Process (GP) method.",
-        16 : "16: Only 2 of the 3 estimates of rotation agreed with one another " +
+        16 : "16: No ACF period could be reliably measured (indicating low power or long periods).",
+        32 : "32: The ACF period does not match the 'best' period within 2 sigma.",
+        64 : "64: The ACF period is potentially a harmonic of the 'best' period (or vice versa!)",
+        128 : "128: Only 2 of the 3 estimates of rotation agreed with one another " +
              "to within 1 sigma.",
-        32 : "32: None of the 3 estimates agreed with one another to within 1 "+
+        256 : "256: None of the 3 estimates agreed with one another to within 1 "+
              "sigma. The CACF estimate is assumed to be the best in this case, "+
              "if it is available.",
-        64 : "64: No ACF period could be reliably measured (indicating low power or long periods).",
-        128 : "128: The ACF period does not match the 'best' period within 2 sigma.",
-        256 : "256: The ACF period is potentially a harmonic of the 'best' period (or vice versa!)",
         512: "512: One or more sectors disagrees strongly across all estimates with " +
             "the others. This may indicate signal from a background star present " +
             "in those sectors.",
