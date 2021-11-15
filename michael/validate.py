@@ -75,11 +75,12 @@ def validate_CACF(j):
             altpeaks_x = []
             mask = np.ones(len(j.sectors), dtype=bool)
             mask[idx] = 0
-            if j.sectors[mask] > 1:
+            if len(j.sectors[mask]) > 1:
                 for s in j.sectors[mask]:
                     for p in j.void[f'{s}_cpeaks']:
                         altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
             else:
+                s = j.sectors[mask][0]
                 for p in j.void[f'{s}_cpeaks']:
                     altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
 
