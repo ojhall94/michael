@@ -50,6 +50,7 @@ def validate_SW(j):
         if np.isfinite(idx):
             j.results.loc['best', 'SW'] = j.results.loc[idx, 'SW']
             j.results.loc['best', 'e_SW'] = j.results.loc[idx, 'e_SW']
+            j.results.loc['best', 'h_SW'] = j.results.loc[idx, 'h_SW']
             j.results.loc['best', 's_SW'] = idx.astype(str)
     _safety(j)
 
@@ -59,20 +60,52 @@ def validate_CACF(j):
         # If there is a CACF value for 'all', consider this the default best
         j.results.loc['best', 'CACF'] = j.results.loc['all', 'CACF']
         j.results.loc['best', 'e_CACF'] = j.results.loc['all', 'e_CACF']
+        j.results.loc['best', 'h_CACF'] = j.results.loc['all', 'h_CACF']
         j.results.loc['best', 's_CACF'] = 'all'
 
     else:
         # If only single-sector cases are available, pick  cases where double
         # peaks are occuring within 2sigma.
+        flag = np.zeros(len(j.sectors), dtype=bool)
 
+        for idx, sector in enumerate(j.sectors):
+            lolim = j.results.loc[sector, 'SLS'] - 2*j.results.loc[sector, 'e_SLS']
+            uplim = j.results.loc[sector, 'SLS'] + 2*j.results.loc[sector, 'e_SLS']
+
+            altpeaks_x = []
+            mask = np.ones(len(j.sectors), dtype=bool)
+            mask[idx] = 0
+            if j.sectors[mask] > 1:
+                for s in j.sectors[mask]:
+                    for p in j.void[f'{s}_cpeaks']:
+                        altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
+            else:
+                for p in j.void[f'{s}_cpeaks']:
+                    altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
+
+            # Check if there are any peaks from other sectors present within 2 sigma
+            flag[idx] = any(altpeaks_x - j.results.loc[sector, 'SLS'] < j.results.loc[sector, 'e_SLS'])
+
+
+        # If flag 1 on one sector, then that's the "best"
+        if len(flag[flag == 1]):
+            idx = j.sectors[np.argmax(flag)]
+
+        # If flag 1 on multiple sectors, then select "best" based on peak height
+        elif len(flag[flag > 1]):
+            s = j.sectors[flag]
+            idx = np.array(j.results[s]['h_CACF'].idxmax())
+
+        # If 0 or 1 on all, then select "best" based on peak height.
+        elif np.min(flag) == np.max(flag):
+            idx = np.array(j.results['h_CACF'].idxmax())
         # If onlys single-sector cases are available, pick the value with
         # the lowest fractional uncertainty
-        sigfrac = j.results['e_CACF'] / j.results['CACF']
-        idx = np.array(sigfrac.idxmin())
 
         if np.isfinite(idx):
             j.results.loc['best', 'CACF'] = j.results.loc[idx, 'CACF']
             j.results.loc['best', 'e_CACF'] = j.results.loc[idx, 'e_CACF']
+            j.results.loc['best', 'h_CACF'] = j.results.loc[idx, 'h_CACF']
             j.results.loc['best', 's_CACF'] = idx.astype(str)
     _safety(j)
 

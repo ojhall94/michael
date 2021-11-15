@@ -273,21 +273,20 @@ def composite_ACF(j, sector, period_range):
 
 
     # Identify the first 10 maxima above a threshold of 0.01
-    cpeaks, _ = find_peaks(cacfsmoo, height = 0.01)
+    cpeaks = find_peaks(cacfsmoo, height = 0.01, distance=10)
 
     # No peaks found
     if len(cpeaks) == 0:
         j.results.loc[sector, 'CACF'] = np.nan
+        j.results.loc[sector, 'e_CACF'] = np.nan
+        j.results.loc[sector, 'h_CACF'] = np.nan
+        j.void[f'{sector}_cacf_popt'] = np.nan
 
-    # Save the metadata
-    j.void[f'{sector}_vizacf'] = vizacf
-    j.void[f'{sector}_cacf'] = cacf
-    j.void[f'{sector}_cacfsmoo'] = cacfsmoo
-    j.void[f'{sector}_cpeaks'] = cpeaks
+    else:
+        peak = cpeaks[0][np.argmax(cpeaks[1]['peak_heights'])]
 
-    if len(cpeaks >= 1):
-        Px = cacf[cpeaks[0]]['time'].value
-        Py = cacfsmoo[cpeaks[0]]
+        Px = cacf[peak]['time'].value
+        Py = cacfsmoo[peak]
 
         lolim = 0.8*Px
         if lolim < period_range[0]:
@@ -303,12 +302,14 @@ def composite_ACF(j, sector, period_range):
 
         j.results.loc[sector, 'CACF'] = popt[0]
         j.results.loc[sector, 'e_CACF'] = popt[1]
+        j.results.loc[sector, 'h_CACF'] = popt[2]
         j.void[f'{sector}_cacf_popt'] = popt
 
-    else:
-        j.results.loc[sector, 'CACF'] = np.nan
-        j.results.loc[sector, 'e_CACF'] = np.nan
-        j.void[f'{sector}_cacf_popt'] = np.nan
+    # Save the metadata
+    j.void[f'{sector}_vizacf'] = vizacf
+    j.void[f'{sector}_cacf'] = cacf
+    j.void[f'{sector}_cacfsmoo'] = cacfsmoo
+    j.void[f'{sector}_cpeaks'] = cpeaks[0]
 
     if j.verbose:
         print(f'### Completed Composite ACF estimation for Sector {sector} on star {j.gaiaid} ###')
