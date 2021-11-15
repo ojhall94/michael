@@ -10,25 +10,25 @@ def validate_SLS(j):
         # If there is a LS value for 'all', consider this the default best
         j.results.loc['best', 'SLS'] = j.results.loc['all', 'SLS']
         j.results.loc['best', 'e_SLS'] = j.results.loc['all', 'e_SLS']
+        j.results.loc['best', 'h_SLS'] = j.results.loc['all', 'h_SLS']
         j.results.loc['best', 's_SLS'] = 'all'
         j.results.loc['best', 'f_SLS'] = j.results.loc['all', 'f_SLS']
 
     else:
         # If onlys single-sector cases are available, pick the value with
-        # the lowest fractional uncertainty on an unflagged value
+        # the highest peak height on an unflagged value
         s = j.results['f_SLS'] == 0
         if len(j.results[s]) > 0:
-            sigfrac = j.results[s]['e_SLS'] / j.results[s]['SLS']
-
+            idx = np.array(j.results[s]['h_SLS'].idxmax())
         # It may be the case that there are only flagged values. In this
         # case, ignore the flags
         else:
-            sigfrac = j.results['e_SLS'] / j.results['SLS']
+            idx = np.array(j.results['h_SLS'].idxmax())
 
-        idx = np.array(sigfrac.idxmin())
         if np.isfinite(idx):
             j.results.loc['best', 'SLS'] = j.results.loc[idx, 'SLS']
             j.results.loc['best', 'e_SLS'] = j.results.loc[idx, 'e_SLS']
+            j.results.loc['best', 'h_SLS'] = j.results.loc[idx, 'h_SLS']
             j.results.loc['best', 's_SLS'] = idx.astype(str)
             j.results.loc['best', 'f_SLS'] = j.results.loc[idx, 'f_SLS']
     _safety(j)
@@ -39,13 +39,13 @@ def validate_SW(j):
         # If there is a SW value for 'all', consider this the default best
         j.results.loc['best', 'SW'] = j.results.loc['all', 'SW']
         j.results.loc['best', 'e_SW'] = j.results.loc['all', 'e_SW']
+        j.results.loc['best', 'h_SW'] = j.results.loc['all', 'h_SW']
         j.results.loc['best', 's_SW'] = 'all'
 
     else:
         # If onlys single-sector cases are available, pick the value with
-        # the lowest fractional uncertainty
-        sigfrac = j.results['e_SW'] / j.results['SW']
-        idx = np.array(sigfrac.idxmin())
+        # the highest peak
+        idx = np.array(j.results['h_SW'].idxmax())
 
         if np.isfinite(idx):
             j.results.loc['best', 'SW'] = j.results.loc[idx, 'SW']
@@ -62,6 +62,9 @@ def validate_CACF(j):
         j.results.loc['best', 's_CACF'] = 'all'
 
     else:
+        # If only single-sector cases are available, pick  cases where double
+        # peaks are occuring within 2sigma.
+
         # If onlys single-sector cases are available, pick the value with
         # the lowest fractional uncertainty
         sigfrac = j.results['e_CACF'] / j.results['CACF']

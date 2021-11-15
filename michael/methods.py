@@ -82,6 +82,7 @@ def simple_astropy_lombscargle(j, sector, period_range):
 
     j.results.loc[sector, 'SLS'] = popt[0]
     j.results.loc[sector, 'e_SLS'] = popt[1]
+    j.results.loc[sector, 'h_SLS'] = popt[2]
     j.results.loc[sector, 'f_SLS'] = 0
 
     # Perform quality checks
@@ -100,14 +101,14 @@ def simple_astropy_lombscargle(j, sector, period_range):
         if len(peaks) > 1:
             s = (pg.period.value > 0.8*max_period) & (pg.period.value < 1.2*max_period)
 
-
-
             popt, pcov = curve_fit(_gaussian_fn, pg[s].period.value, pg[s].power.value,
                                     p0 = [max_period, 0.2*max_period, max_power],
                                     bounds = ([lolim, 0., 0.9*max_power],[uplim, 0.25*max_period, 1.1*max_power]))
 
             j.results.loc[sector, 'SLS'] = popt[0]
             j.results.loc[sector, 'e_SLS'] = popt[1]
+            j.results.loc[sector, 'h_SLS'] = popt[2]
+
 
     ## Condition (4)
     sig_rms = np.sqrt(np.mean((clc.flux.value - 1)**2))
@@ -203,6 +204,8 @@ def simple_wavelet(j, sector, period_range):
 
     j.results.loc[sector, 'SW'] = popt[0]
     j.results.loc[sector, 'e_SW'] = popt[1]
+    j.results.loc[sector, 'h_SW'] = popt[2]
+
 
     # Save the gaussian fit
     j.void[f'{sector}_wavelet_popt'] = popt
