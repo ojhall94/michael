@@ -276,7 +276,7 @@ def composite_ACF(j, sector, period_range):
     cpeaks = find_peaks(cacfsmoo, height = 0.01, distance=10)
 
     # No peaks found
-    if len(cpeaks) == 0:
+    if len(cpeaks[0]) == 0:
         j.results.loc[sector, 'CACF'] = np.nan
         j.results.loc[sector, 'e_CACF'] = np.nan
         j.results.loc[sector, 'h_CACF'] = np.nan

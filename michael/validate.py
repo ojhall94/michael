@@ -69,8 +69,8 @@ def validate_CACF(j):
         flag = np.zeros(len(j.sectors), dtype=bool)
 
         for idx, sector in enumerate(j.sectors):
-            lolim = j.results.loc[sector, 'SLS'] - 2*j.results.loc[sector, 'e_SLS']
-            uplim = j.results.loc[sector, 'SLS'] + 2*j.results.loc[sector, 'e_SLS']
+            lolim = j.results.loc[sector, 'CACF'] - 2*j.results.loc[sector, 'e_CACF']
+            uplim = j.results.loc[sector, 'CACF'] + 2*j.results.loc[sector, 'e_CACF']
 
             altpeaks_x = []
             mask = np.ones(len(j.sectors), dtype=bool)
@@ -85,7 +85,7 @@ def validate_CACF(j):
                     altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
 
             # Check if there are any peaks from other sectors present within 2 sigma
-            flag[idx] = any(altpeaks_x - j.results.loc[sector, 'SLS'] < j.results.loc[sector, 'e_SLS'])
+            flag[idx] = any(altpeaks_x - j.results.loc[sector, 'CACF'] < j.results.loc[sector, 'e_CACF'])
 
 
         # If flag 1 on one sector, then that's the "best"
@@ -127,20 +127,20 @@ def validate_best(j):
 
     # If they disagree, see if two of them are in agreement
     else:
-        # We check in this order, as the priority is SLS -> SW -> CACF
+        # We check in this order, as the priority is CACF -> SW -> SLS
         best = j.results.loc['best', ['SLS','SW','CACF']]
         ebest = j.results.loc['best', ['e_SLS','e_SW','e_CACF']]
         a = np.abs(np.diff(best[['SLS','SW']])) < np.sqrt(np.sum(ebest[['e_SLS', 'e_SW']]**2))
         b = np.abs(np.diff(best[['SLS','CACF']])) < np.sqrt(np.sum(ebest[['e_SLS', 'e_CACF']]**2))
         c = np.abs(np.diff(best[['SW','CACF']])) < np.sqrt(np.sum(ebest[['e_SW', 'e_CACF']]**2))
 
-        # SLS and SW are in agreement
-        if a:
-            frac = ebest[['e_SLS','e_SW']].values /  best[['SLS','SW']].values
+        # SW and CACF are in agreement
+        if c:
+            frac = ebest[['e_SW', 'e_CACF']].values /  best[['SW', 'CACF']].values
             s = np.argmin(frac)
-            j.results.loc['best', 'overall'] = best[['SLS','SW']][s]
-            j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_SW']][s]
-            j.results.loc['best', 'f_overall'] = 2**s + 128
+            j.results.loc['best', 'overall'] = best[['SW', 'CACF']][s]
+            j.results.loc['best', 'e_overall'] = ebest[['e_SW', 'e_CACF']][s]
+            j.results.loc['best', 'f_overall'] = 2**(s+1) + 128
 
         # SLS and CACF are in agreement
         elif b:
@@ -153,13 +153,13 @@ def validate_best(j):
             else:
                  j.results.loc['best', 'f_overall'] = 4 + 128
 
-        # SW and CACF are in agreement
-        elif c:
-            frac = ebest[['e_SW', 'e_CACF']].values /  best[['SW', 'CACF']].values
+        # SLS and SW are in agreement
+        elif a:
+            frac = ebest[['e_SLS','e_SW']].values /  best[['SLS','SW']].values
             s = np.argmin(frac)
-            j.results.loc['best', 'overall'] = best[['SW', 'CACF']][s]
-            j.results.loc['best', 'e_overall'] = ebest[['e_SW', 'e_CACF']][s]
-            j.results.loc['best', 'f_overall'] = 2**(s+1) + 128
+            j.results.loc['best', 'overall'] = best[['SLS','SW']][s]
+            j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_SW']][s]
+            j.results.loc['best', 'f_overall'] = 2**s + 128
 
         # There is no agreement whatsover
         else:
