@@ -55,6 +55,7 @@ class data_class():
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
         star = eleanor.multi_sectors(coords = coords, sectors = 'all')
 
+
         for s in star:
             try:
                 datum = eleanor.TargetData(s)
@@ -65,6 +66,10 @@ class data_class():
                 print('Try running eleanor.Update(), or raise an issue on the '
                         'Eleanor GitHub!')
                 print('Moving on the next sector... \n')
+
+            except ValueError:
+                print(f'There may be an issue where eleanor is detecting multiple '
+                        'instances of a single sector. Skipping this sector.')
 
     def build_eleanor_lc(self):
         """

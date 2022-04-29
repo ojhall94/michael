@@ -158,7 +158,7 @@ class janet():
         """
         Updates `eleanor` for a list of sectors.
         """
-        for s in sectors:
+        for idx, s in enumerate(sectors):
             eleanor.Update(s)
         print(f'Updated eleanor Sectors {sectors}.')
 
@@ -188,7 +188,7 @@ class janet():
 
 
     @staticmethod
-    def boot(df, index=0, output_path = '/Users/oliver hall/Research/unicorn/data/eleanor'):
+    def boot(df, index, output_path = '/Users/oliver hall/Research/unicorn/data/eleanor'):
         """
         Sets up Janet quickly.
         """
