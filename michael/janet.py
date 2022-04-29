@@ -18,6 +18,7 @@ the Universe (if only).
 import os, warnings
 import pandas as pd
 import numpy as np
+import eleanor
 import astropy.units as u
 
 from .data import data_class
@@ -152,6 +153,14 @@ class janet():
             print(f'\n------ Decoding Overall Period Flag {int(flag)} ------')
             print(_decode(flag))
             print('No other flags raised. \n')
+
+    def update(self, sectors):
+        """
+        Updates `eleanor` for a list of sectors.
+        """
+        for s in sectors:
+            eleanor.Update(s)
+        print(f'Updated eleanor Sectors {sectors}.')
 
     def run(self, period_range = (0.2, 27.4)):
         self.prepare_data()

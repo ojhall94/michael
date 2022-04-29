@@ -45,6 +45,7 @@ class data_class():
         if any(np.diff(self.j.sectors) > 1):
             self.j.gaps = True
 
+
     def download_eleanor_data(self):
         """ Download Eleanor data.
         Data may not always be available due to not being observed by TESS, or
