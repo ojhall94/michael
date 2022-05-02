@@ -105,12 +105,15 @@ class janet():
         This needs some polish to get multiple methods working.
         """
         sectorlist = list(self.sectors)
+
+        # TO DO: Remove this, gaps are automatically accounted for in new build
         if not self.gaps:
             sectorlist += ['all']
 
         self.period_range = period_range
 
         # Loop over all sectors.
+        # TO DO: This shouldn't be needed in the new build
         if len(self.sectors) == 1:
             simple_astropy_lombscargle(self, sector='all', period_range = period_range)
             simple_wavelet(self, sector='all', period_range = period_range)
