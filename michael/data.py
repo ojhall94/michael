@@ -41,22 +41,22 @@ class data_class():
 
         # Check which sectors have been downloaded
         self.j.sfiles = glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')
-        self.j.sectornumbers = np.unique(np.sort([int(f.split('_')[-1][:-5]) for f in self.j.sfiles]))
+        self.j.sectorlist = np.unique(np.sort([int(f.split('_')[-1][:-5]) for f in self.j.sfiles]))
 
         # Create sectorlabels that connect sectors together.
         sectors = []
         jdx = 0
-        for idx, sector in enumerate(self.j.sectornumbers):
+        for idx, sector in enumerate(self.j.sectorlist):
             if jdx > idx:
                 continue
             else:
                 label = f"{sector}"
-                for jdx in np.arange(idx+1, len(self.j.sectornumbers)):
-                    diff = np.diff([self.j.sectornumbers[jdx-1],self.j.sectornumbers[jdx]])
+                for jdx in np.arange(idx+1, len(self.j.sectorlist)):
+                    diff = np.diff([self.j.sectorlist[jdx-1],self.j.sectorlist[jdx]])
                     if diff == 1:
                         continue
                     elif jdx-1 != idx:
-                        label += f"-{self.j.sectornumbers[jdx-1]}"
+                        label += f"-{self.j.sectorlist[jdx-1]}"
                         break
                     else:
                         break
@@ -95,7 +95,7 @@ class data_class():
         a well as the full Eleanor Target Pixel File data.
         """
         # Looping and appending all sectors
-        for s in self.j.sectornumbers:
+        for s in self.j.sectorlist:
             datum = eleanor.TargetData(eleanor.Source(fn=f'lc_sector_{s}.fits',
                                                      fn_dir=f'{self.j.output_path}/{self.j.gaiaid}/'))
             q = datum.quality == 0
@@ -107,6 +107,11 @@ class data_class():
             self.j.void[f'clc_{s}'] = lc.normalize().remove_nans().remove_outliers()
 
         # Combine consecutive lightcurves
+        all = self.j.void[f'clc_{self.j.sectorlist[0]}']
+        for s in self.j.sectorlist:
+            all = all.append(self.j.void[f'clc_{s}'])
+        self.j.void[f'clc_all'] = all
+
         for s in self.j.sectors:
             if len(s.split('-')) > 1:
                 sectors = np.arange(int(s.split('-')[0]), int(s.split('-')[-1])+1)

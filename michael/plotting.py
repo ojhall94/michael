@@ -20,15 +20,18 @@ colmap = sns.color_palette('colorblind', 8)
 def plot_tpf(j, fig, ax):
     # Plot Sector 0 TPF
     if not j.override:
-        ax.set_title(f'Frame 0 Sector {j.sectors[0]}')
+        sector0 = j.sectorlist[0]
+        ax.set_title(f'Frame 0 Sector {sector0}')
         ax.set_xlabel('X')
         ax.set_ylabel('Y')
-        ax.imshow(np.log10(j.void[f'datum_{j.sectors[0]}'].tpf[0]), zorder=1)
-        pix = np.where(j.void[f'datum_{j.sectors[0]}'].aperture > 0)
+        ax.imshow(np.log10(j.void[f'datum_{sector0}'].tpf[0]), zorder=1)
+        pix = np.where(j.void[f'datum_{sector0}'].aperture > 0)
         ax.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
         ax.legend(loc='upper left', fontsize=_label_fontsize)
 
 def plot_lcs(j, fig, ax):
+
+    # Sort out the text
     text = ''
     if len(j.sectors) > 1:
         for s in j.sectors[:-1]:
@@ -38,44 +41,33 @@ def plot_lcs(j, fig, ax):
     else:
         text = j.sectors[0]
     ax.set_title(f'Full TESS LC, Sectors: {text}. Normalised, outliers removed.')
-    if len(j.sectors) >= 2:
-        if not j.gaps:
-            for s in j.sectors:
-                j.void[f'clc_{s}'].plot(ax=ax, lw=1)
-            ax.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
-        else:
-            xstep = 0
-            xlabels = []
-            xlocs = []
-            for s in j.sectors:
-                lc = j.void[f'clc_{s}']
-                xvals = lc.time.value - lc.time.value.min() + xstep
-                ax.plot(xvals, lc.flux, label=f'Sector {s}', lw=1)
-                xstep = xvals.max()
-                if s != j.sectors[-1]:
-                    ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10)
-                xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
-                xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
 
-            ax.set_xticks(np.array(xlocs).flatten())
-            ax.set_xticklabels(np.array(xlabels).flatten().astype(int))
-            ax.legend(loc='best')
-            ax.set_xlabel('Normalised Time [JD]')
-            ax.set_xlim(0, xstep)
-    else:
-        j.void[f'clc_all'].plot(ax=ax, lw=1, c='k')
-        ax.set_xlim(j.void[f'clc_all'].time.min().value, j.void[f'clc_all'].time.max().value)
+    xstep = 0
+    xlabels = []
+    xlocs = []
+    for s in j.sectors:
+        lc = j.void[f'clc_{s}']
+        xvals = lc.time.value - lc.time.value.min() + xstep
+        ax.plot(xvals, lc.flux, label=f'Sector(s) {s}', lw=1)
+        xstep = xvals.max()
+        if s != j.sectors[-1]:
+            ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10)
+        xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
+        xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
+
+    ax.set_xticks(np.array(xlocs).flatten())
+    ax.set_xticklabels(np.array(xlabels).flatten().astype(int))
+    ax.legend(loc='best')
+    ax.set_xlabel('Normalised Time [JD]')
+    ax.set_xlim(0, xstep)
     ax.set_ylabel('Normalised Flux')
 
 def plot_periodograms(j, fig, ax):
     best_sls = j.results.loc['best', 's_SLS']
 
-    if not j.gaps:
-        j.void[f'pg_all'].plot(ax=ax, view='period', label=f'All Sectors',lw=2, zorder=2, c='k')
-    if len(j.sectors) >= 2:
-        for s in j.sectors:
-            j.void[f'pg_{s}'].plot(ax=ax, view='period',
-            label=f'Sector {s}', lw=2, zorder=2)
+    for s in j.sectors:
+        j.void[f'pg_{s}'].plot(ax=ax, view='period',
+        label=f'Sector(s) {s}', lw=2, zorder=2)
     ax.axvline(j.results.loc["best", "SLS"], c=cmap[4], lw=5, ls='--', zorder=1, label=f'P = {j.results.loc["best", "SLS"]:.2f} d')
     ax.set_xlim(j.void[f'pg_{best_sls}'].period.min().value, j.void[f'pg_{best_sls}'].period.max().value)
     ax.set_ylim(0)
@@ -86,10 +78,7 @@ def plot_periodograms(j, fig, ax):
 def plot_periodogram_fit(j, fig, ax):
     best_sls = j.results.loc['best', 's_SLS']
 
-    if best_sls == 'all':
-        text = 'All Sectors'
-    else:
-        text = f'Sector {best_sls}'
+    text = f'Sector(s) {best_sls}'
 
     ax.get_yaxis().set_visible(False)
     ax.plot(j.void[f'p_{best_sls}'],
@@ -97,45 +86,42 @@ def plot_periodogram_fit(j, fig, ax):
             label = rf'$\sigma$ = {j.results.loc["best", "e_SLS"]:.2f} d')
     ax.set_xlim(j.void[f'popt_{best_sls}'][0] - 5*j.void[f'popt_{best_sls}'][1],
                     j.void[f'popt_{best_sls}'][0] + 5*j.void[f'popt_{best_sls}'][1])
-    if not j.gaps:
-        j.void[f'pg_all'].plot(ax=ax, lw=2, c='k', zorder=0)
-    if len(j.sectors) >= 2:
-        for s in j.sectors:
-            j.void[f'pg_{s}'].plot(ax=ax,lw=2, zorder=0)
+
+    for s in j.sectors:
+        j.void[f'pg_{s}'].plot(ax=ax,lw=2, zorder=0)
     ax.legend(loc='best', fontsize=_label_fontsize)
     ax.set_xlabel('Period [d]')
     ax.set_title(f'Fit to LSP {text}')
 
 def plot_wavelet_contour(j, fig, ax):
-    if not j.gaps:
-        ax.contourf(j.void['all_wt'].taus, 1./j.void['all_wt'].nus, j.void['all_wwz'])
+    # if not j.gaps:
+    #     ax.contourf(j.void['all_wt'].taus, 1./j.void['all_wt'].nus, j.void['all_wwz'])
+    #
+    #     if len(j.sectors) >= 2:
+    #         for s in j.sectors[1:]:
+    #             ax.axvline(j.void[f'clc_{s}'].time.min().value, c='w', ls='-.', lw=3)
+    #         for s in j.sectors:
+    #             ax.text(j.void[f'clc_{s}'].time.min().value+1, (1./j.void[f'all_wt'].nus).max() * 0.925, f'S{s}', c='w', weight='bold')
+    #     ax.axhline(j.results.loc['best', 'SW'], ls='--', lw = 3, c='w', label=f'P = {j.results.loc["best", "SW"]:.2f} d')
+    #
+    # else:
+    xstep = 0
+    xlabels = []
+    xlocs = []
 
-        if len(j.sectors) >= 2:
-            for s in j.sectors[1:]:
-                ax.axvline(j.void[f'clc_{s}'].time.min().value, c='w', ls='-.', lw=3)
-            for s in j.sectors:
-                ax.text(j.void[f'clc_{s}'].time.min().value+1, (1./j.void[f'all_wt'].nus).max() * 0.925, f'S{s}', c='w', weight='bold')
-        ax.axhline(j.results.loc['best', 'SW'], ls='--', lw = 3, c='w', label=f'P = {j.results.loc["best", "SW"]:.2f} d')
+    for s in j.sectors:
+        xvals = j.void[f'{s}_wt'].taus - j.void[f'{s}_wt'].taus.min() + xstep
+        ax.contourf(xvals, 1./j.void[f'{s}_wt'].nus, j.void[f'{s}_wwz'])
+        ax.text(xstep+1, (1./j.void[f'{s}_wt'].nus).max() * 0.925, f'S{s}', c='w', weight='bold')
+        xstep = xvals.max()
+        if s != j.sectors[-1]:
+            ax.axvline(xstep, c='w', ls='-', lw=10)
+        xlabels.append(np.nanpercentile(j.void[f'{s}_wt'].taus, [25, 50, 75]))
+        xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
 
-    else:
-        xstep = 0
-        xlabels = []
-        xlocs = []
-
-        for s in j.sectors:
-            xvals = j.void[f'{s}_wt'].taus - j.void[f'{s}_wt'].taus.min() + xstep
-            ax.contourf(xvals, 1./j.void[f'{s}_wt'].nus, j.void[f'{s}_wwz'])
-            ax.text(xstep+1, (1./j.void[f'{s}_wt'].nus).max() * 0.925, f'S{s}', c='w', weight='bold')
-            xstep = xvals.max()
-            if s != j.sectors[-1]:
-                ax.axvline(xstep, c='w', ls='-', lw=10)
-            xlabels.append(np.nanpercentile(j.void[f'{s}_wt'].taus, [25, 50, 75]))
-            xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
-
-
-        ax.axhline(j.results.loc['best', 'SW'], ls='--', lw = 3, c='w', label=f'P = {j.results.loc["best", "SW"]:.2f} d')
-        ax.set_xticks(np.array(xlocs).flatten())
-        ax.set_xticklabels(np.array(xlabels).flatten().astype(int))
+    ax.axhline(j.results.loc['best', 'SW'], ls='--', lw = 3, c='w', label=f'P = {j.results.loc["best", "SW"]:.2f} d')
+    ax.set_xticks(np.array(xlocs).flatten())
+    ax.set_xticklabels(np.array(xlabels).flatten().astype(int))
 
     ax.set_title('Wavelet Transform')
     ax.legend(loc='best', fontsize=_label_fontsize)
@@ -144,26 +130,23 @@ def plot_wavelet_contour(j, fig, ax):
     ax.set_ylim(j.period_range[0], j.period_range[1])
 
 def plot_wavelet_fit(j, fig, ax):
-    if not j.gaps:
-        taus = j.void['all_wt'].taus
-        ws = np.sum(j.void['all_wwz'], axis=1)
-        ws /= ws.max()
-        p = 1/j.void['all_wt'].nus
-        ax.plot(p, ws, lw=2, c='k')
+    # if not j.gaps:
+    #     taus = j.void['all_wt'].taus
+    #     ws = np.sum(j.void['all_wwz'], axis=1)
+    #     ws /= ws.max()
+    #     p = 1/j.void['all_wt'].nus
+    #     ax.plot(p, ws, lw=2, c='k')
 
-    if len(j.sectors) > 1:
-        for s in j.sectors:
-            taus = j.void[f'{s}_wt'].taus
-            ws = np.sum(j.void[f'{s}_wwz'], axis=1)
-            ws /= ws.max()
-            p = 1/j.void[f'{s}_wt'].nus
-            ax.plot(p, ws, lw=2)
+    # if len(j.sectors) > 1:
+    for s in j.sectors:
+        taus = j.void[f'{s}_wt'].taus
+        ws = np.sum(j.void[f'{s}_wwz'], axis=1)
+        ws /= ws.max()
+        p = 1/j.void[f'{s}_wt'].nus
+        ax.plot(p, ws, lw=2)
 
     best_sw = j.results.loc['best', 's_SW']
-    if best_sw == 'all':
-        text = 'All Sectors'
-    else:
-        text = f'Sector {best_sw}'
+    text = f'Sector(s) {best_sw}'
 
     taus = j.void[f'{best_sw}_wt'].taus
     w = np.sum(j.void[f'{best_sw}_wwz'], axis=1)
@@ -183,14 +166,14 @@ def plot_wavelet_fit(j, fig, ax):
                     j.void[f'{best_sw}_wavelet_popt'][0] + 5*j.void[f'{best_sw}_wavelet_popt'][1])
 
 def plot_cacf(j, fig, ax):
-    if not j.gaps:
-        j.void['all_cacf'].plot(ax=ax, c='k', lw=1,  zorder=1, alpha=.5)
-        ax.plot(j.void['all_cacf'].time.value, j.void['all_cacfsmoo'], c='k', lw=2, label='All Sectors', zorder=4)
+    # if not j.gaps:
+    #     j.void['all_cacf'].plot(ax=ax, c='k', lw=1,  zorder=1, alpha=.5)
+    #     ax.plot(j.void['all_cacf'].time.value, j.void['all_cacfsmoo'], c='k', lw=2, label='All Sectors', zorder=4)
 
-    if len(j.sectors) > 1:
-        for idx, s in enumerate(j.sectors):
-            j.void[f'{s}_cacf'].plot(ax=ax, c=colmap[idx], lw=1,  zorder=2, alpha=.5)
-            ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, label=f'Sector {s}', zorder=5)
+    # if len(j.sectors) > 1:
+    for idx, s in enumerate(j.sectors):
+        j.void[f'{s}_cacf'].plot(ax=ax, c=colmap[idx], lw=1,  zorder=2, alpha=.5)
+        ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, label=f'Sector {s}', zorder=5)
 
 
     ax.set_xlim(j.void['vizacf'].time.value.min(), j.void['vizacf'].time.value.max())
@@ -216,10 +199,7 @@ def plot_cacf(j, fig, ax):
 def plot_cacf_fit(j, fig, ax):
     best_cacf = j.results.loc['best', 's_CACF']
 
-    if best_cacf == 'all':
-        text = 'All Sectors'
-    else:
-        text = f'Sector {best_cacf}'
+    text = f'Sector(s) {best_cacf}'
 
     ax.get_yaxis().set_visible(False)
     ax.plot(j.void[f'{best_cacf}_cacf'].time.value,
@@ -230,13 +210,12 @@ def plot_cacf_fit(j, fig, ax):
                     j.void[f'{best_cacf}_cacf_popt'][0] + 5*j.void[f'{best_cacf}_cacf_popt'][1])
     ax.set_ylim(0.)
 
-    if not j.gaps:
-        ax.plot(j.void[f'all_cacf'].time.value, j.void[f'all_cacfsmoo'], c='k', lw=2, zorder=0)
+    # if not j.gaps:
+    #     ax.plot(j.void[f'all_cacf'].time.value, j.void[f'all_cacfsmoo'], c='k', lw=2, zorder=0)
 
-    if len(j.sectors) > 1:
-        for idx, s in enumerate(j.sectors):
-            ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, zorder=0)
-
+    # if len(j.sectors) > 1:
+    for idx, s in enumerate(j.sectors):
+        ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, zorder=0)
 
     ax.legend(loc='best', fontsize=_label_fontsize)
     ax.set_xlabel('Period [d]')
