@@ -173,7 +173,7 @@ def plot_cacf(j, fig, ax):
     # if len(j.sectors) > 1:
     for idx, s in enumerate(j.sectors):
         j.void[f'{s}_cacf'].plot(ax=ax, c=colmap[idx], lw=1,  zorder=2, alpha=.5)
-        ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, label=f'Sector {s}', zorder=5)
+        ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, label=f'Sector(s) {s}', zorder=5)
 
 
     ax.set_xlim(j.void['vizacf'].time.value.min(), j.void['vizacf'].time.value.max())
@@ -182,9 +182,9 @@ def plot_cacf(j, fig, ax):
                 j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'], color=cmap[6], zorder=2,
                 label=f'P = {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d',
                 alpha=.5)
-    ax.axvspan(j.results.loc['best', 'overall'] - 2*j.results.loc['best', 'e_overall'],
-                j.results.loc['best', 'overall'] + 2*j.results.loc['best', 'e_overall'], color=cmap[7], zorder=1,
-                label=r'$2\sigma$', alpha=.5)
+    # ax.axvspan(j.results.loc['best', 'overall'] - 2*j.results.loc['best', 'e_overall'],
+    #             j.results.loc['best', 'overall'] + 2*j.results.loc['best', 'e_overall'], color=cmap[7], zorder=1,
+    #             label=r'$2\sigma$', alpha=.5)
 
     if np.isfinite(j.results.loc['best','CACF']):
         ax.axvline(j.results.loc['best', 'CACF'], c=cmap[3],
@@ -210,10 +210,6 @@ def plot_cacf_fit(j, fig, ax):
                     j.void[f'{best_cacf}_cacf_popt'][0] + 5*j.void[f'{best_cacf}_cacf_popt'][1])
     ax.set_ylim(0.)
 
-    # if not j.gaps:
-    #     ax.plot(j.void[f'all_cacf'].time.value, j.void[f'all_cacfsmoo'], c='k', lw=2, zorder=0)
-
-    # if len(j.sectors) > 1:
     for idx, s in enumerate(j.sectors):
         ax.plot(j.void[f'{s}_cacf'].time.value, j.void[f'{s}_cacfsmoo'], c=colmap[idx], lw=2, zorder=0)
 
@@ -227,6 +223,7 @@ def plot_acf(j, fig, ax):
             label = 'Smoothed ACF', zorder=4)
     ax.set_ylim(j.void['vizacf'].flux.value.min(), j.void['vizacf'].flux.value.max()+0.1)
     ax.set_xlim(j.void['vizacf'].time.value.min(), j.void['vizacf'].time.value.max())
+
     if len(j.void['peaks']) >= 1:
         ax.axvline(j.void['vizacf'].time.value[j.void['peaks'][0]], c=cmap[3],
                         label = f'P = {j.results.loc["all", "ACF"]:.2f} d',
@@ -235,9 +232,9 @@ def plot_acf(j, fig, ax):
                 j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'], color=cmap[6], zorder=2,
                 label=f'P = {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d',
                 alpha=.5)
-    ax.axvspan(j.results.loc['best', 'overall'] - 2*j.results.loc['best', 'e_overall'],
-                j.results.loc['best', 'overall'] + 2*j.results.loc['best', 'e_overall'], color=cmap[7], zorder=1,
-                label=r'$2\sigma$', alpha=.5)
+    # ax.axvspan(j.results.loc['best', 'overall'] - 2*j.results.loc['best', 'e_overall'],
+    #             j.results.loc['best', 'overall'] + 2*j.results.loc['best', 'e_overall'], color=cmap[7], zorder=1,
+    #             label=r'$2\sigma$', alpha=.5)
     ax.set_title("Autocorrelation Function for all Sectors")
     ax.set_ylabel('Normalised ACF')
     ax.axhline(0.01, label='Detection threshold', c='k', zorder=0)

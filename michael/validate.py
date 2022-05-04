@@ -3,110 +3,127 @@ import numpy as np
 import warnings
 from .utils import _safety
 
+def longest_sector(j):
+    diffs = np.zeros(len(j.sectors))
+    for idx, s in enumerate(j.sectors):
+        d = np.diff(np.array(s.split('-')).astype(int))
+        if np.isfinite(d):
+            diffs[idx] = d
+
+    if any(diffs > 0):
+        return j.sectors[np.argmax(diffs)]
+    else:
+        return None
+
 def validate_SLS(j):
     j.results['s_SLS'] = np.nan
     # Validate LombScargle
-    # if np.isfinite(j.results.loc['all', 'SLS']):
-    #     # If there is a LS value for 'all', consider this the default best
-    #     j.results.loc['best', 'SLS'] = j.results.loc['all', 'SLS']
-    #     j.results.loc['best', 'e_SLS'] = j.results.loc['all', 'e_SLS']
-    #     j.results.loc['best', 'h_SLS'] = j.results.loc['all', 'h_SLS']
-    #     j.results.loc['best', 's_SLS'] = 'all'
-    #     j.results.loc['best', 'f_SLS'] = j.results.loc['all', 'f_SLS']
-    #
-    # else:
-        # If onlys single-sector cases are available, pick the value with
-    # the highest peak height on an unflagged value
-    s = j.results['f_SLS'] == 0
-    if len(j.results[s]) > 0:
-        idx = np.array(j.results[s]['h_SLS'].idxmax())
-    # It may be the case that there are only flagged values. In this
-    # case, ignore the flags
-    else:
-        idx = np.array(j.results['h_SLS'].idxmax())
+    longest = longest_sector(j)
+    if longest is not None:
+        # Consider the longest sector the default best
+        j.results.loc['best', 'SLS'] = j.results.loc[longest, 'SLS']
+        j.results.loc['best', 'e_SLS'] = j.results.loc[longest, 'e_SLS']
+        j.results.loc['best', 'h_SLS'] = j.results.loc[longest, 'h_SLS']
+        j.results.loc['best', 's_SLS'] = longest
+        j.results.loc['best', 'f_SLS'] = j.results.loc[longest, 'f_SLS']
 
-    j.results.loc['best', 'SLS'] = j.results.loc[idx, 'SLS']
-    j.results.loc['best', 'e_SLS'] = j.results.loc[idx, 'e_SLS']
-    j.results.loc['best', 'h_SLS'] = j.results.loc[idx, 'h_SLS']
-    j.results.loc['best', 's_SLS'] = idx.astype(str)
-    j.results.loc['best', 'f_SLS'] = j.results.loc[idx, 'f_SLS']
+    else:
+        # If onlys single-sector cases are available, pick the value with
+        # the highest peak height on an unflagged value
+        s = j.results['f_SLS'] == 0
+        if len(j.results[s]) > 0:
+            idx = np.array(j.results[s]['h_SLS'].idxmax())
+        # It may be the case that there are only flagged values. In this
+        # case, ignore the flags
+        else:
+            idx = np.array(j.results['h_SLS'].idxmax())
+
+        j.results.loc['best', 'SLS'] = j.results.loc[idx, 'SLS']
+        j.results.loc['best', 'e_SLS'] = j.results.loc[idx, 'e_SLS']
+        j.results.loc['best', 'h_SLS'] = j.results.loc[idx, 'h_SLS']
+        j.results.loc['best', 's_SLS'] = idx.astype(str)
+        j.results.loc['best', 'f_SLS'] = j.results.loc[idx, 'f_SLS']
     _safety(j)
 
 def validate_SW(j):
     j.results['s_SW'] = np.nan
-    # if np.isfinite(j.results.loc['all', 'SW']):
-    #     # If there is a SW value for 'all', consider this the default best
-    #     j.results.loc['best', 'SW'] = j.results.loc['all', 'SW']
-    #     j.results.loc['best', 'e_SW'] = j.results.loc['all', 'e_SW']
-    #     j.results.loc['best', 'h_SW'] = j.results.loc['all', 'h_SW']
-    #     j.results.loc['best', 's_SW'] = 'all'
 
-    # else:
-    # If onlys single-sector cases are available, pick the value with
-    # the highest peak
-    idx = np.array(j.results['h_SW'].idxmax())
+    longest = longest_sector(j)
+    if longest is not None:
+        #  Consider the longest sector the default best
+        j.results.loc['best', 'SW'] = j.results.loc[longest, 'SW']
+        j.results.loc['best', 'e_SW'] = j.results.loc[longest, 'e_SW']
+        j.results.loc['best', 'h_SW'] = j.results.loc[longest, 'h_SW']
+        j.results.loc['best', 's_SW'] = longest
 
-    j.results.loc['best', 'SW'] = j.results.loc[idx, 'SW']
-    j.results.loc['best', 'e_SW'] = j.results.loc[idx, 'e_SW']
-    j.results.loc['best', 'h_SW'] = j.results.loc[idx, 'h_SW']
-    j.results.loc['best', 's_SW'] = idx.astype(str)
+    else:
+        # If onlys single-sector cases are available, pick the value with
+        # the highest peak
+        idx = np.array(j.results['h_SW'].idxmax())
+
+        j.results.loc['best', 'SW'] = j.results.loc[idx, 'SW']
+        j.results.loc['best', 'e_SW'] = j.results.loc[idx, 'e_SW']
+        j.results.loc['best', 'h_SW'] = j.results.loc[idx, 'h_SW']
+        j.results.loc['best', 's_SW'] = idx.astype(str)
     _safety(j)
 
 def validate_CACF(j):
     j.results['s_CACF'] = np.nan
-    # if np.isfinite(j.results.loc['all', 'CACF']):
-    #     # If there is a CACF value for 'all', consider this the default best
-    #     j.results.loc['best', 'CACF'] = j.results.loc['all', 'CACF']
-    #     j.results.loc['best', 'e_CACF'] = j.results.loc['all', 'e_CACF']
-    #     j.results.loc['best', 'h_CACF'] = j.results.loc['all', 'h_CACF']
-    #     j.results.loc['best', 's_CACF'] = 'all'
+
+    longest = longest_sector(j)
+    if longest is not None:
+        #  Consider the longest sector the default best
+        j.results.loc['best', 'CACF'] = j.results.loc[longest, 'CACF']
+        j.results.loc['best', 'e_CACF'] = j.results.loc[longest, 'e_CACF']
+        j.results.loc['best', 'h_CACF'] = j.results.loc[longest, 'h_CACF']
+        j.results.loc['best', 's_CACF'] = longest
     #
-    # else:
+    else:
         # If only single-sector cases are available, pick  cases where double
-    # peaks are occuring within 2sigma.
-    flag = np.zeros(len(j.sectors), dtype=bool)
+        # peaks are occuring within 2sigma.
+        flag = np.zeros(len(j.sectors), dtype=bool)
 
-    for idx, sector in enumerate(j.sectors):
-        lolim = j.results.loc[sector, 'CACF'] - 2*j.results.loc[sector, 'e_CACF']
-        uplim = j.results.loc[sector, 'CACF'] + 2*j.results.loc[sector, 'e_CACF']
+        for idx, sector in enumerate(j.sectors):
+            lolim = j.results.loc[sector, 'CACF'] - 2*j.results.loc[sector, 'e_CACF']
+            uplim = j.results.loc[sector, 'CACF'] + 2*j.results.loc[sector, 'e_CACF']
 
-        altpeaks_x = []
-        mask = np.ones(len(j.sectors), dtype=bool)
-        mask[idx] = 0
-        if len(j.sectors[mask]) > 1:
-            for s in j.sectors[mask]:
+            altpeaks_x = []
+            mask = np.ones(len(j.sectors), dtype=bool)
+            mask[idx] = 0
+            if len(j.sectors[mask]) > 1:
+                for s in j.sectors[mask]:
+                    for p in j.void[f'{s}_cpeaks']:
+                        altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
+            else:
+                s = j.sectors[mask][0]
                 for p in j.void[f'{s}_cpeaks']:
                     altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
-        else:
-            s = j.sectors[mask][0]
-            for p in j.void[f'{s}_cpeaks']:
-                altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
 
-        # Check if there are any peaks from other sectors present within 2 sigma
-        flag[idx] = any(altpeaks_x - j.results.loc[sector, 'CACF'] < j.results.loc[sector, 'e_CACF'])
+            # Check if there are any peaks from other sectors present within 2 sigma
+            flag[idx] = any(altpeaks_x - j.results.loc[sector, 'CACF'] < j.results.loc[sector, 'e_CACF'])
 
 
-        # If flag 1 on one sector, then that's the "best"
-        if len(flag[flag == 1]):
-            idx = j.sectors[np.argmax(flag)]
+            # If flag 1 on one sector, then that's the "best"
+            if len(flag[flag == 1]):
+                idx = j.sectors[np.argmax(flag)]
 
-        # If flag 1 on multiple sectors, then select "best" based on peak height
-        elif len(flag[flag > 1]):
-            s = j.sectors[flag]
-            idx = np.array(j.results[s]['h_CACF'].idxmax())
+            # If flag 1 on multiple sectors, then select "best" based on peak height
+            elif len(flag[flag > 1]):
+                s = j.sectors[flag]
+                idx = np.array(j.results[s]['h_CACF'].idxmax())
 
-        # If 0 or 1 on all, then select "best" based on peak height.
-        elif np.min(flag) == np.max(flag):
-            idx = np.array(j.results['h_CACF'].idxmax())
+            # If 0 or 1 on all, then select "best" based on peak height.
+            elif np.min(flag) == np.max(flag):
+                idx = np.array(j.results['h_CACF'].idxmax())
 
-        # Otherwise, pick sector with lowest fractional uncertainty
-        else:
-            idx = np.array(j.results['e_CACF']/j.results['CACF']).idxmin()
+            # Otherwise, pick sector with lowest fractional uncertainty
+            else:
+                idx = np.array(j.results['e_CACF']/j.results['CACF']).idxmin()
 
-        j.results.loc['best', 'CACF'] = j.results.loc[idx, 'CACF']
-        j.results.loc['best', 'e_CACF'] = j.results.loc[idx, 'e_CACF']
-        j.results.loc['best', 'h_CACF'] = j.results.loc[idx, 'h_CACF']
-        j.results.loc['best', 's_CACF'] = idx.astype(str)
+            j.results.loc['best', 'CACF'] = j.results.loc[idx, 'CACF']
+            j.results.loc['best', 'e_CACF'] = j.results.loc[idx, 'e_CACF']
+            j.results.loc['best', 'h_CACF'] = j.results.loc[idx, 'h_CACF']
+            j.results.loc['best', 's_CACF'] = idx.astype(str)
     _safety(j)
 
 def validate_best(j):
