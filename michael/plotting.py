@@ -326,12 +326,12 @@ def plot_fold(j, fig, ax):
     for s in j.sectors:
         lc = j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall'])
         xvals = lc.time.value - lc.time.value.min() + xstep
-        ax.scatter(xvals, lc.flux, s=1, label=f'Sector(s) {s} Folded')
+        ax.scatter(xvals, lc.flux, s=2, label=f'Sector(s) {s} Folded')
         xstep = xvals.max()
         if s != j.sectors[-1]:
-            ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10)
-        xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
-        xlocs.append(np.nanpercentile(xvals, [15, 50, 85]))
+            ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10000)
+        xlabels.append(np.round(np.nanpercentile(lc.time.value, [25, 50, 75]),2))
+        xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]), 2))
 
         binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/50))
         if s == j.sectors[-1]:
@@ -342,7 +342,7 @@ def plot_fold(j, fig, ax):
         binned.plot(ax=ax, zorder=103, lw=10, c='w')
     ax.set_xlim(0, xstep)
     ax.set_xticks(np.array(xlocs).flatten())
-    ax.set_xticklabels(np.array(xlabels).flatten().astype(int))
+    ax.set_xticklabels(np.array(xlabels).flatten())
 
     # else:
     #     lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
