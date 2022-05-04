@@ -108,7 +108,7 @@ class data_class():
 
         # Combine consecutive lightcurves
         all = self.j.void[f'clc_{self.j.sectorlist[0]}']
-        for s in self.j.sectorlist:
+        for s in self.j.sectorlist[1:]:
             all = all.append(self.j.void[f'clc_{s}'])
         self.j.void[f'clc_all'] = all
 
