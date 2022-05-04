@@ -41,10 +41,27 @@ class data_class():
 
         # Check which sectors have been downloaded
         self.j.sfiles = glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')
-        self.j.sectors = np.sort([int(f.split('_')[-1][:-5]) for f in self.j.sfiles])
-        if any(np.diff(self.j.sectors) > 1):
-            self.j.gaps = True
+        self.j.sectornumbers = np.unique(np.sort([int(f.split('_')[-1][:-5]) for f in self.j.sfiles]))
 
+        # Create sectorlabels that connect sectors together.
+        sectors = []
+        jdx = 0
+        for idx, sector in enumerate(self.j.sectornumbers):
+            if jdx > idx:
+                continue
+            else:
+                label = f"{sector}"
+                for jdx in np.arange(idx+1, len(self.j.sectornumbers)):
+                    diff = np.diff([self.j.sectornumbers[jdx-1],self.j.sectornumbers[jdx]])
+                    if diff == 1:
+                        continue
+                    elif jdx-1 != idx:
+                        label += f"-{self.j.sectornumbers[jdx-1]}"
+                        break
+                    else:
+                        break
+                sectors.append(label)
+        self.j.sectors = np.array(sectors)
 
     def download_eleanor_data(self):
         """ Download Eleanor data.
@@ -69,7 +86,7 @@ class data_class():
 
             except ValueError:
                 print(f'There may be an issue where eleanor is detecting multiple '
-                        'instances of a single sector. Skipping this sector.')
+                        'instances of a single sector. Skipping this sector.' )
 
     def build_eleanor_lc(self):
         """
@@ -77,29 +94,26 @@ class data_class():
         light curves. It also stores the light curve for each object it reads in,
         a well as the full Eleanor Target Pixel File data.
         """
+        # Looping and appending all sectors
+        for s in self.j.sectornumbers:
+            datum = eleanor.TargetData(eleanor.Source(fn=f'lc_sector_{s}.fits',
+                                                     fn_dir=f'{self.j.output_path}/{self.j.gaiaid}/'))
+            q = datum.quality == 0
+            lc = lk.LightCurve(time = datum.time[q], flux = datum.corr_flux[q])
+            # self.clc = self.clc.append(lc.normalize().remove_nans().remove_outliers())
 
-        datum = eleanor.TargetData(eleanor.Source(fn=f'lc_sector_{self.j.sectors[0]}.fits',
-                                                 fn_dir=f'{self.j.output_path}/{self.j.gaiaid}/'))
+            # Store the datum and light curve
+            self.j.void[f'datum_{s}'] = datum
+            self.j.void[f'clc_{s}'] = lc.normalize().remove_nans().remove_outliers()
 
-        q = datum.quality == 0
-        lc = lk.LightCurve(time = datum.time[q], flux = datum.corr_flux[q])
-        self.clc = lc.normalize().remove_nans().remove_outliers()
+        # Combine consecutive lightcurves
+        for s in self.j.sectors:
+            if len(s.split('-')) > 1:
+                sectors = np.arange(int(s.split('-')[0]), int(s.split('-')[-1])+1)
 
-        # Store the datum and light curve
-        self.j.void[f'datum_{self.j.sectors[0]}'] = datum
-        self.j.void[f'clc_{self.j.sectors[0]}'] = self.clc
+                clc = self.j.void[f'clc_{sectors[0]}']
 
-        if len(self.j.sectors) > 1:
-            # Looping and appending all sectors
-            for s in self.j.sectors[1:]:
-                datum = eleanor.TargetData(eleanor.Source(fn=f'lc_sector_{s}.fits',
-                                                         fn_dir=f'{self.j.output_path}/{self.j.gaiaid}/'))
-                q = datum.quality == 0
-                lc = lk.LightCurve(time = datum.time[q], flux = datum.corr_flux[q])
-                self.clc = self.clc.append(lc.normalize().remove_nans().remove_outliers())
+                for i in sectors[1:]:
+                    clc = clc.append(self.j.void[f'clc_{i}'])
 
-                # Store the datum and light curve
-                self.j.void[f'datum_{s}'] = datum
-                self.j.void[f'clc_{s}'] = lc.normalize().remove_nans().remove_outliers()
-
-        self.j.void[f'clc_all'] = self.clc
+                self.j.void[f'clc_{s}'] = clc
