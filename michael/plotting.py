@@ -48,7 +48,7 @@ def plot_lcs(j, fig, ax):
     for s in j.sectors:
         lc = j.void[f'clc_{s}']
         xvals = lc.time.value - lc.time.value.min() + xstep
-        ax.plot(xvals, lc.flux, label=f'Sector(s) {s}', lw=1)
+        ax.scatter(xvals, lc.flux, label=f'Sector(s) {s}', s=1)
         xstep = xvals.max()
         if s != j.sectors[-1]:
             ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10)
@@ -309,46 +309,48 @@ def plot_comparison(j, fig, ax):
     ax.set_ylim(0.9*np.nanmin(res-err), 1.1*np.nanmax(res+err))
 
 def plot_fold(j, fig, ax):
-    if len(j.sectors) > 1:
-        if not j.gaps:
-            for idx, s in enumerate(j.sectors):
-                j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall']).scatter(
-                        s=75, label=f'Sector {s} Folded', ax=ax, zorder=len(j.sectors) - idx)
-            lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
-            binned = lc.bin(bins=int(len(lc)/50))
-            binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
-            binned.plot(ax=ax, zorder=103, lw=10, c='w')
-            ax.set_xlim(binned.time.value[0], binned.time.value[-1])
+    # if len(j.sectors) > 1:
+    #     if not j.gaps:
+    #         for idx, s in enumerate(j.sectors):
+    #             j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall']).scatter(
+    #                     s=75, label=f'Sector {s} Folded', ax=ax, zorder=len(j.sectors) - idx)
+    #         lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
+    #         binned = lc.bin(bins=int(len(lc)/50))
+    #         binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
+    #         binned.plot(ax=ax, zorder=103, lw=10, c='w')
+    #         ax.set_xlim(binned.time.value[0], binned.time.value[-1])
+    #     else:
+    xstep = 0
+    xlabels = []
+    xlocs = []
+    for s in j.sectors:
+        lc = j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall'])
+        xvals = lc.time.value - lc.time.value.min() + xstep
+        ax.scatter(xvals, lc.flux, s=1, label=f'Sector(s) {s} Folded')
+        xstep = xvals.max()
+        if s != j.sectors[-1]:
+            ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10)
+        xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
+        xlocs.append(np.nanpercentile(xvals, [15, 50, 85]))
+
+        binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/50))
+        if s == j.sectors[-1]:
+            label = 'Binned LC'
         else:
-            xstep = 0
-            xlabels = []
-            xlocs = []
-            for s in j.sectors:
-                lc = j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall'])
-                xvals = lc.time.value - lc.time.value.min() + xstep
-                ax.scatter(xvals, lc.flux, s=75, label=f'Sector {s} Folded')
-                xstep = xvals.max()
-                if s != j.sectors[-1]:
-                    ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10)
-                xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
-                xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
-
-                binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/50))
-                if s == j.sectors[-1]:
-                    label = 'Binned LC'
-                else:
-                    label = None
-                binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label=label)
-                binned.plot(ax=ax, zorder=103, lw=10, c='w')
-            ax.set_xlim(0, xstep)
-
-    else:
-        lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
-        lc.scatter(ax=ax, c='k', s=75, label='All Sectors Folded', zorder=1)
-        binned = lc.bin(bins=int(len(lc)/50))
-        binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
+            label = None
+        binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label=label)
         binned.plot(ax=ax, zorder=103, lw=10, c='w')
-        ax.set_xlim(lc.time.value[0], lc.time.value[-1])
+    ax.set_xlim(0, xstep)
+    ax.set_xticks(np.array(xlocs).flatten())
+    ax.set_xticklabels(np.array(xlabels).flatten().astype(int))
+
+    # else:
+    #     lc = j.void[f'clc_all'].fold(period=j.results.loc['best', 'overall'])
+    #     lc.scatter(ax=ax, c='k', s=75, label='All Sectors Folded', zorder=1)
+    #     binned = lc.bin(bins=int(len(lc)/50))
+    #     binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label='Binned LC')
+    #     binned.plot(ax=ax, zorder=103, lw=10, c='w')
+    #     ax.set_xlim(lc.time.value[0], lc.time.value[-1])
     ax.legend(loc='best')
     ax.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
     ax.set_title(rf'All Sectors folded on Best Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
