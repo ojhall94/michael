@@ -200,5 +200,5 @@ class janet():
         """
         return janet(
             gaiaid = df.loc[index, 'source_id'], ra = df.loc[index, 'ra'], dec = df.loc[index, 'dec'],
-            output_path = output_path, verbose=True
+            output_path = output_path, verbose=True, use_prior=False, obs = None
         )
