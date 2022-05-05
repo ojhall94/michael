@@ -4,12 +4,16 @@ import warnings
 from .utils import _safety
 
 def longest_sector(j):
+    if len(j.sectors) == 1:
+        return j.sectors[0]
+
     diffs = np.zeros(len(j.sectors))
     for idx, s in enumerate(j.sectors):
         d = np.diff(np.array(s.split('-')).astype(int))
         if np.isfinite(d):
             diffs[idx] = d
 
+    # Will pick the first longest
     if any(diffs > 0):
         return j.sectors[np.argmax(diffs)]
     else:
@@ -79,7 +83,7 @@ def validate_CACF(j):
         j.results.loc['best', 's_CACF'] = longest
     #
     else:
-        # If only single-sector cases are available, pick  cases where double
+        # If only single-sector cases are available, pick cases where double
         # peaks are occuring within 2sigma.
         flag = np.zeros(len(j.sectors), dtype=bool)
 

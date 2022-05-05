@@ -15,6 +15,7 @@ from .utils import _gaussian_fn, _safety
 _label_fontsize=24
 cmap = sns.color_palette('viridis', 8)
 colmap = sns.color_palette('colorblind', 8)
+binfactor = 20
 
 
 def plot_tpf(j, fig, ax):
@@ -54,6 +55,14 @@ def plot_lcs(j, fig, ax):
             ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10)
         xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
         xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
+
+        binned = lk.LightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/binfactor))
+        if s == j.sectors[-1]:
+            label = 'Binned LC'
+        else:
+            label = None
+        binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label=label)
+        binned.plot(ax=ax, zorder=103, lw=10, c='w')
 
     ax.set_xticks(np.array(xlocs).flatten())
     ax.set_xticklabels(np.array(xlabels).flatten().astype(int))
@@ -246,44 +255,49 @@ def plot_comparison(j, fig, ax):
     ax.axhline(j.results.loc['all', 'ACF'],  label='ACF', c=cmap[3], ls=':', lw=5,
                zorder =1, alpha=.8)
     # Plot SLS
-    if not j.gaps:
-        xs = np.linspace(0.8, 1.2, len(j.sectors)+1)
-        ax.errorbar(xs[-1], j.results.loc['all', 'SLS'],
-                    yerr = j.results.loc['all', 'e_SLS'],
-                    fmt='o', c='k')
-    else:
-        xs = np.linspace(0.8, 1.2, len(j.sectors))
+    # if not j.gaps:
+    #     xs = np.linspace(0.8, 1.2, len(j.sectors)+1)
+    #     ax.errorbar(xs[-1], j.results.loc['all', 'SLS'],
+    #                 yerr = j.results.loc['all', 'e_SLS'],
+    #                 fmt='o', c='k')
+    # else:
+    xs = np.linspace(0.8, 1.2, len(j.sectors))
+    if len(j.sectors) == 1:
+        xs[0] = 1.
 
-    if len(j.sectors) > 1:
-        for idx, sector in enumerate(j.sectors):
-            ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
-                        yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=colmap[idx])
+    for idx, sector in enumerate(j.sectors):
+        ax.errorbar(xs[idx], j.results.loc[sector, 'SLS'],
+                    yerr = j.results.loc[sector, 'e_SLS'], fmt='o', c=colmap[idx])
 
     # Plot SW
-    if not j.gaps:
-        xs = np.linspace(1.8, 2.2, len(j.sectors)+1)
-        ax.errorbar(xs[-1], j.results.loc['all', 'SW'], yerr = j.results.loc['all', 'e_SW'],
-                    c='k', fmt='o')
-    else:
-        xs = np.linspace(1.8, 2.2, len(j.sectors))
+    # if not j.gaps:
+    #     xs = np.linspace(1.8, 2.2, len(j.sectors)+1)
+    #     ax.errorbar(xs[-1], j.results.loc['all', 'SW'], yerr = j.results.loc['all', 'e_SW'],
+    #                 c='k', fmt='o')
+    # else:
+    xs = np.linspace(1.8, 2.2, len(j.sectors))
+    if len(j.sectors) == 1:
+        xs[0] = 2.
 
-    if len(j.sectors) > 1:
-        for idx, sector in enumerate(j.sectors):
-            ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
-                        yerr = j.results.loc[sector, 'e_SW'], fmt='o', c=colmap[idx])
+    # if len(j.sectors) > 1:
+    for idx, sector in enumerate(j.sectors):
+        ax.errorbar(xs[idx], j.results.loc[sector, 'SW'],
+                    yerr = j.results.loc[sector, 'e_SW'], fmt='o', c=colmap[idx])
 
     # Plot CACF
-    if not j.gaps:
-        xs = np.linspace(2.8, 3.2, len(j.sectors)+1)
-        ax.errorbar(xs[-1], j.results.loc['all', 'CACF'], yerr = j.results.loc['all', 'e_CACF'],
-                    c='k', fmt='o')
-    else:
-        xs = np.linspace(2.8, 3.2, len(j.sectors))
+    # if not j.gaps:
+    #     xs = np.linspace(2.8, 3.2, len(j.sectors)+1)
+    #     ax.errorbar(xs[-1], j.results.loc['all', 'CACF'], yerr = j.results.loc['all', 'e_CACF'],
+    #                 c='k', fmt='o')
+    # else:
+    xs = np.linspace(2.8, 3.2, len(j.sectors))
+    if len(j.sectors) == 1:
+        xs[0] = 3.
 
-    if len(j.sectors) > 1:
-        for idx, sector in enumerate(j.sectors):
-            ax.errorbar(xs[idx], j.results.loc[sector, 'CACF'],
-                    yerr = j.results.loc[sector, 'e_CACF'], fmt='o', c=colmap[idx])
+    # if len(j.sectors) > 1:
+    for idx, sector in enumerate(j.sectors):
+        ax.errorbar(xs[idx], j.results.loc[sector, 'CACF'],
+                yerr = j.results.loc[sector, 'e_CACF'], fmt='o', c=colmap[idx])
 
     labels = ['SLS', 'SW', 'CACF']
     x = [1., 2., 3.]
@@ -333,7 +347,7 @@ def plot_fold(j, fig, ax):
         xlabels.append(np.round(np.nanpercentile(lc.time.value, [25, 50, 75]),2))
         xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]), 2))
 
-        binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/50))
+        binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/binfactor))
         if s == j.sectors[-1]:
             label = 'Binned LC'
         else:

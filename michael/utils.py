@@ -12,8 +12,6 @@ def _gaussian_fn(p, mu, sigma, A):
 
 def _safety(janet):
     janet.results.to_csv(f'{janet.output_path}/{janet.gaiaid}/results.csv')
-    if janet.verbose:
-        print('### Saved results ###')
 
 def _decode(flag):
     """
