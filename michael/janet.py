@@ -27,6 +27,8 @@ from .validate import validator
 from .plotting import plot
 from .utils import _decode, _safety
 
+_random_seed = 802
+
 class janet():
     """ Class managing all i/o for the `michael' package.
 
