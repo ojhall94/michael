@@ -47,7 +47,8 @@ class janet():
 
     """
 
-    def __init__(self, gaiaid, ra=None, dec=None, output_path=None, verbose=True):
+    def __init__(self, gaiaid, ra = None, dec = None, output_path = None,
+                use_prior = False, obs = None, verbose = True):
             self.gaiaid = gaiaid
             self.ra = ra
             self.dec = dec
@@ -55,8 +56,13 @@ class janet():
             self.output_path = output_path
             self.verbose = verbose
             self.void = {}
-            self.gaps = False
             self.override=False
+            self.use_prior = use_prior
+            self.obs = obs
+
+            if use_prior and obs is None:
+                raise ValueError('When using the prior function you must provide '
+                                 'observables as input.')
 
     def prepare_data(self):
         """
@@ -112,7 +118,6 @@ class janet():
         self.period_range = period_range
 
         # Loop over all sectors.
-        # TO DO: This shouldn't be needed in the new build
         for sector in sectorlist:
             simple_astropy_lombscargle(self, sector = sector, period_range = period_range)
             simple_wavelet(self, sector = sector, period_range = period_range)
@@ -160,6 +165,11 @@ class janet():
 
     def run(self, period_range = (0.2, 27.4)):
         self.prepare_data()
+
+        if self.use_prior:
+            self.prior = priorclass(self.obs, self.verbose)
+            self.void['samples'], self.prot_prior = prior()
+
         self.get_rotation(period_range = period_range)
         self.validate_rotation()
 

@@ -11,7 +11,7 @@ from statsmodels.nonparametric.bandwidths import select_bandwidth
 
 from janet import _random_seed
 
-class prior():
+class priorclass():
     """ Class managing the prior expectations on rotation period.
 
     Examples
@@ -29,14 +29,14 @@ class prior():
         self.obs = obs
         self.verbose = verbose
 
-    def load_prior_data():
+    def load_prior_data(self):
         """
         This will randomly shuffle the data following the set random seed.
         """
         df = pd.read_csv('data/prior_data.csv', index_col = None)
         self.train = df.sample(len(df), ignore_index=True).reset_index(drop=True)
 
-    def build_kde():
+    def build_kde(self):
         """
         Build a KDE based on the prior data from the Santos et al. (2019, 2020)
         catalogues. The KDE is based on a subselection of the full data set
@@ -112,4 +112,10 @@ class prior():
         if self.verbose:
             print('Done sampling prior!')
 
+        return samples, prot_prior
+
+    def __call__(self):
+        self.load_prior_data()
+        self.build_kde()
+        samples, prot_prior = self.sample()
         return samples, prot_prior
