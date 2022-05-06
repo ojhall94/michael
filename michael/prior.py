@@ -9,7 +9,7 @@ import emcee
 import statsmodels.api as sm
 from statsmodels.nonparametric.bandwidths import select_bandwidth
 
-from janet import _random_seed
+from .utils import _random_seed
 
 class priorclass():
     """ Class managing the prior expectations on rotation period.
@@ -33,7 +33,7 @@ class priorclass():
         """
         This will randomly shuffle the data following the set random seed.
         """
-        df = pd.read_csv('data/prior_data.csv', index_col = None)
+        df = pd.read_csv('../michael/data/prior_data.csv', index_col = None)
         self.train = df.sample(len(df), ignore_index=True).reset_index(drop=True)
 
     def build_kde(self):
@@ -51,15 +51,15 @@ class priorclass():
 
         self.sel_train = self.train.loc[np.abs(self.train.logT - self.obs['logT'][0])
                                     < 2*self.obs['logT'][1]]
-        if len(sel_train) < 2000:
+        if len(self.sel_train) < 2000:
             self.sel_train = self.train.loc[np.abs(self.train.logT - self.obs['logT'][0])
                                     < 3*self.obs['logT'][1]]
 
         self.bw = select_bandwidth(self.sel_train.values,
                       bw = 'scott', kernel=None)
 
-        self.kde = sm.nonparametric.KDEMultivariate(data = self.train.values,
-                                               var_type = 'c'*len(self.train.columns),
+        self.kde = sm.nonparametric.KDEMultivariate(data = self.sel_train.values,
+                                               var_type = 'c'*len(self.sel_train.columns),
                                                bw = self.bw)
 
         if self.verbose:
@@ -87,7 +87,9 @@ class priorclass():
         like += self.ln_normal(p[0], *self.obs['logT'])
         like += self.ln_normal(p[1], *self.obs['logg'])
         like += self.ln_normal(p[3], *self.obs['MG'])
-        like += self.ln_normal(p[4], *self.obs['bp_rp'])
+        like += self.ln_normal(p[4], *self.obs['logbp_rp'])
+
+        return like
 
     def sample(self, nwalkers = 32, nsteps = 1000):
         """
@@ -97,8 +99,8 @@ class priorclass():
         ndim = 5
         sampler = emcee.EnsembleSampler(nwalkers, ndim, self.likelihood)
 
-        start =  [obs['logT'][0], obs['logg'][0], 10., obs['MG'][0], obs['logbp_rp'][0]]
-        p0 =  [start + np.random.rand(ndim) * [0.005, 0.001, 1., 0.2, 0.001] for n in range(nwalkers)]
+        start =  [self.obs['logT'][0], self.obs['logg'][0], 1.3, self.obs['MG'][0], self.obs['logbp_rp'][0]]
+        p0 =  [start + np.random.rand(ndim) * [0.005, 0.001, 0.2, 0.2, 0.001] for n in range(nwalkers)]
 
         sampler.run_mcmc(p0, nsteps, progress=self.verbose)
 
@@ -107,12 +109,12 @@ class priorclass():
             warnings.warn(f'Sampler acceptance fraction is low: {frac_acc}')
 
         self.samples = sampler.get_chain(flat=True)
-        self.prot_prior = np.nanpercentile(samples[:,2], [16, 50, 84])
+        self.prot_prior = np.nanpercentile(self.samples[:,2], [16, 50, 84])
 
         if self.verbose:
             print('Done sampling prior!')
 
-        return samples, prot_prior
+        return self.samples, self.prot_prior
 
     def __call__(self):
         self.load_prior_data()

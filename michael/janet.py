@@ -26,8 +26,7 @@ from .methods import *
 from .validate import validator
 from .plotting import plot
 from .utils import _decode, _safety
-
-_random_seed = 802
+from .prior import priorclass
 
 class janet():
     """ Class managing all i/o for the `michael' package.
@@ -59,6 +58,7 @@ class janet():
             self.override=False
             self.use_prior = use_prior
             self.obs = obs
+            self.prot_prior = np.array([np.nan, np.nan, np.nan])
 
             if use_prior and obs is None:
                 raise ValueError('When using the prior function you must provide '
@@ -168,7 +168,7 @@ class janet():
 
         if self.use_prior:
             self.prior = priorclass(self.obs, self.verbose)
-            self.void['samples'], self.prot_prior = prior()
+            self.void['samples'], self.prot_prior = self.prior()
 
         self.get_rotation(period_range = period_range)
         self.validate_rotation()
@@ -194,11 +194,12 @@ class janet():
 
 
     @staticmethod
-    def boot(df, index, output_path = '/Users/oliver hall/Research/unicorn/data/eleanor'):
+    def boot(df, index, output_path = '/Users/oliver hall/Research/unicorn/data/eleanor',
+            use_prior = False, obs = None):
         """
         Sets up Janet quickly.
         """
         return janet(
             gaiaid = df.loc[index, 'source_id'], ra = df.loc[index, 'ra'], dec = df.loc[index, 'dec'],
-            output_path = output_path, verbose=True, use_prior=False, obs = None
+            output_path = output_path, verbose=True, use_prior=use_prior, obs=obs
         )

@@ -4,6 +4,8 @@ Various utility functions
 
 import numpy as np
 
+_random_seed = 802
+
 def _gaussian_fn(p, mu, sigma, A):
     """
     Returns: A * exp(-(p - mu)^2 / (2.0 * sigma^2))
