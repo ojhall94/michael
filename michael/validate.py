@@ -136,7 +136,6 @@ def validate_best(j):
     best = j.results.loc['best', ['SLS','SW','CACF']].dropna()
     ebest = j.results.loc['best', ['e_SLS','e_SW','e_CACF']].dropna()
 
-
     # If they agree, then pick the one with the best fractional uncertainty
     if np.abs(np.diff(best, len(best)-1)) < np.sqrt(np.sum(ebest**2)):
         frac = ebest.values /  best.values
