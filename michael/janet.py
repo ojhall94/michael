@@ -59,6 +59,7 @@ class janet():
             self.use_prior = use_prior
             self.obs = obs
             self.prot_prior = np.array([np.nan, np.nan, np.nan])
+            self.samples = None
 
             if use_prior and obs is None:
                 raise ValueError('When using the prior function you must provide '
@@ -147,7 +148,7 @@ class janet():
         If `michael` is run using the `verbose=True` kwarg, the decoded flag
         will be printed at the end of the run.
         """
-        if flag >= 1024:
+        if flag >= 4086:
             print("Our flags don't go this high. Please see the `validator()`"+
                     " function docstring for more information")
         else:

@@ -327,7 +327,7 @@ def validator(j):
     if len(j.sectors) > 1:
         validate_sectors(j)
 
-    if j.prot_prior is not None:
+    if j.samples is not None:
         validate_prior(j)
 
     _safety(j)

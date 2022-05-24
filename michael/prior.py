@@ -135,7 +135,4 @@ class priorclass():
         self.build_kde()
         if self.test_prior():
             self.sample()
-        else:
-            self.samples = None
-            self.prot_prior = None
-        return self.samples, self.prot_prior
+            return self.samples, self.prot_prior

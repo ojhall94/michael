@@ -317,7 +317,7 @@ def plot_comparison(j, fig, ax):
         ax.axhspan(2*j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
                     2*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
                     color=cmap[7], alpha=.5, zorder=0)
-    if j.prot_prior is not None:
+    if j.samples is not None:
         ax.axhspan(j.prot_prior[0], j.prot_prior[-1], color=cmap[1], alpha=.4,
                     zorder=0, label='Prior')
         ax.axhline(j.prot_prior[1], ls='--', c=cmap[1], zorder=1)
