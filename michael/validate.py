@@ -231,6 +231,33 @@ def validate_sectors(j):
 
     warnings.warn("One or more sectors disagree strongly across all estimates. Please inspect the results carefully yourself.")
 
+def validate_prior(j):
+    # Check how the various measurements are consistent with the KDE prior
+    # Is the prior in disagreement with the 'best' result?
+    condition = (j.results.loc['best','overall'] + j.results.loc['best','e_overall']\
+                > j.prot_prior[0]) &\
+                (j.results.loc['best','overall'] - j.results.loc['best','e_overall']\
+                            < j.prot_prior[2])
+    if not condition:
+        j.results.loc['best', 'f_overall'] += 1024
+        warnings.warn("The prior on rotation disagrees with the best measured value. The prior is not necessarily correct and only a guide. Please inspect the results carefully yourself.")
+
+        # Is the prior an integer multiple of the best result overall?
+        protsamp = 10**j.samples[:,2]
+        res = np.random.randn(len(protsamp)) * j.results.loc['best','e_overall']\
+                + j.results.loc['best', 'overall']
+
+        if np.nanmean(res) > np.nanmean(protsamp):
+            div = res/protsamp
+        else:
+            div = protsamp/res
+        pars = np.nanpercentile(div, [16, 50, 84])
+        lim = np.round(pars[1], 0)
+        condition = (lim > pars[0]) & (lim < pars[1])
+        if condition:
+            j.results.loc['best', 'f_overall'] += 2048
+            warnings.warn("The prior on rotation agrees with an integer multiple of the best measured value. This may indicate that `michael` has measured a harmonic. Please inspect the results carefully yourself.")
+
 def validator(j):
     """
     TODO: THIS DOCSTRING IS OUT OF DATE
@@ -278,6 +305,8 @@ def validator(j):
     128 - Only two out of three estimates agreed
     256 - No robust matches, CACF assumed best
     512 - One or more sectors disagree strongly across all estimates
+    1024 - The result disagrees with a prior value.
+    2048 - The result is an integer multiple of the prior value (likely harmonic).
     """
     # Validate LombScargle
     validate_SLS(j)
@@ -297,5 +326,8 @@ def validator(j):
     # Validate individual sectors
     if len(j.sectors) > 1:
         validate_sectors(j)
+
+    if j.prot_prior is not None:
+        validate_prior(j)
 
     _safety(j)

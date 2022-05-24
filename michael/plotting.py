@@ -52,7 +52,7 @@ def plot_lcs(j, fig, ax):
         ax.scatter(xvals, lc.flux, label=f'Sector(s) {s}', s=1)
         xstep = xvals.max()
         if s != j.sectors[-1]:
-            ax.axvline(xstep, c='k', ls='-', lw=3, zorder=10)
+            ax.axvline(xstep, c='k', ls='-', lw=3, zorder=200)
         xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
         xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
 

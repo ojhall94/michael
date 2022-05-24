@@ -109,15 +109,33 @@ class priorclass():
             warnings.warn(f'Sampler acceptance fraction is low: {frac_acc}')
 
         self.samples = sampler.get_chain(flat=True)
-        self.prot_prior = np.nanpercentile(self.samples[:,2], [16, 50, 84])
+        self.prot_prior = np.nanpercentile(10**self.samples[:,2], [16, 50, 84])
 
         if self.verbose:
             print('Done sampling prior!')
 
-        return self.samples, self.prot_prior
+    def test_prior(self):
+        """
+        Check whether the prior returns finite results for the input data.
+        I.e., does the prior KDE cover the input's parameter space?
+
+        The starting guess for log(P) is set to 1.3 (== 20 days).
+        """
+
+        p0 =  [self.obs['logT'][0], self.obs['logg'][0], 1.3, self.obs['MG'][0], self.obs['logbp_rp'][0]]
+        prior = self.prior_pdf(p0)
+        if prior < 1e-3:
+            print('!! Input data are outside range of KDE. Prior not available. !!')
+            return False
+        else:
+            return True
 
     def __call__(self):
         self.load_prior_data()
         self.build_kde()
-        samples, prot_prior = self.sample()
-        return samples, prot_prior
+        if self.test_prior():
+            self.sample()
+        else:
+            self.samples = None
+            self.prot_prior = None
+        return self.samples, self.prot_prior

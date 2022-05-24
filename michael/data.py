@@ -45,19 +45,31 @@ class data_class():
 
         # Create sectorlabels that connect sectors together.
         sectors = []
-        jdx = 0
-        for idx, sector in enumerate(self.j.sectorlist):
-            if jdx > idx:
+        step = 0
+        for start, sector in enumerate(self.j.sectorlist):
+            if step > start:
                 continue
             else:
+                # Start the label
                 label = f"{sector}"
-                for jdx in np.arange(idx+1, len(self.j.sectorlist)):
-                    diff = np.diff([self.j.sectorlist[jdx-1],self.j.sectorlist[jdx]])
+                # Check all consecutive sectors if they follow this one
+                for step in np.arange(start+1, len(self.j.sectorlist)):
+                    diff = np.diff([self.j.sectorlist[step-1],self.j.sectorlist[step]])
+                    # Next step is 1 ahead of the previous sector, continue
                     if diff == 1:
-                        continue
-                    elif jdx-1 != idx:
-                        label += f"-{self.j.sectorlist[jdx-1]}"
+                        #Check whether this is the final entry
+                        if step == len(self.j.sectorlist)-1:
+                            label += f"-{self.j.sectorlist[step]}"
+                            step += 1 # End the loop
+                            break
+                        else:
+                            continue
+
+                    # Next step is a leap ahead
+                    elif step-1 != start:
+                        label += f"-{self.j.sectorlist[step-1]}"
                         break
+
                     else:
                         break
                 sectors.append(label)

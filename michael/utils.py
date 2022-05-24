@@ -27,6 +27,8 @@ def _decode(flag):
     128 - Only two out of three estimates agreed
     256 - No robust matches, CACF assumed best
     512 - One or more sectors disagree strongly across all estimates
+    1024 - The result disagrees with a prior value.
+    2048 - The result is an integer multiple of the prior value (likely harmonic).
     """
 
     STRINGS = {
@@ -45,6 +47,10 @@ def _decode(flag):
         512: "512: One or more sectors disagrees strongly across all estimates with " +
             "the others. This may indicate signal from a background star present " +
             "in those sectors.",
+        1024: "1024: The prior value is in disagreement with the 'best' period",
+        2048: "2048: The prior value is an integer multiple of the 'best' period. " +
+            "This may indicate that the 'best' period is a harmonic of the true "+
+            "period."
     }
 
     val = np.copy(flag)
