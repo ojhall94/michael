@@ -11,6 +11,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 import lightkurve as lk
 import eleanor
+import tess_cpm
 
 class data_class():
     def __init__(self, janet):
@@ -79,11 +80,15 @@ class data_class():
         """ Download Eleanor data.
         Data may not always be available due to not being observed by TESS, or
         errors in the download (which Im still trying to solve).
+
+        Eleanor will download the data as a tesscut of 50x50 pixels, which is
+        required for the `unpopular` method. For other methods, this is reduced
+        to a 13x13 postcard.
         """
 
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
-        star = eleanor.multi_sectors(coords = coords, sectors = 'all')
-
+        star = eleanor.multi_sectors(coords = coords, sectors = 'all',
+                                        tc = True, tesscut_size=50)
 
         for s in star:
             try:
@@ -134,3 +139,49 @@ class data_class():
                     clc = clc.append(self.j.void[f'clc_{i}'])
 
                 self.j.void[f'clc_{s}'] = clc
+
+    def build_unpopular_lc(self):
+        """
+        This function constructs a `Lightkurve` object output from the
+        `tess_cpm` (a.k.a. `unpopular`) technique by Hattori et al. (2021).
+        """
+        rastr = str(self.j.ra)
+        step = len(rastr.split('.')[0])
+        decstr = str(self.j.dec)
+        step = len(decstr.split('.')[0])
+        sfiles = np.sort(glob.glob(f'/Users/oliver hall/.eleanor/tesscut/*_{rastr[:(7+step)]}*{decstr[:(7+step)]}_*'))
+        coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
+
+        # Set up a standard aperture based on the `eleanor` aperture for a 50x50
+        # postcard.
+        for sfile, s in zip(sfiles, self.j.sectorlist):
+            cpm = tess_cpm.Source(sfile, remove_bad=True)
+            aperture = self.j.void[f'datum_{s}'].aperture
+            rowlims = 20 + np.array([np.where(aperture)[0].min(), np.where(aperture)[0].max()])
+            collims = 20 + np.array([np.where(aperture)[1].min(), np.where(aperture)[1].max()])
+            cpm.set_aperture(rowlims = rowlims, collims = collims)
+
+            # We use 200 predictors for a stamp of this size. This is a rough
+            # guesstimate from trial-and-error, but seems to work well.
+            cpm.add_cpm_model(exclusion_size=6, n=200,
+                predictor_method = "similar_brightness")
+            cpm.set_regs([0.1])
+            cpm.holdout_fit_predict(k=100, verbose=False)
+
+            # Save corrected flux as a lightcurve object for this sector
+            flux = cpm.get_aperture_lc(data_type="cpm_subtracted_flux",
+                                        weighting='median')
+            self.j.void[f'cpmlc_{s}'] = lk.LightCurve(time = cpm.time, flux = flux) + 1.
+            self.j.void[f'cpm_{s}'] = cpm
+
+        # And now we append the sectors that are consecutive
+        for s in self.j.sectors:
+            if len(s.split('-')) > 1:
+                sectors = np.arange(int(s.split('-')[0]), int(s.split('-')[-1])+1)
+
+                cpmlc = self.j.void[f'cpmlc_{sectors[0]}']
+
+                for i in sectors[1:]:
+                    cpmlc = cpmlc.append(self.j.void[f'cpmlc_{i}'])
+
+                self.j.void[f'cpmlc_{s}'] = cpmlc
