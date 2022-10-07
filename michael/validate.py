@@ -320,13 +320,13 @@ def validator(j):
     validate_best(j)
 
     # Validate ACF vs the 'best' period
-    validate_best_vs_ACF(j)
+    # validate_best_vs_ACF(j)
 
     # Validate individual sectors
     if len(j.sectors) > 1:
         validate_sectors(j)
 
-    if j.samples is not None:
-        validate_prior(j)
+    # if j.samples is not None:
+    #     validate_prior(j)
 
     _safety(j)

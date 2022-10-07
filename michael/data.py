@@ -93,7 +93,7 @@ class data_class():
 
         for s in star:
             try:
-                datum = eleanor.TargetData(s)
+                datum = eleanor.TargetData(s, do_pca = True)
                 datum.save(output_fn = f'lc_sector_{s.sector}.fits',
                         directory = f'{self.j.output_path}/{self.j.gaiaid}/')
             except TypeError:
@@ -130,7 +130,8 @@ class data_class():
         # Looping and appending all sectors
         for s in self.j.sectorlist:
             datum = eleanor.TargetData(eleanor.Source(fn=f'lc_sector_{s}.fits',
-                                                     fn_dir=f'{self.j.output_path}/{self.j.gaiaid}/'))
+                                                     fn_dir=f'{self.j.output_path}/{self.j.gaiaid}/'),
+                                                     do_pca = True)
             q = datum.quality == 0
             lc = lk.LightCurve(time = datum.time[q], flux = datum.corr_flux[q])
             # self.clc = self.clc.append(lc.normalize().remove_nans().remove_outliers())
@@ -139,22 +140,48 @@ class data_class():
             self.j.void[f'datum_{s}'] = datum
             self.j.void[f'clc_{s}'] = lc.normalize().remove_nans().remove_outliers()
 
+            # Save additional format light curves
+            ## Raw light curve from eleanor aperture
+            self.j.void[f'rawlc_{s}'] = lk.LightCurve(time = datum.time[q], flux = datum.raw_flux[q])
+            self.j.void[f'rawlc_{s}'] = self.j.void[f'rawlc_{s}'].normalize().remove_nans().remove_outliers()
+
+            ## PCA light curve from eleanor aperture
+            self.j.void[f'pcalc_{s}'] = lk.LightCurve(time = datum.time[q], flux = datum.pca_flux[q])
+            self.j.void[f'pcalc_{s}'] = self.j.void[f'pcalc_{s}'].normalize().remove_nans().remove_outliers()
+
+            ## corner correction light curve from eleanor
+            cf = eleanor.TargetData.corrected_flux(datum, flux=datum.raw_flux, regressors='corner')
+            self.j.void[f'cornlc_{s}'] = lk.LightCurve(time = datum.time[q], flux = cf[q])
+            self.j.void[f'cornlc_{s}'] = self.j.void[f'cornlc_{s}'].normalize().remove_nans().remove_outliers()
+
+
         # Combine consecutive lightcurves
-        all = self.j.void[f'clc_{self.j.sectorlist[0]}']
-        for s in self.j.sectorlist[1:]:
-            all = all.append(self.j.void[f'clc_{s}'])
-        self.j.void[f'clc_all'] = all
+        pls = ['c','raw','pca','corn']
+        for pl in pls:
+            for s in self.j.sectors:
+                if len(s.split('-')) > 1:
+                    sectors = np.arange(int(s.split('-')[0]), int(s.split('-')[-1])+1)
 
-        for s in self.j.sectors:
-            if len(s.split('-')) > 1:
-                sectors = np.arange(int(s.split('-')[0]), int(s.split('-')[-1])+1)
+                    combo = self.j.void[f'{pl}lc_{sectors[0]}']
 
-                clc = self.j.void[f'clc_{sectors[0]}']
+                    for i in sectors[1:]:
+                        combo = combo.append(self.j.void[f'{pl}lc_{i}'])
 
-                for i in sectors[1:]:
-                    clc = clc.append(self.j.void[f'clc_{i}'])
+                    self.j.void[f'{pl}lc_{s}'] = combo
 
-                self.j.void[f'clc_{s}'] = clc
+    def build_stitched_all_lc(self):
+        """
+        Combine all available light curves of a given sector for the purposes of the ACF.
+
+        NOTE: We may want to change the ACF method to sector-by-sector due to changing spots.
+        """
+        pls = ['c','raw','pca','corn', 'cpm']
+
+        for pl in pls:
+            all = self.j.void[f'{pl}lc_{self.j.sectorlist[0]}']
+            for s in self.j.sectorlist[1:]:
+                all = all.append(self.j.void[f'{pl}lc_{s}'])
+            self.j.void[f'{pl}lc_all'] = all
 
     def build_tess_sip_lc(self):
         """

@@ -307,6 +307,7 @@ def composite_ACF(j, sector, period_range):
 
     # Save the metadata
     j.void[f'{sector}_vizacf'] = vizacf
+    j.void[f'{sector}_acflc'] = acflc
     j.void[f'{sector}_cacf'] = cacf
     j.void[f'{sector}_cacfsmoo'] = cacfsmoo
     j.void[f'{sector}_cpeaks'] = cpeaks[0]
@@ -316,7 +317,7 @@ def composite_ACF(j, sector, period_range):
 
     _safety(j)
 
-def simple_ACF(j, period_range):
+def simple_ACF(j, sector, period_range):
     """
     For the ACF estimator, we follow the guidelines presented in Garcia et al.
     (2014), which builds upon the work by McQuillan et al. (2013a, b). There is
@@ -343,8 +344,7 @@ def simple_ACF(j, period_range):
         The `janet` class containing the metadata on our star.
 
     sector: int
-        The sector for which to calculate the simple astropy lombscargle period.
-        If 'all', calculates for all sectors stitched together.
+        The sector for which to calculate the ACF.
 
     period_range: tuple
         The lower and upper limit on period range to search for a rotational
@@ -355,51 +355,48 @@ def simple_ACF(j, period_range):
     if j.verbose:
         print(f'### Running ACF Estimation on star {j.gaiaid} ###')
 
-    clc = j.void['clc_all']
-
-    # Calculate the ACF between 0 and 12 days.
-    acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
-    lag = clc.time.value - np.nanmin(clc.time.value)
-
-    # Cut up and normalize the ACF
-    secmin = j.sectors[0]
-    norm_acf = acf/np.nanmax(acf)
-    acflc = lk.LightCurve(time=lag, flux=norm_acf)
-    acflc = acflc[acflc.time.value < (j.void[f'clc_{secmin}'].time.value - j.void[f'clc_{secmin}'].time.value.min()).max()]
-
-    # Estimate a first-guess period
-    acfpg = acflc.to_periodogram()
-    first_guess = acfpg.period_at_max_power
-
-    # Limit the search range
-    if not period_range[0] < first_guess.value < period_range[1]:
-        warnings.warn("The highest peak in the ACF lies outside the period range of your search.")
-    vizacf = acflc[(acflc.time.value <= period_range[1])]
-    vizacf = vizacf[(vizacf.time.value >= period_range[0])]
+    # clc = j.void[f'clc_{sector}']
+    #
+    # # Calculate the ACF between 0 and 12 days.
+    # acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
+    # lag = clc.time.value - np.nanmin(clc.time.value)
+    #
+    # # Cut up and normalize the ACF
+    # norm_acf = acf/np.nanmax(acf)
+    # acflc = lk.LightCurve(time=lag, flux=norm_acf)
+    # acflc = acflc[acflc.time.value < (j.void[f'clc_{sector}'].time.value - j.void[f'clc_{sector}'].time.value.min()).max()]
+    #
+    # # Estimate a first-guess period
+    # acfpg = acflc.to_periodogram()
+    # first_guess = acfpg.period_at_max_power
+    #
+    # # Limit the search range
+    # if not period_range[0] < first_guess.value < period_range[1]:
+    #     warnings.warn("The highest peak in the ACF lies outside the period range of your search.")
+    # vizacf = acflc[(acflc.time.value <= period_range[1])]
+    # vizacf = vizacf[(vizacf.time.value >= period_range[0])]
 
     # Smooth the  ACF
     sd = 2.
-    acfsmoo = gaussian_filter1d(vizacf.flux.value, sigma = sd, mode='nearest')
+    acfsmoo = gaussian_filter1d(j.void[f'{sector}_vizacf'].flux.value, sigma = sd, mode='nearest')
 
     # Identify the first 10 maxima above a threshold of 0.01
     peaks, _ = find_peaks(acfsmoo, height = 0.01)
 
     # Save the metadata
-    j.void['acflc'] = acflc
-    j.void['vizacf'] = vizacf
-    j.void['acfsmoo'] = acfsmoo
-    j.void['peaks'] = peaks
+    j.void[f'{sector}_acfsmoo'] = acfsmoo
+    j.void[f'{sector}_peaks'] = peaks
 
     # The first of these maxima (with the shortest period) corresponds to Prot
     if len(peaks) >= 1:
-        acf_period = vizacf.time.value[peaks[0]]
-        j.results.loc['all', 'ACF'] = acf_period
+        acf_period = j.void[f'{sector}_vizacf'].time.value[peaks[0]]
+        j.results.loc[sector, 'ACF'] = acf_period
 
     # No peaks found
     else:
-        j.results.loc['all', 'ACF'] = np.nan
+        j.results.loc[sector, 'ACF'] = np.nan
 
     if j.verbose:
-        print(f'### Completed ACF Estimation on star {j.gaiaid} ###')
+        print(f'### Completed ACF Estimation for Sector {sector} on star {j.gaiaid} ###')
 
     _safety(j)

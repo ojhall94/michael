@@ -75,6 +75,7 @@ class janet():
         self.data.build_eleanor_lc()
         self.data.build_unpopular_lc()
         self.data.build_tess_sip_lc()
+        self.data.build_stitched_all_lc()
 
     def flux_override(self, time, flux):
         """
@@ -124,9 +125,8 @@ class janet():
         for sector in sectorlist:
             simple_astropy_lombscargle(self, sector = sector, period_range = period_range)
             simple_wavelet(self, sector = sector, period_range = period_range)
-            composite_ACF(self, sector= sector, period_range = period_range)
-
-        simple_ACF(self, period_range = period_range)
+            composite_ACF(self, sector = sector, period_range = period_range)
+            simple_ACF(self, sector = sector, period_range = period_range)
 
     def validate_rotation(self):
         validator(self)
@@ -169,9 +169,9 @@ class janet():
     def run(self, period_range = (0.2, 27.4)):
         self.prepare_data()
 
-        if self.use_prior:
-            self.prior = priorclass(self.obs, self.verbose)
-            self.void['samples'], self.prot_prior = self.prior()
+        # if self.use_prior:
+        #     self.prior = priorclass(self.obs, self.verbose)
+        #     self.void['samples'], self.prot_prior = self.prior()
 
         self.get_rotation(period_range = period_range)
         self.validate_rotation()
@@ -179,9 +179,9 @@ class janet():
         if self.verbose:
             self.view()
 
-        # Temporary hack for Unicorn project
-        pg = self.void[f'pg_{self.results.loc["best", "s_SLS"]}']
-        pg.to_table().to_pandas().to_csv(f'{self.output_path}/{self.gaiaid}/periodogram.csv')
+        # # Temporary hack for Unicorn project
+        # pg = self.void[f'pg_{self.results.loc["best", "s_SLS"]}']
+        # pg.to_table().to_pandas().to_csv(f'{self.output_path}/{self.gaiaid}/periodogram.csv')
 
         if self.verbose:
             self.decode(self.results.loc['best', 'f_overall'].astype(int))
