@@ -8,6 +8,8 @@ from matplotlib.gridspec import GridSpec
 import seaborn as sns
 import lightkurve as lk
 import seaborn as sns
+from scipy.ndimage import gaussian_filter1d
+
 sns.set_palette('colorblind')
 sns.set_context('poster')
 
@@ -303,13 +305,24 @@ def plot_fold(j, fig, ax):
         xlabels.append(np.round(np.nanpercentile(lc.time.value, [25, 50, 75]),2))
         xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]), 2))
 
-        binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/binfactor))
+        # Plot the smothed version
+        # binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/binfactor))
         if s == j.sectors[-1]:
-            label = 'Binned LC'
+            label = 'Smoothed LC'
         else:
             label = None
-        binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label=label)
-        binned.plot(ax=ax, zorder=103, lw=10, c='w')
+        # binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label=label)
+        # binned.plot(ax=ax, zorder=103, lw=10, c='w')
+        sd = np.sqrt(len(lc))
+        fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode='reflect')
+        check = np.std(lc.flux) > np.abs(1 - np.array([fsmoo.max(), fsmoo.min()]))
+        if all(check):
+            linecol = 'r'
+        else:
+            linecol = cmap[4]
+        ax.plot(lc.time.value, fsmoo, lw=10, c='w', zorder=103)
+        ax.plot(lc.time.value, fsmoo, lw=5, c=linecol, label=label, zorder=104)
+
     ax.set_xlim(0, xstep)
     ax.set_xticks(np.array(xlocs).flatten())
     ax.set_xticklabels(np.array(xlabels).flatten())
