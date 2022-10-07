@@ -73,6 +73,8 @@ class janet():
         self.data = data_class(self)
         self.data.check_eleanor_setup()
         self.data.build_eleanor_lc()
+        self.data.build_unpopular_lc()
+        self.data.build_tess_sip_lc()
 
     def flux_override(self, time, flux):
         """

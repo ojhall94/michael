@@ -7,6 +7,7 @@ import eleanor
 import os
 import numpy as np
 import glob
+from tess_sip import SIP
 from astropy.coordinates import SkyCoord
 from astropy import units as u
 import lightkurve as lk
@@ -105,6 +106,21 @@ class data_class():
                 print(f'There may be an issue where eleanor is detecting multiple '
                         'instances of a single sector. Skipping this sector.' )
 
+        # Eliminate the secondary duplicate sector from the TESSCuts
+        rastr = str(self.j.ra)
+        step = len(rastr.split('.')[0])
+        decstr = str(self.j.dec)
+        step = len(decstr.split('.')[0])
+        sfiles = np.sort(glob.glob(f'/Users/oliver hall/.eleanor/tesscut/*_{rastr[:(7+step)]}*{decstr[:(7+step)]}_*'))
+
+        slabels = []
+        for idx in range(len(sfiles)):
+            slabels.append(sfiles[idx].split('-')[1])
+        keep = np.unique(slabels, return_index=True)[1]
+        for idx, sfile in enumerate(sfiles):
+            if idx not in keep:
+                os.remove(sfile)
+
     def build_eleanor_lc(self):
         """
         This function constructs a `Lightkurve` object from downloaded `eleanor`
@@ -140,10 +156,43 @@ class data_class():
 
                 self.j.void[f'clc_{s}'] = clc
 
+    def build_tess_sip_lc(self):
+        """
+        This function constructs a `Lightkurve` object output from the
+        `tess_sip` technique by Hedges et al. (2021).
+
+        Note: this only works on consecutive sectors of data.
+        """
+        rastr = str(self.j.ra)
+        step = len(rastr.split('.')[0])
+        decstr = str(self.j.dec)
+        step = len(decstr.split('.')[0])
+
+        sfiles = []
+        for sector in self.j.sectors:
+            split = sector.split('-')
+            if len(split) > 1:
+                sfiles = []
+                for s in np.arange(int(split[0]), int(split[1])+1):
+                    sfiles.append(glob.glob(
+                    f'/Users/oliver hall/.eleanor/tesscut/*s00{s}*_{rastr[:(7+step)]}*{decstr[:(7+step)]}_*')[0])
+
+
+                tpflist = [lk.TessTargetPixelFile(f).cutout([26,26],13) for f in sfiles]
+                tpfs = lk.TargetPixelFileCollection(tpflist)
+                r = SIP(tpfs)
+                self.j.void[f'r_{sector}'] = r
+                self.j.void[f'rlc_{sector}'] = r['corr_lc']
+
+            else:
+                continue
+
     def build_unpopular_lc(self):
         """
         This function constructs a `Lightkurve` object output from the
         `tess_cpm` (a.k.a. `unpopular`) technique by Hattori et al. (2021).
+
+        Note that this method does not work particularly well for fainter stars.
         """
         rastr = str(self.j.ra)
         step = len(rastr.split('.')[0])
