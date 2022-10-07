@@ -315,13 +315,13 @@ def plot_fold(j, fig, ax):
         # binned.plot(ax=ax, zorder=103, lw=10, c='w')
         sd = np.sqrt(len(lc))
         fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode='reflect')
-        check = np.std(lc.flux) > np.abs(1 - np.array([fsmoo.max(), fsmoo.min()]))
+        check = np.std(lc.flux) > np.diff([fsmoo.min(), fsmoo.max()])
         if all(check):
             linecol = 'r'
         else:
             linecol = cmap[4]
-        ax.plot(lc.time.value, fsmoo, lw=10, c='w', zorder=103)
-        ax.plot(lc.time.value, fsmoo, lw=5, c=linecol, label=label, zorder=104)
+        ax.plot(xvals, fsmoo, lw=10, c='w', zorder=103)
+        ax.plot(xvals, fsmoo, lw=5, c=linecol, label=label, zorder=104)
 
     ax.set_xlim(0, xstep)
     ax.set_xticks(np.array(xlocs).flatten())
