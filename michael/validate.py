@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import warnings
+from scipy.ndimage import gaussian_filter1d
 from .utils import _safety
 
 def longest_sector(j):
@@ -257,6 +258,55 @@ def validate_prior(j):
             j.results.loc['best', 'f_overall'] += 2048
             warnings.warn("The prior on rotation agrees with an integer multiple of the best measured value. This may indicate that `michael` has measured a harmonic. Please inspect the results carefully yourself.")
 
+
+def validate_p2p(j):
+    """
+    A good measurement of a rotation period should be clearly visible in a
+    light curve folded on the measured period. If folded on an incorrect
+    period, this will decreate the peak-to-peak height of the periodic motion,
+    as the data will be scattered.
+
+    In order to validate the rotation rates, we will flag any targets for which
+    the peak-to-peak (p2p) height is smaller than the standard deviation on the
+    flux values for a given sectors (i.e. the rotation signal could be the
+    product of noise).
+
+    The p2p height is measured as the difference between the maximum and minimum
+    of a smoothed folded light curve. The folded light curve is smoothed using a
+    the `scipy.gaussian_filter1d` package, with a standard deviation of `sqrt(N)`
+    where N is the number of cadences in the sector.
+
+    The p2p height is recorded. In cases where the p2p height exceeds the
+    standard deviation, the target is given a p2p flag of 1, indicating a good
+    detection.
+
+    This method is fairly sensitive to systematics or flares, as they will
+    cause a large p2p signal. As always, validation should be taken with a grain
+    of salt!
+    """
+
+    methods = ['SLS', 'SW','CACF','ACF']
+    for m in methods:
+        j.results[f'p2p_{m}'] = np.zeros(len(j.results)).astype(int)
+        j.results[f'f_p2p_{m}'] = np.zeros(len(j.results)).astype(int)
+
+        for s in j.sectors:
+            period = j.results.loc[s, m]
+            lc = j.void[f'clc_{s}'].fold(period = period)
+            sd = np.sqrt(len(lc))
+            fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'reflect')
+
+            p2p = np.diff([np.nanmin(fsmoo), np.nanmax(fsmoo)])
+            j.results.loc[s, f'p2p_{m}'] = p2p
+
+            std = np.std(lc.flux.value/gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'nearest'))
+            j.void[f'{m}_{s}_std'] = std
+
+            if p2p > 2*std:
+                j.results.loc[s, f'f_p2p_{m}'] = 1
+
+    _safety(j)
+
 def validator(j):
     """
     TODO: THIS DOCSTRING IS OUT OF DATE
@@ -307,6 +357,10 @@ def validator(j):
     1024 - The result disagrees with a prior value.
     2048 - The result is an integer multiple of the prior value (likely harmonic).
     """
+
+    # Peak-to-peak validation
+    validate_p2p(j)
+
     # Validate LombScargle
     validate_SLS(j)
 
@@ -326,7 +380,7 @@ def validator(j):
     if len(j.sectors) > 1:
         validate_sectors(j)
 
-    # if j.samples is not None:
-    #     validate_prior(j)
+    if j.samples is not None:
+        validate_prior(j)
 
     _safety(j)

@@ -312,7 +312,9 @@ def plot_fold(j, fig, ax):
         # binned.plot(ax=ax, zorder=103, lw=10, c='w')
         sd = np.sqrt(len(lc))
         fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode='reflect')
-        check = np.std(lc.flux) > np.diff([fsmoo.min(), fsmoo.max()])
+        std = np.std(lc.flux.value/gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'nearest'))
+
+        check = std > np.diff([np.nanmin(fsmoo), np.nanmax(fsmoo)])
         if all(check):
             linecol = 'r'
         else:
