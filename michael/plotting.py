@@ -211,18 +211,15 @@ def plot_acf(j, fig, ax):
 
     if len(j.void[f'{s}_peaks']) >= 1:
         ax.axvline(j.void[f'{s}_vizacf'].time.value[j.void[f'{s}_peaks'][0]], c=cmap[3],
-                            # label = f'P = {j.results.loc["all", "ACF"]:.2f} d',
+                            label = f'P = {j.results.loc["best", "ACF"]:.2f} d',
                             lw = 4, ls=':', zorder=5)
     ax.axvspan(j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
                 j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'], color=cmap[6], zorder=2,
                 label=f'P = {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d',
                 alpha=.5)
-    # ax.axvspan(j.results.loc['best', 'overall'] - 2*j.results.loc['best', 'e_overall'],
-    #             j.results.loc['best', 'overall'] + 2*j.results.loc['best', 'e_overall'], color=cmap[7], zorder=1,
-    #             label=r'$2\sigma$', alpha=.5)
     ax.set_title("Smoothed Autocorrelation Function for all Sectors")
     ax.set_ylabel('Normalised ACF')
-    ax.axhline(0.01, label='Detection threshold', c='k', zorder=0)
+    ax.axhline(0.01, label='Detection threshold', c='k', ls ='--', zorder=0)
     ax.legend(loc='upper right')
 
 def plot_comparison(j, fig, ax):
@@ -320,7 +317,7 @@ def plot_fold(j, fig, ax):
             linecol = 'r'
         else:
             linecol = cmap[4]
-        ax.plot(xvals, fsmoo, lw=10, c='w', zorder=103)
+        ax.plot(xvals, fsmoo, lw=10, c='k', zorder=103)
         ax.plot(xvals, fsmoo, lw=5, c=linecol, label=label, zorder=104)
 
     ax.set_xlim(0, xstep)
