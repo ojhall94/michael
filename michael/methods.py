@@ -396,6 +396,8 @@ def simple_ACF(j, sector, period_range):
     else:
         j.results.loc[sector, 'ACF'] = np.nan
 
+    j.results.loc[sector, 'e_ACF'] = np.nan
+
     if j.verbose:
         print(f'### Completed ACF Estimation for Sector {sector} on star {j.gaiaid} ###')
 

@@ -56,13 +56,16 @@ def plot_lcs(j, fig, ax):
         xlabels.append(np.nanpercentile(lc.time.value, [25, 50, 75]))
         xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]),2))
 
-        binned = lk.LightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/binfactor))
+        # binned = lk.LightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/binfactor))
         if s == j.sectors[-1]:
-            label = 'Binned LC'
+            label = 'Smoothed LC'
         else:
             label = None
-        binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label=label)
-        binned.plot(ax=ax, zorder=103, lw=10, c='w')
+
+        sd = np.sqrt(len(lc))
+        fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd/4, mode='reflect')
+        ax.plot(xvals, fsmoo, zorder=104, lw=5, c=cmap[4], label=label)
+        ax.plot(xvals, fsmoo, zorder=103, lw=10, c='w')
 
     ax.set_xticks(np.array(xlocs).flatten())
     ax.set_xticklabels(np.array(xlabels).flatten().astype(int))

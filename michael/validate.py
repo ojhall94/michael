@@ -24,198 +24,250 @@ def validate_SLS(j):
     j.results['s_SLS'] = np.nan
     # Validate LombScargle
     longest = longest_sector(j)
-    if longest is not None:
-        # Consider the longest sector the default best
-        j.results.loc['best', 'SLS'] = j.results.loc[longest, 'SLS']
-        j.results.loc['best', 'e_SLS'] = j.results.loc[longest, 'e_SLS']
-        j.results.loc['best', 'h_SLS'] = j.results.loc[longest, 'h_SLS']
-        j.results.loc['best', 's_SLS'] = longest
-        j.results.loc['best', 'f_SLS'] = j.results.loc[longest, 'f_SLS']
 
+    # Check for p2p-validated sectors
+    indices = j.results[j.results['f_p2p_SLS'] == 1].index
+
+    # If all targets have a p2p flag of 0, consider all sectors together
+    if len(indices) == 0:
+        indices = j.sectors
+
+    # If longest sector is in the positive p2p flags, assign that as the result
+    if longest in indices:
+        best = longest
     else:
         # If onlys single-sector cases are available, pick the value with
-        # the highest peak height on an unflagged value
-        s = j.results['f_SLS'] == 0
-        if len(j.results[s]) > 0:
-            idx = np.array(j.results[s]['h_SLS'].idxmax())
+        # the highest peak height on an unflagged value,
+        s = j.results.loc[indices]['f_SLS'] == 0
+        if len(j.results.loc[indices][s]) > 0:
+            best = np.array(j.results.loc[indices][s]['h_SLS'].idxmax())
         # It may be the case that there are only flagged values. In this
         # case, ignore the flags
         else:
-            idx = np.array(j.results['h_SLS'].idxmax())
+            best = np.array(j.results.loc[indices]['h_SLS'].idxmax())
 
-        j.results.loc['best', 'SLS'] = j.results.loc[idx, 'SLS']
-        j.results.loc['best', 'e_SLS'] = j.results.loc[idx, 'e_SLS']
-        j.results.loc['best', 'h_SLS'] = j.results.loc[idx, 'h_SLS']
-        j.results.loc['best', 's_SLS'] = idx.astype(str)
-        j.results.loc['best', 'f_SLS'] = j.results.loc[idx, 'f_SLS']
+    j.results.loc['best', 'SLS'] = j.results.loc[best, 'SLS']
+    j.results.loc['best', 'e_SLS'] = j.results.loc[best, 'e_SLS']
+    j.results.loc['best', 'h_SLS'] = j.results.loc[best, 'h_SLS']
+    j.results.loc['best', 's_SLS'] = best
+    j.results.loc['best', 'f_SLS'] = j.results.loc[best, 'f_SLS']
+    j.results.loc['best', 'p2p_SLS'] = j.results.loc[best, 'p2p_SLS']
+
     _safety(j)
 
 def validate_SW(j):
     j.results['s_SW'] = np.nan
 
     longest = longest_sector(j)
-    if longest is not None:
-        #  Consider the longest sector the default best
-        j.results.loc['best', 'SW'] = j.results.loc[longest, 'SW']
-        j.results.loc['best', 'e_SW'] = j.results.loc[longest, 'e_SW']
-        j.results.loc['best', 'h_SW'] = j.results.loc[longest, 'h_SW']
-        j.results.loc['best', 's_SW'] = longest
 
+    # Check for p2p-validated sectors
+    indices = j.results[j.results['f_p2p_SLS'] == 1].index
+
+    # If all targets have a p2p flag of 0, consider all sectors together
+    if len(indices) == 0:
+        indices = j.sectors
+
+    # If longest sector is in the positive p2p flags, assign that as the result
+    if longest in indices:
+        best = longest
     else:
-        # If onlys single-sector cases are available, pick the value with
-        # the highest peak
-        idx = np.array(j.results['h_SW'].idxmax())
+        best = np.array(j.results.loc[indices]['h_SW'].idxmax()).astype(str)
 
-        j.results.loc['best', 'SW'] = j.results.loc[idx, 'SW']
-        j.results.loc['best', 'e_SW'] = j.results.loc[idx, 'e_SW']
-        j.results.loc['best', 'h_SW'] = j.results.loc[idx, 'h_SW']
-        j.results.loc['best', 's_SW'] = idx.astype(str)
+    #  Consider the longest sector the default best
+    j.results.loc['best', 'SW'] = j.results.loc[best, 'SW']
+    j.results.loc['best', 'e_SW'] = j.results.loc[best, 'e_SW']
+    j.results.loc['best', 'h_SW'] = j.results.loc[best, 'h_SW']
+    j.results.loc['best', 's_SW'] = best
+    j.results.loc['best', 'p2p_SW'] = j.results.loc[best, 'p2p_SW']
+
     _safety(j)
 
 def validate_CACF(j):
     j.results['s_CACF'] = np.nan
 
+    # find longest sector
     longest = longest_sector(j)
-    if longest is not None:
-        #  Consider the longest sector the default best
-        j.results.loc['best', 'CACF'] = j.results.loc[longest, 'CACF']
-        j.results.loc['best', 'e_CACF'] = j.results.loc[longest, 'e_CACF']
-        j.results.loc['best', 'h_CACF'] = j.results.loc[longest, 'h_CACF']
-        j.results.loc['best', 's_CACF'] = longest
-    #
+
+    # Check for p2p-validated sectors
+    indices = j.results[j.results['f_p2p_SLS'] == 1].index
+
+    # If all targets have a p2p flag of 0, consider all sectors together
+    if len(indices) == 0:
+        indices = j.sectors
+
+    # If longest sector is in the positive p2p flags, assign that as the result
+    if longest in indices:
+        best = longest
+
     else:
         # If only single-sector cases are available, pick cases where double
+        df = j.results.loc[indices]
+        dfsec = df.index.values
+
         # peaks are occuring within 2sigma.
-        flag = np.zeros(len(j.sectors), dtype=bool)
+        flag = np.zeros(len(dfsec), dtype=bool)
 
         for idx, sector in enumerate(j.sectors):
-            lolim = j.results.loc[sector, 'CACF'] - 2*j.results.loc[sector, 'e_CACF']
-            uplim = j.results.loc[sector, 'CACF'] + 2*j.results.loc[sector, 'e_CACF']
+            lolim = df.loc[sector, 'CACF'] - 2*df.loc[sector, 'e_CACF']
+            uplim = df.loc[sector, 'CACF'] + 2*df.loc[sector, 'e_CACF']
 
             altpeaks_x = []
-            mask = np.ones(len(j.sectors), dtype=bool)
+            mask = np.ones(len(dfsec), dtype=bool)
             mask[idx] = 0
-            if len(j.sectors[mask]) > 1:
-                for s in j.sectors[mask]:
+            if len(dfsec[mask]) > 1:
+                for s in dfsec[mask]:
                     for p in j.void[f'{s}_cpeaks']:
                         altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
             else:
-                s = j.sectors[mask][0]
+                s = dfsec[mask][0]
                 for p in j.void[f'{s}_cpeaks']:
                     altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
 
             # Check if there are any peaks from other sectors present within 2 sigma
-            flag[idx] = any(altpeaks_x - j.results.loc[sector, 'CACF'] < j.results.loc[sector, 'e_CACF'])
+            flag[idx] = any(altpeaks_x - df.loc[sector, 'CACF'] < df.loc[sector, 'e_CACF'])
 
 
             # If flag 1 on one sector, then that's the "best"
             if len(flag[flag == 1]):
-                idx = j.sectors[np.argmax(flag)]
+                best = df[np.argmax(flag)]
 
             # If flag 1 on multiple sectors, then select "best" based on peak height
             elif len(flag[flag > 1]):
-                s = j.sectors[flag]
-                idx = np.array(j.results[s]['h_CACF'].idxmax())
+                s = dfsec[flag]
+                best = np.array(df[s]['h_CACF'].idxmax())
 
             # If 0 or 1 on all, then select "best" based on peak height.
             elif np.min(flag) == np.max(flag):
-                idx = np.array(j.results['h_CACF'].idxmax())
+                best = np.array(df['h_CACF'].idxmax())
 
-            # Otherwise, pick sector with lowest fractional uncertainty
+            # Otherwise, pick sector with highest p2p height
             else:
-                idx = np.array(j.results['e_CACF']/j.results['CACF']).idxmin()
+                best = df.p2p_CACF.idxmax()
 
-            j.results.loc['best', 'CACF'] = j.results.loc[idx, 'CACF']
-            j.results.loc['best', 'e_CACF'] = j.results.loc[idx, 'e_CACF']
-            j.results.loc['best', 'h_CACF'] = j.results.loc[idx, 'h_CACF']
-            j.results.loc['best', 's_CACF'] = idx.astype(str)
+    j.results.loc['best', 'CACF'] = j.results.loc[best, 'CACF']
+    j.results.loc['best', 'e_CACF'] = j.results.loc[best, 'e_CACF']
+    j.results.loc['best', 'h_CACF'] = j.results.loc[best, 'h_CACF']
+    j.results.loc['best', 's_CACF'] = best.astype(str)
+    j.results.loc['best', 'p2p_CACF'] = j.results.loc[best, 'p2p_CACF']
+    _safety(j)
+
+def validate_ACF(j):
+    j.results['s_ACF'] = np.nan
+
+    longest = longest_sector(j)
+
+    # Check for p2p-validated sectors
+    indices = j.results[j.results['f_p2p_SLS'] == 1].index
+
+    # If all targets have a p2p flag of 0, consider all sectors together
+    if len(indices) == 0:
+        indices = j.sectors
+
+    # If longest sector is in the positive p2p flags, assign that as the result
+    if longest in indices:
+        best = longest
+    # if not, pick the ACF result with the highest p2p value
+    else:
+        best = np.array(j.results.loc[indices]['p2p_ACF'].idxmax()).astype(str)
+
+    #  Consider the longest sector the default best
+    j.results.loc['best', 'ACF'] = j.results.loc[best, 'ACF']
+    j.results.loc['best', 's_ACF'] = best
+    j.results.loc['best', 'p2p_ACF'] = j.results.loc[best, 'p2p_ACF']
+
     _safety(j)
 
 def validate_best(j):
     # Validate the best estimates against one another
     # Check to see if they agree closely with one another
-    best = j.results.loc['best', ['SLS','SW','CACF']].dropna()
-    ebest = j.results.loc['best', ['e_SLS','e_SW','e_CACF']].dropna()
+    methods = [['SLS', 'SW', 'CACF', 'ACF']]
+    best = j.results.loc['best', ['SLS','SW','CACF', 'ACF']]#.dropna()
+    ebest = j.results.loc['best', ['e_SLS','e_SW','e_CACF', 'e_ACF']]#.dropna()
+    p2ps = j.results.loc['best', ['p2p_SLS','p2p_SW','p2p_CACF', 'p2p_ACF']]#.dropna()']
 
-    # If they agree, then pick the one with the best fractional uncertainty
-    if np.abs(np.diff(best, len(best)-1)) < np.sqrt(np.sum(ebest**2)):
-        frac = ebest.values /  best.values
-        s = np.argmin(frac)
+    # If they agree, then pick the one with the highest p2p value
+    if np.abs(np.diff(best.drpona(), len(best.drpona())-1)) < np.sqrt(np.nansum(ebest**2)):
+        s = np.argmax(p2ps)
         j.results.loc['best', 'overall'] = best[s]
         j.results.loc['best', 'e_overall'] = ebest[s]
-        j.results.loc['best', 'f_overall'] = 2**s
+        j.results.loc['best', 'method_overall'] = methods[s]
 
     # If they disagree, see if two of them are in agreement
     else:
-        # We check in this order, as the priority is CACF -> SW -> SLS
-        best = j.results.loc['best', ['SLS','SW','CACF']]
-        ebest = j.results.loc['best', ['e_SLS','e_SW','e_CACF']]
-        a = np.abs(np.diff(best[['SLS','SW']])) < np.sqrt(np.sum(ebest[['e_SLS', 'e_SW']]**2))
+        # We check in this order, as the priority is CACF -> SW -> SLS -> ACF
+        d = np.abs(np.diff(best[['SLS','SW']])) < np.sqrt(np.sum(ebest[['e_SLS', 'e_SW']]**2))
+        c = np.abs(np.diff(best[['ACF', 'CACF']])) < ebest[['e_CACF']]
         b = np.abs(np.diff(best[['SLS','CACF']])) < np.sqrt(np.sum(ebest[['e_SLS', 'e_CACF']]**2))
-        c = np.abs(np.diff(best[['SW','CACF']])) < np.sqrt(np.sum(ebest[['e_SW', 'e_CACF']]**2))
+        a = np.abs(np.diff(best[['SW','CACF']])) < np.sqrt(np.sum(ebest[['e_SW', 'e_CACF']]**2))
 
         # SW and CACF are in agreement
-        if c:
-            frac = ebest[['e_SW', 'e_CACF']].values /  best[['SW', 'CACF']].values
-            s = np.argmin(frac)
+        if a:
+            s = np.argmax(p2ps[['p2p_SW','p2p_CACF']])
             j.results.loc['best', 'overall'] = best[['SW', 'CACF']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_SW', 'e_CACF']][s]
-            j.results.loc['best', 'f_overall'] = 2**(s+1) + 128
+            j.results.loc['best', 'method_overall'] = ['SW','CACF'][s]
+            j.results.loc['best', 'f_overall'] += 4
 
         # SLS and CACF are in agreement
         elif b:
-            frac = ebest[['e_SLS','e_CACF']].values /  best[['SLS','CACF']].values
-            s = np.argmin(frac)
-            j.results.loc['best', 'overall'] = best[['SLS','CACF']][s]
-            j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_CACF']][s]
-            if s == 0:
-                j.results.loc['best', 'f_overall'] = 1 + 128
-            else:
-                 j.results.loc['best', 'f_overall'] = 4 + 128
+            s = np.argmax(p2ps[['p2p_SLS','p2p_CACF']])
+            j.results.loc['best', 'overall'] = best[['SLS', 'CACF']][s]
+            j.results.loc['best', 'e_overall'] = ebest[['e_SLS', 'e_CACF']][s]
+            j.results.loc['best', 'method_overall'] = ['SLS','CACF'][s]
+            j.results.loc['best', 'f_overall'] += 4
+
+        # CACF and ACF are in agreement
+        elif c:
+            s = np.argmax(p2ps[['p2p_ACF','p2p_CACF']])
+            j.results.loc['best', 'overall'] = best[['ACF', 'CACF']][s]
+            j.results.loc['best', 'e_overall'] = ebest[['e_ACF', 'e_CACF']][s]
+            j.results.loc['best', 'method_overall'] = ['ACF','CACF'][s]
+            j.results.loc['best', 'f_overall'] += 4
 
         # SLS and SW are in agreement
-        elif a:
-            frac = ebest[['e_SLS','e_SW']].values /  best[['SLS','SW']].values
-            s = np.argmin(frac)
-            j.results.loc['best', 'overall'] = best[['SLS','SW']][s]
-            j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_SW']][s]
-            j.results.loc['best', 'f_overall'] = 2**s + 128
+        elif d:
+            s = np.argmax(p2ps[['p2p_SLS','p2p_SW']])
+            j.results.loc['best', 'overall'] = best[['SLS', 'SW']][s]
+            j.results.loc['best', 'e_overall'] = ebest[['e_SLS', 'e_SW']][s]
+            j.results.loc['best', 'method_overall'] = ['SLS','SW'][s]
+            j.results.loc['best', 'f_overall'] += 4
 
         # There is no agreement whatsover
         else:
             if np.isfinite(best['CACF']):
                 j.results.loc['best', 'overall'] = best['CACF']
                 j.results.loc['best', 'e_overall'] = ebest['e_CACF']
-                j.results.loc['best', 'f_overall'] = 4 + 256
+                j.results.loc['best', 'f_overall'] += 1
                 warnings.warn("No estimates could agree. Please inspect the results carefully yourself.")
+
             elif np.isfinite(best['SW']):
                 frac = ebest[['e_SLS','e_SW']].values /  best[['SLS','SW']].values
                 s = np.argmin(frac)
                 j.results.loc['best', 'overall'] = best[['SLS','SW']][s]
                 j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_SW']][s]
-                j.results.loc['best', 'f_overall'] = 2**s + 256
+                j.results.loc['best', 'f_overall'] += 2
                 warnings.warn("No estimates could agree. Please inspect the results carefully yourself.")
     _safety(j)
 
-def validate_best_vs_ACF(j):
-    # Validate the ACF vs the best value
-    if np.isfinite(j.results.loc['all', 'ACF']):
-        # Flag if the ACF does not match the 'best' period within 2 sigma
-        condition = np.abs(j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
-                    < 2*j.results.loc['best','e_overall']
-        if not condition:
-            j.results.loc['best', 'f_overall'] += 32
-
-        # Flag if the ACF appears to be a harmonic of the 'best' period
-        condition = (np.abs(0.5*j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
-                    < 2*j.results.loc['best', 'e_overall']) or\
-                    (np.abs(2*j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
-                                < 2*j.results.loc['best', 'e_overall'])
-        if condition:
-            j.results.loc['best', 'f_overall'] += 64
-    else:
-        j.results.loc['best', 'f_overall'] += 16
-    _safety(j)
+# def validate_best_vs_ACF(j):
+#     # Validate the ACF vs the best value
+#     if np.isfinite(j.results.loc['all', 'ACF']):
+#         # Flag if the ACF does not match the 'best' period within 2 sigma
+#         condition = np.abs(j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
+#                     < 2*j.results.loc['best','e_overall']
+#         if not condition:
+#             j.results.loc['best', 'f_overall'] += 32
+#
+#         # Flag if the ACF appears to be a harmonic of the 'best' period
+#         condition = (np.abs(0.5*j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
+#                     < 2*j.results.loc['best', 'e_overall']) or\
+#                     (np.abs(2*j.results.loc['all', 'ACF'] - j.results.loc['best', 'overall'])\
+#                                 < 2*j.results.loc['best', 'e_overall'])
+#         if condition:
+#             j.results.loc['best', 'f_overall'] += 64
+#     else:
+#         j.results.loc['best', 'f_overall'] += 16
+#     _safety(j)
 
 def validate_sectors(j):
     # Check if any individual sectors are wildly out of line, possibly due to binaries
@@ -257,7 +309,6 @@ def validate_prior(j):
         if condition:
             j.results.loc['best', 'f_overall'] += 2048
             warnings.warn("The prior on rotation agrees with an integer multiple of the best measured value. This may indicate that `michael` has measured a harmonic. Please inspect the results carefully yourself.")
-
 
 def validate_p2p(j):
     """
@@ -303,7 +354,7 @@ def validate_p2p(j):
             j.void[f'{m}_{s}_std'] = std
 
             if p2p > 2*std:
-                j.results.loc[s, f'f_p2p_{m}'] = 1
+                j.results.loc[s, f'f_p2p_{m}'] = int(1)
 
     _safety(j)
 
@@ -344,18 +395,10 @@ def validator(j):
 
     ## Flag values
     Overall flag values are:
-    1 - SLS-obtained value
-    2 - SW-obtained value
-    4 - CACF-obtained value
-    8 - GP-obtained value
-    16 - No ACF measured
-    32 - ACF does not match 'best' period within 2 sigma
-    64 - ACF indicates that 'best' period is a potential harmonic
-    128 - Only two out of three estimates agreed
-    256 - No robust matches, CACF assumed best
-    512 - One or more sectors disagree strongly across all estimates
-    1024 - The result disagrees with a prior value.
-    2048 - The result is an integer multiple of the prior value (likely harmonic).
+    1 - No robust matches, CACF assumed best
+    2 - No robust matches, SW assumed best
+    4 - Only two out of three estimates agreed
+    8 - One or more sectors disagree strongly across all estimates
     """
 
     # Peak-to-peak validation
@@ -369,6 +412,9 @@ def validator(j):
 
     # Validate Composite ACF
     validate_CACF(j)
+
+    # Validate regular ACF
+    validate_ACF(j)
 
     # Validate the three estimates
     validate_best(j)
