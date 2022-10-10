@@ -28,8 +28,23 @@ from .plotting import plot
 from .utils import _decode, _safety
 from .prior import priorclass
 
+pipelines = {'eleanor' : 'c',
+             'eleanor-raw' : 'raw',
+             'eleanor-pca' : 'pca',
+             'eleanor-corner' : 'corn',
+             'unpopular' : 'cpm',
+             'tess-sip': 'r'}
+
 class janet():
     """ Class managing all i/o for the `michael' package.
+
+    Pipeline options are:
+    - eleanor
+    - eleanor-raw
+    - eleanor-pca
+    - eleanor-corner
+    - unpopular
+    - tess-sip
 
     Examples
     --------
@@ -47,7 +62,7 @@ class janet():
     """
 
     def __init__(self, gaiaid, ra = None, dec = None, output_path = None,
-                use_prior = False, obs = None, verbose = True):
+                use_prior = False, obs = None, verbose = True, pipeline = 'eleanor'):
             self.gaiaid = gaiaid
             self.ra = ra
             self.dec = dec
@@ -60,6 +75,8 @@ class janet():
             self.obs = obs
             self.prot_prior = np.array([np.nan, np.nan, np.nan])
             self.samples = None
+            self.pipeline = pipeline
+            self.pl = pipelines[pipeline]
 
             if use_prior and obs is None:
                 raise ValueError('When using the prior function you must provide '
@@ -73,9 +90,14 @@ class janet():
         self.data = data_class(self)
         self.data.check_eleanor_setup()
         self.data.build_eleanor_lc()
-        self.data.build_unpopular_lc()
-        self.data.build_tess_sip_lc()
-        self.data.build_stitched_all_lc()
+
+        if self.pipeline == 'unpopular':
+            self.data.build_unpopular_lc()
+
+        if self.pipeline == 'tess-sip':
+            self.data.build_tess_sip_lc()
+
+        # self.data.build_stitched_all_lc()
 
     def flux_override(self, time, flux):
         """
@@ -116,10 +138,19 @@ class janet():
         """
         This needs some polish to get multiple methods working.
         """
+        # Only look at consecutive sectors if using tess-sip
+        if self.pipeline == 'tess-sip':
+            lim = self.sectors[[len(a) > 1 for a in self.sectors]]
+            lim2 = np.where(self.sectorlist != self.sectors[self.sectors == lim])
+            self.sectorlist = np.delete(self.sectorlist, lim2)
+            self.sectors = self.sectors[self.sectors == lim]
+
         sectorlist = list(self.sectors)
 
         # TO DO: Set period range based on longest baseline
         self.period_range = period_range
+
+
 
         # Loop over all sectors.
         for sector in sectorlist:
@@ -198,11 +229,11 @@ class janet():
 
     @staticmethod
     def boot(df, index, output_path = '/Users/oliver hall/Research/unicorn/data/eleanor',
-            use_prior = False, obs = None):
+            use_prior = False, obs = None, pipeline = 'eleanor'):
         """
         Sets up Janet quickly.
         """
         return janet(
             gaiaid = df.loc[index, 'source_id'], ra = df.loc[index, 'ra'], dec = df.loc[index, 'dec'],
-            output_path = output_path, verbose=True, use_prior=use_prior, obs=obs
+            output_path = output_path, verbose=True, use_prior=use_prior, obs=obs, pipeline=pipeline
         )

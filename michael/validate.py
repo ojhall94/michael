@@ -180,7 +180,7 @@ def validate_ACF(j):
 def validate_best(j):
     # Validate the best estimates against one another
     # Check to see if they agree closely with one another
-    methods = [['SLS', 'SW', 'CACF', 'ACF']]
+    methods = ['SLS', 'SW', 'CACF', 'ACF']
     best = j.results.loc['best', ['SLS','SW','CACF', 'ACF']]#.dropna()
     ebest = j.results.loc['best', ['e_SLS','e_SW','e_CACF', 'e_ACF']]#.dropna()
     p2ps = j.results.loc['best', ['p2p_SLS','p2p_SW','p2p_CACF', 'p2p_ACF']]#.dropna()']
@@ -192,6 +192,7 @@ def validate_best(j):
         j.results.loc['best', 'overall'] = best[s]
         j.results.loc['best', 'e_overall'] = ebest[s]
         j.results.loc['best', 'method_overall'] = methods[s]
+        j.results.loc['best', 'p2p_overall'] = p2ps[s]
 
     # If they disagree, see if two of them are in agreement
     else:
@@ -243,6 +244,7 @@ def validate_best(j):
                 j.results.loc['best', 'overall'] = best['CACF']
                 j.results.loc['best', 'e_overall'] = ebest['e_CACF']
                 j.results.loc['best', 'p2p_overall'] = p2ps['p2p_CACF']
+                j.results.loc['best', 'method_overall'] = 'CACF'
                 j.results.loc['best', 'f_overall'] += 1
                 warnings.warn("No estimates could agree. Please inspect the results carefully yourself.")
 
@@ -250,6 +252,7 @@ def validate_best(j):
                 j.results.loc['best', 'overall'] = best['SW']
                 j.results.loc['best', 'e_overall'] = ebest['e_SW']
                 j.results.loc['best', 'p2p_overall'] = p2ps['p2p_SW']
+                j.results.loc['best', 'method_overall'] = 'SW'
                 j.results.loc['best', 'f_overall'] += 2
                 warnings.warn("No estimates could agree. Please inspect the results carefully yourself.")
 
@@ -355,7 +358,7 @@ def validate_p2p(j):
 
         for s in j.sectors:
             period = j.results.loc[s, m]
-            lc = j.void[f'clc_{s}'].fold(period = period)
+            lc = j.void[f'{j.pl}lc_{s}'].fold(period = period)
             sd = np.sqrt(len(lc))
             fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'reflect')
 

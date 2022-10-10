@@ -47,7 +47,7 @@ def plot_lcs(j, fig, ax):
     xlabels = []
     xlocs = []
     for s in j.sectors:
-        lc = j.void[f'clc_{s}']
+        lc = j.void[f'{j.pl}lc_{s}']
         xvals = lc.time.value - lc.time.value.min() + xstep
         ax.scatter(xvals, lc.flux, label=f'Sector(s) {s}', s=1)
         xstep = xvals.max()
@@ -295,7 +295,7 @@ def plot_fold(j, fig, ax):
     xlabels = []
     xlocs = []
     for s in j.sectors:
-        lc = j.void[f'clc_{s}'].fold(period=j.results.loc['best', 'overall'])
+        lc = j.void[f'{j.pl}lc_{s}'].fold(period=j.results.loc['best', 'overall'])
         xvals = lc.time.value - lc.time.value.min() + xstep
         ax.scatter(xvals, lc.flux, s=2, label=f'Sector(s) {s} Folded')
         xstep = xvals.max()
@@ -316,7 +316,7 @@ def plot_fold(j, fig, ax):
         fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode='reflect')
         std = np.std(lc.flux.value/gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'nearest'))
 
-        check = std > np.diff([np.nanmin(fsmoo), np.nanmax(fsmoo)])
+        check = 2*std > np.diff([np.nanmin(fsmoo), np.nanmax(fsmoo)])
         if all(check):
             linecol = 'r'
         else:
@@ -396,9 +396,9 @@ def plot(j):
     ax2.minorticks_on()
     fig.tight_layout()
 
-    fig.suptitle(f'Gaia ID: {j.gaiaid}', fontsize=30)
+    fig.suptitle(f'Gaia ID: {j.gaiaid} - Pipeline: {j.pipeline}', fontsize=30)
     plt.subplots_adjust(top=0.95)
 
 
-    plt.savefig(f'{j.output_path}/{j.gaiaid}/output.pdf')
-    plt.savefig(f'{j.output_path}/{j.gaiaid}/output.png', dpi = 300)
+    plt.savefig(f'{j.output_path}/{j.gaiaid}/{j.pl}_output.pdf')
+    plt.savefig(f'{j.output_path}/{j.gaiaid}/{j.pl}_output.png', dpi = 300)

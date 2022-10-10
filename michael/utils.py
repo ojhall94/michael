@@ -13,7 +13,7 @@ def _gaussian_fn(p, mu, sigma, A):
     return A * np.exp(-(p - mu)**2 / (2.0 * sigma**2))
 
 def _safety(janet):
-    janet.results.to_csv(f'{janet.output_path}/{janet.gaiaid}/results.csv')
+    janet.results.to_csv(f'{janet.output_path}/{janet.gaiaid}/{janet.pl}_results.csv')
 
 def _decode(flag):
     """

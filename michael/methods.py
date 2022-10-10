@@ -51,7 +51,7 @@ def simple_astropy_lombscargle(j, sector, period_range):
         print(f'### Running Simple Astropy Lomb-Scargle on Sector {sector} on star {j.gaiaid} ###')
 
     # Call the relevant light curve
-    clc = j.void[f'clc_{sector}']
+    clc = j.void[f'{j.pl}lc_{sector}']
 
     pg = clc.to_periodogram(minimum_period = period_range[0], maximum_period = period_range[1], normalization='psd', oversample_factor=100,
                                 freq_unit = 1/u.day)
@@ -198,7 +198,7 @@ def simple_wavelet(j, sector, period_range):
         print(f'### Running Wavelet Estimation for Sector {sector} on star {j.gaiaid} ###')
 
     # Call the relevant light curve
-    clc = j.void[f'clc_{sector}']
+    clc = j.void[f'{j.pl}lc_{sector}']
 
     popt, pcov = _calculate_wavelet(clc, period_range, sector, j)
 
@@ -253,7 +253,7 @@ def composite_ACF(j, sector, period_range):
     f = interpolate.interp1d(x, w)
 
     # Calculate the ACF for the relevant sector
-    lc = j.void[f'clc_{sector}']
+    lc = j.void[f'{j.pl}lc_{sector}']
     acf = np.correlate(lc.flux.value-1, lc.flux.value-1, mode='full')[len(lc)-1:]
     lag = lc.time.value - lc.time.value.min()
     norm_acf = acf/np.nanmax(acf)
@@ -355,7 +355,7 @@ def simple_ACF(j, sector, period_range):
     if j.verbose:
         print(f'### Running ACF Estimation on star {j.gaiaid} ###')
 
-    # clc = j.void[f'clc_{sector}']
+    # clc = j.void[f'{j.pl}lc_{sector}']
     #
     # # Calculate the ACF between 0 and 12 days.
     # acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
@@ -364,7 +364,7 @@ def simple_ACF(j, sector, period_range):
     # # Cut up and normalize the ACF
     # norm_acf = acf/np.nanmax(acf)
     # acflc = lk.LightCurve(time=lag, flux=norm_acf)
-    # acflc = acflc[acflc.time.value < (j.void[f'clc_{sector}'].time.value - j.void[f'clc_{sector}'].time.value.min()).max()]
+    # acflc = acflc[acflc.time.value < (j.void[f'{j.pl}lc_{sector}'].time.value - j.void[f'{j.pl}lc_{sector}'].time.value.min()).max()]
     #
     # # Estimate a first-guess period
     # acfpg = acflc.to_periodogram()
