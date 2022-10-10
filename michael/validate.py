@@ -206,6 +206,7 @@ def validate_best(j):
             s = np.argmax(p2ps[['p2p_SW','p2p_CACF']])
             j.results.loc['best', 'overall'] = best[['SW', 'CACF']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_SW', 'e_CACF']][s]
+            j.results.loc['best', 'p2p_overall'] = p2ps[['p2p_SW', 'p2p_CACF']][s]
             j.results.loc['best', 'method_overall'] = ['SW','CACF'][s]
             j.results.loc['best', 'f_overall'] += int(4)
 
@@ -214,6 +215,7 @@ def validate_best(j):
             s = np.argmax(p2ps[['p2p_SLS','p2p_CACF']])
             j.results.loc['best', 'overall'] = best[['SLS', 'CACF']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_SLS', 'e_CACF']][s]
+            j.results.loc['best', 'p2p_overall'] = p2ps[['p2p_SLS', 'p2p_CACF']][s]
             j.results.loc['best', 'method_overall'] = ['SLS','CACF'][s]
             j.results.loc['best', 'f_overall'] += int(4)
 
@@ -222,6 +224,7 @@ def validate_best(j):
             s = np.argmax(p2ps[['p2p_ACF','p2p_CACF']])
             j.results.loc['best', 'overall'] = best[['ACF', 'CACF']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_ACF', 'e_CACF']][s]
+            j.results.loc['best', 'p2p_overall'] = p2ps[['p2p_ACF', 'p2p_CACF']][s]
             j.results.loc['best', 'method_overall'] = ['ACF','CACF'][s]
             j.results.loc['best', 'f_overall'] += int(4)
 
@@ -230,6 +233,7 @@ def validate_best(j):
             s = np.argmax(p2ps[['p2p_SLS','p2p_SW']])
             j.results.loc['best', 'overall'] = best[['SLS', 'SW']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_SLS', 'e_SW']][s]
+            j.results.loc['best', 'p2p_overall'] = p2ps[['p2p_SLS', 'p2p_SW']][s]
             j.results.loc['best', 'method_overall'] = ['SLS','SW'][s]
             j.results.loc['best', 'f_overall'] += 4
 
@@ -238,14 +242,14 @@ def validate_best(j):
             if np.isfinite(best['CACF']):
                 j.results.loc['best', 'overall'] = best['CACF']
                 j.results.loc['best', 'e_overall'] = ebest['e_CACF']
+                j.results.loc['best', 'p2p_overall'] = p2ps['p2p_CACF']
                 j.results.loc['best', 'f_overall'] += 1
                 warnings.warn("No estimates could agree. Please inspect the results carefully yourself.")
 
-            elif np.isfinite(best['SW']):
-                frac = ebest[['e_SLS','e_SW']].values /  best[['SLS','SW']].values
-                s = np.argmin(frac)
-                j.results.loc['best', 'overall'] = best[['SLS','SW']][s]
-                j.results.loc['best', 'e_overall'] = ebest[['e_SLS','e_SW']][s]
+            else:
+                j.results.loc['best', 'overall'] = best['SW']
+                j.results.loc['best', 'e_overall'] = ebest['e_SW']
+                j.results.loc['best', 'p2p_overall'] = p2ps['p2p_SW']
                 j.results.loc['best', 'f_overall'] += 2
                 warnings.warn("No estimates could agree. Please inspect the results carefully yourself.")
     _safety(j)
