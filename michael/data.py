@@ -111,7 +111,7 @@ class data_class():
         step = len(rastr.split('.')[0])
         decstr = str(self.j.dec)
         step = len(decstr.split('.')[0])
-        sfiles = np.sort(glob.glob(f'/Users/oliver hall/.eleanor/tesscut/*_{rastr[:(7+step)]}*{decstr[:(7+step)]}_*'))
+        sfiles = np.sort(glob.glob(f'~/.eleanor/tesscut/*_{rastr[:(7+step)]}*{decstr[:(7+step)]}_*'))
 
         slabels = []
         for idx in range(len(sfiles)):
@@ -204,7 +204,7 @@ class data_class():
                 sfiles = []
                 for s in np.arange(int(split[0]), int(split[1])+1):
                     sfiles.append(glob.glob(
-                    f'/Users/oliver hall/.eleanor/tesscut/*s00{s}*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')[0])
+                    f'~/.eleanor/tesscut/*s00{s}*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')[0])
 
 
                 tpflist = [lk.TessTargetPixelFile(f).cutout([26,26],13) for f in sfiles]
@@ -227,7 +227,7 @@ class data_class():
         step = len(rastr.split('.')[0])
         decstr = str(self.j.dec)
         step = len(decstr.split('.')[0])
-        sfiles = np.sort(glob.glob(f'/Users/oliver hall/.eleanor/tesscut/*{rastr[:(6+step)]}*{decstr[:(6+step)]}*'))
+        sfiles = np.sort(glob.glob(f'~/.eleanor/tesscut/*{rastr[:(6+step)]}*{decstr[:(6+step)]}*'))
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
 
         # Set up a standard aperture based on the `eleanor` aperture for a 50x50
