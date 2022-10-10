@@ -252,6 +252,13 @@ def validate_best(j):
                 j.results.loc['best', 'p2p_overall'] = p2ps['p2p_SW']
                 j.results.loc['best', 'f_overall'] += 2
                 warnings.warn("No estimates could agree. Please inspect the results carefully yourself.")
+
+    method = j.results.loc['best','method_overall']
+    sector = j.results.loc['best',f's_{method}']
+    flag = j.results.loc[sector, f'f_p2p_{method}']
+
+    if flag == 0:
+        j.results.loc['best', 'f_overall'] += 16
     _safety(j)
 
 # def validate_best_vs_ACF(j):
@@ -373,6 +380,7 @@ def validator(j):
     2 - No robust matches, SW assumed best
     4 - Only two out of three estimates agreed
     8 - One or more sectors disagree strongly across all estimates
+    16 - The 'best overall' value does not clear the p2p boundary.
     """
 
     # Peak-to-peak validation
@@ -402,5 +410,6 @@ def validator(j):
 
     # if j.samples is not None:
     #     validate_prior(j)
+
 
     _safety(j)

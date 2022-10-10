@@ -21,6 +21,7 @@ def _decode(flag):
     2 - No robust matches, SW assumed best
     4 - Only two out of three estimates agreed
     8 - One or more sectors disagree strongly across all estimates
+    16 - P2P check isn't cleared for best overall target.
     """
 
     STRINGS = {
@@ -35,6 +36,8 @@ def _decode(flag):
         8 :  "8: One or more sectors disagrees strongly across all estimates with " +
             "the others. This may indicate signal from a background star present " +
             "in those sectors.",
+        16: "16: The best overal value does not have a peak-to-peak height that" +
+            " exceeds the scatter in the detrended light curve. Proceed with caution."
     }
 
     val = np.copy(flag)
