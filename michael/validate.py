@@ -184,9 +184,10 @@ def validate_best(j):
     best = j.results.loc['best', ['SLS','SW','CACF', 'ACF']]#.dropna()
     ebest = j.results.loc['best', ['e_SLS','e_SW','e_CACF', 'e_ACF']]#.dropna()
     p2ps = j.results.loc['best', ['p2p_SLS','p2p_SW','p2p_CACF', 'p2p_ACF']]#.dropna()']
+    j.results['f_overall'] = np.zeros(len(j.results)).astype(int)
 
     # If they agree, then pick the one with the highest p2p value
-    if np.abs(np.diff(best.drpona(), len(best.drpona())-1)) < np.sqrt(np.nansum(ebest**2)):
+    if np.abs(np.diff(best.dropna(), len(best.dropna())-1)) < np.sqrt(np.nansum(ebest**2)):
         s = np.argmax(p2ps)
         j.results.loc['best', 'overall'] = best[s]
         j.results.loc['best', 'e_overall'] = ebest[s]
@@ -196,7 +197,7 @@ def validate_best(j):
     else:
         # We check in this order, as the priority is CACF -> SW -> SLS -> ACF
         d = np.abs(np.diff(best[['SLS','SW']])) < np.sqrt(np.sum(ebest[['e_SLS', 'e_SW']]**2))
-        c = np.abs(np.diff(best[['ACF', 'CACF']])) < ebest[['e_CACF']]
+        c = np.abs(np.diff(best[['ACF', 'CACF']])) < ebest[['e_CACF']].values
         b = np.abs(np.diff(best[['SLS','CACF']])) < np.sqrt(np.sum(ebest[['e_SLS', 'e_CACF']]**2))
         a = np.abs(np.diff(best[['SW','CACF']])) < np.sqrt(np.sum(ebest[['e_SW', 'e_CACF']]**2))
 
@@ -206,7 +207,7 @@ def validate_best(j):
             j.results.loc['best', 'overall'] = best[['SW', 'CACF']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_SW', 'e_CACF']][s]
             j.results.loc['best', 'method_overall'] = ['SW','CACF'][s]
-            j.results.loc['best', 'f_overall'] += 4
+            j.results.loc['best', 'f_overall'] += int(4)
 
         # SLS and CACF are in agreement
         elif b:
@@ -214,7 +215,7 @@ def validate_best(j):
             j.results.loc['best', 'overall'] = best[['SLS', 'CACF']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_SLS', 'e_CACF']][s]
             j.results.loc['best', 'method_overall'] = ['SLS','CACF'][s]
-            j.results.loc['best', 'f_overall'] += 4
+            j.results.loc['best', 'f_overall'] += int(4)
 
         # CACF and ACF are in agreement
         elif c:
@@ -222,7 +223,7 @@ def validate_best(j):
             j.results.loc['best', 'overall'] = best[['ACF', 'CACF']][s]
             j.results.loc['best', 'e_overall'] = ebest[['e_ACF', 'e_CACF']][s]
             j.results.loc['best', 'method_overall'] = ['ACF','CACF'][s]
-            j.results.loc['best', 'f_overall'] += 4
+            j.results.loc['best', 'f_overall'] += int(4)
 
         # SLS and SW are in agreement
         elif d:
@@ -271,15 +272,15 @@ def validate_best(j):
 
 def validate_sectors(j):
     # Check if any individual sectors are wildly out of line, possibly due to binaries
-    res = j.results.loc[(j.results.index != 'best') & (j.results.index != 'all'), ['SLS','SW','CACF']]
-    err = j.results.loc[(j.results.index != 'best') & (j.results.index != 'all'), ['e_SLS', 'e_SW', 'e_CACF']]
+    res = j.results.loc[(j.results.index != 'best') & (j.results.index != 'all'), ['SLS','SW','CACF', 'ACF']]
+    err = j.results.loc[(j.results.index != 'best') & (j.results.index != 'all'), ['e_SLS', 'e_SW', 'e_CACF', 'e_ACF']]
 
     a = np.abs(np.diff(res,axis=0, n = len(res)-1))
-    b = np.sqrt(np.sum(err**2, axis=0)).values
+    b = np.sqrt(np.nansum(err**2, axis=0)).values
 
     # Do any sectors disagree repeatedly over 1 sigma across all sectors?
     if all(list((a-b > 0)[0])):
-        j.results.loc['best', 'f_overall'] += 512
+        j.results.loc['best', 'f_overall'] += 8
 
     warnings.warn("One or more sectors disagree strongly across all estimates. Please inspect the results carefully yourself.")
 
@@ -362,37 +363,6 @@ def validator(j):
     """
     TODO: THIS DOCSTRING IS OUT OF DATE
 
-    This function will validate the measured rotation rates and determine
-    a value that it considers to be the best. It does this following a flow-
-    chart, starting with the Lomb Scargle periodogram results.
-
-    ## Validating the Simple Lomb Scargle (SLS) Period
-    - If there is a SLS value for 'all' sectors, this is the 'best' value.
-    - Otherwise, the SLS value with the lowest fractional uncertainty in
-        and unflagged sector is deemed the 'best' value.
-        - If all sectors have flags, the 'flag' condition is ignored.
-
-    ## Validating the Simple Wavelet (SW) Period vs the SLS Period
-    - There is only one Wavelet Period, which is the best by default.
-    - If the 'best' SW and SLS periods agree within 1 sigma, the value
-        with the smallest fractional uncertainty is chosen as the 'best
-        overall' rotation period.
-        - If there is no agreement within 1 sigma, we check whether the SW
-            agrees within 1 sigma with any *unflagged* single-sector SLS
-            periods.
-        - If there are no matching *unflagged* single-sector SLS periods,
-            no match is found. The wavelet is then assumed to be the 'best
-            overall' rotation period, and the value is flagged.
-
-    ## Validating the ACF Period vs the 'Best Overall' Period
-    - TO DO
-        Something like, verify the ACF has the same value as the best? if not,
-        search for a corresponding peak and flag as maybe a harmonic?
-
-    ## Validating the Gaussian Process (GP) period
-    - As the GP is the most statistically intensive measurement of the
-        rotation, it is automatically taken to be the 'best overall' period.
-
     ## Flag values
     Overall flag values are:
     1 - No robust matches, CACF assumed best
@@ -426,7 +396,7 @@ def validator(j):
     if len(j.sectors) > 1:
         validate_sectors(j)
 
-    if j.samples is not None:
-        validate_prior(j)
+    # if j.samples is not None:
+    #     validate_prior(j)
 
     _safety(j)
