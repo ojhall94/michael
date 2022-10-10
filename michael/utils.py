@@ -30,7 +30,7 @@ def _decode(flag):
         2 : "1: None of the 3 estimates agreed with one another to within 1 "+
               "sigma. The SW estimate is assumed to be the best in this case, "+
               "if it is available.",
-        4 : "128: Only 2 of the 3 estimates of rotation agreed with one another " +
+        4 : "4: Only 2 of the 3 estimates of rotation agreed with one another " +
              "to within 1 sigma.",
         8 :  "8: One or more sectors disagrees strongly across all estimates with " +
             "the others. This may indicate signal from a background star present " +

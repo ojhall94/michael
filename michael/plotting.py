@@ -212,10 +212,9 @@ def plot_acf(j, fig, ax):
 
     ax.set_xlim(j.period_range[0], j.period_range[1])
 
-    if len(j.void[f'{s}_peaks']) >= 1:
-        ax.axvline(j.void[f'{s}_vizacf'].time.value[j.void[f'{s}_peaks'][0]], c=cmap[3],
-                            label = f'P = {j.results.loc["best", "ACF"]:.2f} d',
-                            lw = 4, ls=':', zorder=5)
+    ax.axvline(j.results.loc['best', 'ACF'], c=cmap[3],
+                        label = f'P = {j.results.loc["best", "ACF"]:.2f} d',
+                        lw = 4, ls=':', zorder=5)
     ax.axvspan(j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
                 j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'], color=cmap[6], zorder=2,
                 label=f'P = {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d',

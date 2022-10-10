@@ -280,7 +280,7 @@ def validate_sectors(j):
     err = j.results.loc[(j.results.index != 'best') & (j.results.index != 'all'), ['e_SLS', 'e_SW', 'e_CACF', 'e_ACF']]
 
     a = np.abs(np.diff(res,axis=0, n = len(res)-1))
-    b = np.sqrt(np.nansum(err**2, axis=0)).values
+    b = np.sqrt(np.nansum(err**2, axis=0))
 
     # Do any sectors disagree repeatedly over 1 sigma across all sectors?
     if all(list((a-b > 0)[0])):
