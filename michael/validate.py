@@ -107,42 +107,46 @@ def validate_CACF(j):
         # peaks are occuring within 2sigma.
         flag = np.zeros(len(dfsec), dtype=bool)
 
-        for idx, sector in enumerate(j.sectors):
-            lolim = df.loc[sector, 'CACF'] - 2*df.loc[sector, 'e_CACF']
-            uplim = df.loc[sector, 'CACF'] + 2*df.loc[sector, 'e_CACF']
+        """
+        # TODO: Fix this.
+        """
 
-            altpeaks_x = []
-            mask = np.ones(len(dfsec), dtype=bool)
-            mask[idx] = 0
-            if len(dfsec[mask]) > 1:
-                for s in dfsec[mask]:
-                    for p in j.void[f'{s}_cpeaks']:
-                        altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
-            else:
-                s = dfsec[mask][0]
-                for p in j.void[f'{s}_cpeaks']:
-                    altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
-
-            # Check if there are any peaks from other sectors present within 2 sigma
-            flag[idx] = any(altpeaks_x - df.loc[sector, 'CACF'] < df.loc[sector, 'e_CACF'])
-
-
-            # If flag 1 on one sector, then that's the "best"
-            if len(flag[flag == 1]):
-                best = df[np.argmax(flag)]
-
-            # If flag 1 on multiple sectors, then select "best" based on peak height
-            elif len(flag[flag > 1]):
-                s = dfsec[flag]
-                best = np.array(df[s]['h_CACF'].idxmax())
-
-            # If 0 or 1 on all, then select "best" based on peak height.
-            elif np.min(flag) == np.max(flag):
-                best = np.array(df['h_CACF'].idxmax())
-
-            # Otherwise, pick sector with highest p2p height
-            else:
-                best = df.p2p_CACF.idxmax()
+        # for idx, sector in enumerate(indices):
+        #     lolim = df.loc[sector, 'CACF'] - 2*df.loc[sector, 'e_CACF']
+        #     uplim = df.loc[sector, 'CACF'] + 2*df.loc[sector, 'e_CACF']
+        #
+        #     altpeaks_x = []
+        #     mask = np.ones(len(dfsec), dtype=bool)
+        #     mask[idx] = 0
+        #     if len(dfsec[mask]) > 1:
+        #         for s in dfsec[mask]:
+        #             for p in j.void[f'{s}_cpeaks']:
+        #                 altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
+        #     else:
+        #         s = dfsec[mask][0]
+        #         for p in j.void[f'{s}_cpeaks']:
+        #             altpeaks_x.append(j.void[f'{s}_cacf'][p]['time'].value)
+        #
+        #     # Check if there are any peaks from other sectors present within 2 sigma
+        #     flag[idx] = any(altpeaks_x - df.loc[sector, 'CACF'] < df.loc[sector, 'e_CACF'])
+        #
+        #
+        #     # If flag 1 on one sector, then that's the "best"
+        #     if len(flag[flag == 1]):
+        #         best = df[np.argmax(flag)]
+        #
+        #     # If flag 1 on multiple sectors, then select "best" based on peak height
+        #     elif len(flag[flag > 1]):
+        #         s = dfsec[flag]
+        #         best = np.array(df[s]['h_CACF'].idxmax())
+        #
+        #     # If 0 or 1 on all, then select "best" based on peak height.
+        #     elif np.min(flag) == np.max(flag):
+        #         best = np.array(df['h_CACF'].idxmax())
+        #
+        #     # Otherwise, pick sector with highest p2p height
+        #     else:
+        best = df.p2p_CACF.idxmax()
 
     j.results.loc['best', 'CACF'] = j.results.loc[best, 'CACF']
     j.results.loc['best', 'e_CACF'] = j.results.loc[best, 'e_CACF']
