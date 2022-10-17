@@ -8,8 +8,8 @@ from michael import janet
 import astropy.units as u
 
 """
-Note: janet.view(), janet.run() and janet.validate_rotation() just call
-functions that are tested separately.
+Note: janet.view(), janet.run(), janet.prepare_data() and
+janet.validate_rotation() just call functions that are tested separately.
 """
 
 def test_init():

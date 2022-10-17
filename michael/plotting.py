@@ -22,15 +22,15 @@ binfactor = 20
 
 def plot_tpf(j, fig, ax):
     # Plot Sector 0 TPF
-    if not j.override:
-        sector0 = j.sectorlist[0]
-        ax.set_title(f'Frame 0 Sector {sector0}')
-        ax.set_xlabel('X')
-        ax.set_ylabel('Y')
-        ax.imshow(np.log10(j.void[f'datum_{sector0}'].tpf[0]), zorder=1)
-        pix = np.where(j.void[f'datum_{sector0}'].aperture > 0)
-        ax.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
-        ax.legend(loc='upper left', fontsize=_label_fontsize)
+    # if not j.override:
+    sector0 = j.sectorlist[0]
+    ax.set_title(f'Frame 0 Sector {sector0}')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.imshow(np.log10(j.void[f'datum_{sector0}'].tpf[0]), zorder=1)
+    pix = np.where(j.void[f'datum_{sector0}'].aperture > 0)
+    ax.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
+    ax.legend(loc='upper left', fontsize=_label_fontsize)
 
 def plot_lcs(j, fig, ax):
     text = ''
@@ -278,10 +278,10 @@ def plot_comparison(j, fig, ax):
         ax.axhspan(2*j.results.loc['best', 'overall'] - j.results.loc['best', 'e_overall'],
                     2*j.results.loc['best', 'overall'] + j.results.loc['best', 'e_overall'],
                     color=cmap[7], alpha=.5, zorder=0)
-    if j.samples is not None:
-        ax.axhspan(j.prot_prior[0], j.prot_prior[-1], color=cmap[1], alpha=.4,
-                    zorder=0, label='Prior')
-        ax.axhline(j.prot_prior[1], ls='--', c=cmap[1], zorder=1)
+    # if j.samples is not None:
+    #     ax.axhspan(j.prot_prior[0], j.prot_prior[-1], color=cmap[1], alpha=.4,
+    #                 zorder=0, label='Prior')
+    #     ax.axhline(j.prot_prior[1], ls='--', c=cmap[1], zorder=1)
 
     ax.legend(loc='best')
     res = j.results.loc[j.results.index != 'best', ['SLS','SW', 'CACF', 'ACF']].to_numpy().flatten()

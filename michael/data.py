@@ -37,7 +37,6 @@ class data_class():
         if len(glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')) > 0:
             if self.j.verbose:
                 print(f'Already have data downloaded for Gaia ID {self.j.gaiaid}.')
-                print(f'If you want to check for new data, run `janet.update()`.')
         else:
             self.download_eleanor_data()
 
@@ -111,7 +110,7 @@ class data_class():
         step = len(rastr.split('.')[0])
         decstr = str(self.j.dec)
         step = len(decstr.split('.')[0])
-        sfiles = np.sort(glob.glob(f'~/.eleanor/tesscut/*_{rastr[:(7+step)]}*{decstr[:(7+step)]}_*'))
+        sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*_{rastr[:(7+step)]}*{decstr[:(7+step)]}_*'))
 
         slabels = []
         for idx in range(len(sfiles)):
@@ -169,21 +168,21 @@ class data_class():
 
                     self.j.void[f'{pl}lc_{s}'] = combo
 
-    def build_stitched_all_lc(self):
-        """
-        Deprecated, data no longer needed.
-
-        Combine all available light curves of a given sector for the purposes of the ACF.
-
-        NOTE: We may want to change the ACF method to sector-by-sector due to changing spots.
-        """
-        pls = ['c','raw','pca','corn', 'cpm']
-
-        for pl in pls:
-            all = self.j.void[f'{pl}lc_{self.j.sectorlist[0]}']
-            for s in self.j.sectorlist[1:]:
-                all = all.append(self.j.void[f'{pl}lc_{s}'])
-            self.j.void[f'{pl}lc_all'] = all
+    # def build_stitched_all_lc(self):
+    #     """
+    #     Deprecated, data no longer needed.
+    #
+    #     Combine all available light curves of a given sector for the purposes of the ACF.
+    #
+    #     NOTE: We may want to change the ACF method to sector-by-sector due to changing spots.
+    #     """
+    #     pls = ['c','raw','pca','corn', 'cpm']
+    #
+    #     for pl in pls:
+    #         all = self.j.void[f'{pl}lc_{self.j.sectorlist[0]}']
+    #         for s in self.j.sectorlist[1:]:
+    #             all = all.append(self.j.void[f'{pl}lc_{s}'])
+    #         self.j.void[f'{pl}lc_all'] = all
 
     def build_tess_sip_lc(self):
         """
@@ -204,7 +203,7 @@ class data_class():
                 sfiles = []
                 for s in np.arange(int(split[0]), int(split[1])+1):
                     sfiles.append(glob.glob(
-                    f'~/.eleanor/tesscut/*s00{s}*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')[0])
+                    f'{os.path.expanduser("~")}/.eleanor/tesscut/*-s*{s}-*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')[0])
 
 
                 tpflist = [lk.TessTargetPixelFile(f).cutout([26,26],13) for f in sfiles]
@@ -227,7 +226,7 @@ class data_class():
         step = len(rastr.split('.')[0])
         decstr = str(self.j.dec)
         step = len(decstr.split('.')[0])
-        sfiles = np.sort(glob.glob(f'~/.eleanor/tesscut/*{rastr[:(6+step)]}*{decstr[:(6+step)]}*'))
+        sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(6+step)]}*{decstr[:(6+step)]}*'))
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
 
         # Set up a standard aperture based on the `eleanor` aperture for a 50x50

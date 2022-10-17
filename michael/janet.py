@@ -184,7 +184,7 @@ class janet():
         If `michael` is run using the `verbose=True` kwarg, the decoded flag
         will be printed at the end of the run.
         """
-        if (type(flag) is not int) & (type(flag) is not float):
+        if (type(flag) is not int) & (type(flag) is not float) & (type(flag) is not np.int64):
             raise ValueError("Please input an integer flag.")
 
         if flag >= 32:
