@@ -62,7 +62,7 @@ class janet():
     """
 
     def __init__(self, gaiaid, ra = None, dec = None, output_path = None,
-                use_prior = False, obs = None, verbose = True, pipeline = 'eleanor'):
+                pipeline = 'eleanor', verbose = True):
             self.gaiaid = gaiaid
             self.ra = ra
             self.dec = dec
@@ -70,17 +70,22 @@ class janet():
             self.output_path = output_path
             self.verbose = verbose
             self.void = {}
-            self.override=False
-            self.use_prior = use_prior
-            self.obs = obs
-            self.prot_prior = np.array([np.nan, np.nan, np.nan])
-            self.samples = None
+            # self.override=False
+            # self.use_prior = use_prior
+            # self.obs = obs
+            # self.prot_prior = np.array([np.nan, np.nan, np.nan])
+            # self.samples = None
+            if pipeline not in pipelines:
+                raise ValueError("Requested pipeline not available, defaulting"+
+                                " to eleanor pipeline")
+                pipeline = 'eleanor'
+
             self.pipeline = pipeline
             self.pl = pipelines[pipeline]
 
-            if use_prior and obs is None:
-                raise ValueError('When using the prior function you must provide '
-                                 'observables as input.')
+            # if use_prior and obs is None:
+            #     raise ValueError('When using the prior function you must provide '
+            #                      'observables as input.')
 
     def prepare_data(self):
         """
@@ -99,40 +104,40 @@ class janet():
 
         # self.data.build_stitched_all_lc()
 
-    def flux_override(self, time, flux):
-        """
-        Michael is intended for use with `eleanor` light curves only. However for
-        testing purposes, this `flux_override()` command allows input of a custom
-        light curve.
-
-        After calling this command, the user should call `get_rotation()`,
-        `validate_rotation()` and `view()` manually.
-
-        This lone light curve is treated as if it's an 'all' sectors light curve.
-
-        Parameters
-        ----------
-        time: ndarray
-            The time values in units of days.
-
-        flux: ndarray
-            The flux values in any units.
-        """
-        self.sectors = np.array(['all'])
-        self.gaps = False
-        self.override = True
-
-        # Create matching data folders
-        if not os.path.exists(f'{self.output_path}/{self.gaiaid}'):
-            print(f'Making folder {self.output_path}/{self.gaiaid}/...')
-            os.makedirs(f'{self.output_path}/{self.gaiaid}')
-        else:
-            pass
-
-        lc = lk.LightCurve(time = time, flux = flux)
-        clc = lc.normalize().remove_nans().remove_outliers()
-        self.void['datum_all'] = None
-        self.void['clc_all'] = clc
+    # def flux_override(self, time, flux):
+    #     """
+    #     Michael is intended for use with `eleanor` light curves only. However for
+    #     testing purposes, this `flux_override()` command allows input of a custom
+    #     light curve.
+    #
+    #     After calling this command, the user should call `get_rotation()`,
+    #     `validate_rotation()` and `view()` manually.
+    #
+    #     This lone light curve is treated as if it's an 'all' sectors light curve.
+    #
+    #     Parameters
+    #     ----------
+    #     time: ndarray
+    #         The time values in units of days.
+    #
+    #     flux: ndarray
+    #         The flux values in any units.
+    #     """
+    #     self.sectors = np.array(['all'])
+    #     self.gaps = False
+    #     self.override = True
+    #
+    #     # Create matching data folders
+    #     if not os.path.exists(f'{self.output_path}/{self.gaiaid}'):
+    #         print(f'Making folder {self.output_path}/{self.gaiaid}/...')
+    #         os.makedirs(f'{self.output_path}/{self.gaiaid}')
+    #     else:
+    #         pass
+    #
+    #     lc = lk.LightCurve(time = time, flux = flux)
+    #     clc = lc.normalize().remove_nans().remove_outliers()
+    #     self.void['datum_all'] = None
+    #     self.void['clc_all'] = clc
 
     def get_rotation(self, period_range = (0.2, 13.7)):
         """
@@ -149,8 +154,6 @@ class janet():
 
         # TO DO: Set period range based on longest baseline
         self.period_range = period_range
-
-
 
         # Loop over all sectors.
         for sector in sectorlist:
@@ -181,7 +184,10 @@ class janet():
         If `michael` is run using the `verbose=True` kwarg, the decoded flag
         will be printed at the end of the run.
         """
-        if flag >= 4086:
+        if (type(flag) is not int) & (type(flag) is not float):
+            raise ValueError("Please input an integer flag.")
+
+        if flag >= 32:
             print("Our flags don't go this high. Please see the `validator()`"+
                     " function docstring for more information")
         else:
@@ -189,13 +195,13 @@ class janet():
             print(_decode(flag))
             print('No other flags raised. \n')
 
-    def update(self, sectors):
-        """
-        Updates `eleanor` for a list of sectors.
-        """
-        for idx, s in enumerate(sectors):
-            eleanor.Update(s)
-        print(f'Updated eleanor Sectors {sectors}.')
+    # def update(self, sectors):
+    #     """
+    #     Updates `eleanor` for a list of sectors.
+    #     """
+    #     for idx, s in enumerate(sectors):
+    #         eleanor.Update(s)
+    #     print(f'Updated eleanor Sectors {sectors}.')
 
     def run(self, period_range = (0.2, 27.4)):
         self.prepare_data()
