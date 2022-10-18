@@ -110,7 +110,7 @@ def simple_astropy_lombscargle(j, sector, period_range):
             j.results.loc[sector, 'h_SLS'] = popt[2]
 
 
-    ## Condition (4)
+    # Condition (4)
     sig_rms = np.sqrt(np.mean((clc.flux.value - 1)**2))
     sig_ps = 4 * sig_rms**2 / len(clc)
     if popt[2] < 4 * sig_ps:
