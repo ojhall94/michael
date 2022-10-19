@@ -23,7 +23,7 @@ import astropy.units as u
 
 from .data import data_class
 from .methods import *
-from .validate import validator
+from .validate import validator, longest_sector
 from .plotting import plot
 from .utils import _decode, _safety
 from .prior import priorclass
@@ -143,6 +143,30 @@ class janet():
         """
         This needs some polish to get multiple methods working.
         """
+        # Assert the period range is positive and not longer than your longest
+        # sector. Raise a warning if it is over half your longest sector.
+        if any(np.array(period_range) <= 0):
+            raise ValueError("Please input a lower period limit > 0.")
+
+        if period_range[1] <= period_range[0]:
+            raise ValueError("It looks like you've got your period limits mixed up!")
+
+        longest = longest_sector(self)
+        if len(longest.split('-')) == 1:
+            maxlen = 27
+        else:
+            split = longest.split('-')
+            maxlen = 27*(int(split[1]) - int(split[0])+1)
+
+        if period_range[1] > maxlen:
+            raise ValueError("Your upper period limit is longer than your "+
+                            "longest set of consecutive TESS sectors.")
+
+        if period_range[1] > maxlen/2:
+            warnings.warn(UserWarning("Your upper period limit is longer than half your "+
+                            "longest set of consecutive TESS sectors. You'll "+
+                            "be more prone to harmonics."))
+
         # Only look at consecutive sectors if using tess-sip
         if self.pipeline == 'tess-sip':
             lim = self.sectors[[len(a) > 1 for a in self.sectors]]

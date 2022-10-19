@@ -51,4 +51,21 @@ def test_decode():
 def test_get_rotation():
     # Assert `get_rotation` calls the correct functions under different
     # pipelines.
-    return 0
+
+    # Test period range is checked appropriately
+    # Just run all the decode calls
+    gaiaid = 'test'
+    ra , dec = 0.0*u.deg, 0.0*u.deg
+    output_path = 'data/'
+    pipeline = 'eleanor'
+    j = janet(gaiaid, ra, dec, output_path, pipeline, verbose=True)
+
+    with pytest.raises(ValueError) as err:
+        j.get_rotation(period_range = (-5, 27))
+
+    with pytest.raises(ValueError) as err:
+        j.get_rotation(period_range = (27, 5))
+
+    j.sectors = ['45-46']
+    with pytest.raises(ValueError) as err:
+        j.get_rotation(period_range = (2, 100))

@@ -353,27 +353,6 @@ def simple_ACF(j, sector, period_range):
     if j.verbose:
         print(f'### Running ACF Estimation on star {j.gaiaid} ###')
 
-    # clc = j.void[f'{j.pl}lc_{sector}']
-    #
-    # # Calculate the ACF between 0 and 12 days.
-    # acf = np.correlate(clc.flux.value-1, clc.flux.value-1, mode='full')[len(clc)-1:]
-    # lag = clc.time.value - np.nanmin(clc.time.value)
-    #
-    # # Cut up and normalize the ACF
-    # norm_acf = acf/np.nanmax(acf)
-    # acflc = lk.LightCurve(time=lag, flux=norm_acf)
-    # acflc = acflc[acflc.time.value < (j.void[f'{j.pl}lc_{sector}'].time.value - j.void[f'{j.pl}lc_{sector}'].time.value.min()).max()]
-    #
-    # # Estimate a first-guess period
-    # acfpg = acflc.to_periodogram()
-    # first_guess = acfpg.period_at_max_power
-    #
-    # # Limit the search range
-    # if not period_range[0] < first_guess.value < period_range[1]:
-    #     warnings.warn("The highest peak in the ACF lies outside the period range of your search.")
-    # vizacf = acflc[(acflc.time.value <= period_range[1])]
-    # vizacf = vizacf[(vizacf.time.value >= period_range[0])]
-
     # Smooth the  ACF
     sd = 2.
     acfsmoo = gaussian_filter1d(j.void[f'{sector}_vizacf'].flux.value, sigma = sd, mode='nearest')

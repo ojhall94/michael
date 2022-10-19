@@ -23,7 +23,8 @@ def test_SLS_pass():
     sfile = glob.glob('tests/data/synthetic*pass*')[0]
     prot = float(sfile.split('_')[-2])
     syn = np.genfromtxt(sfile)
-    j.void['clc_0']  = lightkurve.LightCurve(np.arange(0, 27., 0.02), syn)
+    j.void['clc_0']  = lightkurve.LightCurve(time = np.arange(0, 27., 0.02),
+                                            flux = syn)
 
     # Call function and assert outcomes
     simple_astropy_lombscargle(j, 0, period_range = (0.1, 27))
@@ -49,9 +50,11 @@ def test_SLS_fail():
 
     # Build failure mode data, designed to trigger if statements in methods
     np.random.seed(5)
+    t = np.arange(0, 27., 0.02)
     failure = np.random.randn(len(t))*0.1 + 1
 
-    j.void['clc_0']  = lk.LightCurve(np.arange(0, 27., 0.02), failure)
+    j.void['clc_0']  = lightkurve.LightCurve(time = t,
+                                            flux = failure)
 
     # Call function and assert outcomes
     simple_astropy_lombscargle(j, 0, period_range = (0.1, 27))
@@ -75,7 +78,8 @@ def test_SW():
     sfile = glob.glob('tests/data/synthetic*pass*')[0]
     prot = float(sfile.split('_')[-2])
     syn = np.genfromtxt(sfile)
-    j.void['clc_0']  = lightkurve.LightCurve(np.arange(0, 27., 0.02), syn)
+    j.void['clc_0']  = lightkurve.LightCurve(time = np.arange(0, 27., 0.02),
+                                            flux = syn)
 
     # Call function and assert outcomes
     simple_wavelet(j, 0, period_range = (2, 8))
@@ -93,10 +97,104 @@ def test_SW():
     # Assert the correct result has been recovered
     assert_almost_equal(j.results.loc[0,'SW'], prot, decimal=1)
 
-    # Check that SW doesn't fail on a ridiculous period_range
-    j.void['clc_0']  = lightkurve.LightCurve(np.arange(0, 27., 0.02), syn)
-    simple_wavelet(j, 0, period_range = (9, 10))
-    assert len(j.results.loc[0]) == 3
+def test_CACF_pass():
+    # Set up mock `janet` with synthetic pass case data
+    j = janet('synthetic', 0., 0., output_path = 'tests/data')
+    j.sectors = ['0']
+    j.sectorlist = ['0']
+    sfile = glob.glob('tests/data/synthetic*pass*')[0]
+    prot = float(sfile.split('_')[-2])
+    syn = np.genfromtxt(sfile)
+    j.void['clc_0']  = lightkurve.LightCurve(time = np.arange(0, 27., 0.02),
+                                            flux = syn)
+    simple_wavelet(j, 0, period_range = (1, 13.5))
+
+    # Call function and assert outcome
+    composite_ACF(j, 0, period_range = (1, 13.5))
+
+    # Check types of stored objects
+    assert type(j.void['0_cacf_popt']) == np.ndarray
+    assert type(j.void['0_vizacf']) == lightkurve.lightcurve.LightCurve
+    assert type(j.void['0_acflc']) == lightkurve.lightcurve.LightCurve
+    assert type(j.void['0_cacf']) == lightkurve.lightcurve.LightCurve
+    assert type(j.void['0_cacfsmoo']) == np.ndarray
+    assert type(j.void['0_cpeaks']) == np.ndarray
+
+    # Check results have been stored correctly
+    assert len(j.results.loc[0]) == 6
     assert all(np.isfinite(j.results.loc[0]))
 
-=
+    # Assert the correct result has been recovered
+    assert_almost_equal(j.results.loc[0,'CACF'], prot, decimal=1)
+
+def test_CACF_fail():
+    # Set up mock `janet` with synthetic pass case data
+    j = janet('synthetic', 0., 0., output_path = 'tests/data')
+    j.sectors = ['0']
+    j.sectorlist = ['0']
+
+    # Build failure mode data, designed to trigger if statements in methods
+    np.random.seed(5)
+    t = np.arange(0, 27., 0.02)
+    failure = np.random.randn(len(t))*1e-7 + 1
+
+    j.void['clc_0']  = lightkurve.LightCurve(time = t,
+                                            flux = failure)
+    simple_wavelet(j, 0, period_range = (1, 13.5))
+
+    # Call function and assert outcome
+    composite_ACF(j, 0, period_range = (1, 13.5))
+
+    # Check results are nans due to lack peaks
+    assert all(np.isnan(j.results.loc[0, ['CACF','e_CACF','h_CACF']]))
+
+def test_ACF_pass():
+    # Set up mock `janet` with synthetic pass case data
+    j = janet('synthetic', 0., 0., output_path = 'tests/data')
+    j.sectors = ['0']
+    j.sectorlist = ['0']
+    sfile = glob.glob('tests/data/synthetic*pass*')[0]
+    prot = float(sfile.split('_')[-2])
+    syn = np.genfromtxt(sfile)
+    j.void['clc_0']  = lightkurve.LightCurve(time = np.arange(0, 27., 0.02),
+                                            flux = syn)
+
+    simple_wavelet(j, 0, period_range = (2, 7))
+    composite_ACF(j, 0, period_range = (2, 7))
+
+    # Call function and assert outcome
+    simple_ACF(j, 0, period_range = (2, 7))
+
+    # Check types of stored objects
+    assert type(j.void['0_acfsmoo']) == np.ndarray
+    assert type(j.void['0_peaks']) == np.ndarray
+
+    # Check results have been stored correctly
+    assert len(j.results.loc[0]) == 8
+    assert all(np.isfinite(j.results.loc[0, j.results.columns[:-1]]))
+
+    # Assert the correct result has been recovered
+    assert_almost_equal(j.results.loc[0,'ACF'], prot, decimal=1)
+
+def test_ACF_fail():
+    # Set up mock `janet` with synthetic pass case data
+    j = janet('synthetic', 0., 0., output_path = 'tests/data')
+    j.sectors = ['0']
+    j.sectorlist = ['0']
+
+    # Build failure mode data, designed to trigger if statements in methods
+    np.random.seed(5)
+    t = np.arange(0, 27., 0.02)
+    failure = np.random.randn(len(t))*1e-7 + 1
+
+    j.void['clc_0']  = lightkurve.LightCurve(time = t,
+                                            flux = failure)
+    simple_wavelet(j, 0, period_range = (1, 13.5))
+    composite_ACF(j, 0, period_range = (1, 13.5))
+
+    # minimise the scale of the ACF to assure on peaks are captured
+    j.void['0_vizacf'] *= 1e-6
+    simple_ACF(j, 0, period_range = (1, 13.5))
+
+    # Check results are nans due to lack of peaks
+    assert all(np.isnan(j.results.loc[0, ['ACF', 'e_ACF']]))
