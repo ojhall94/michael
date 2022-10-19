@@ -88,3 +88,18 @@ def test_get_rotation():
     assert len(j.void) == 18
     assert all(list(j.results.index) == j.sectors)
     assert all(np.diff(j.sectorlist) == 1)
+
+def test_view():
+    # Using a known rotator from the Gaia catalogue
+    gaiaid = 38329666836450304
+    ra = 59.560442
+    dec = 12.627969
+
+    j = janet(gaiaid, ra, dec, pipeline = 'unpopular', output_path = 'tests/data')
+    data = data_class(j)
+    data.check_eleanor_setup()
+    data.build_eleanor_lc()
+    data.build_unpopular_lc()
+    j.get_rotation(period_range = (2, 8))
+    j.validate_rotation()
+    j.view()

@@ -150,6 +150,7 @@ def plot_wavelet_fit(j, fig, ax):
     ax.plot(pp, _gaussian_fn(pp, *j.void[f'{best_sw}_wavelet_popt']), ls='--', lw=10, c=cmap[5],
                 label = rf'$\sigma$ = {j.results.loc["best", "e_SW"]:.2f} d')
     ax.set_ylabel('Normalized Summed WWZ')
+    ax.set_xlabel('Period [d]')
     ax.get_yaxis().set_visible(False)
     ax.set_xlabel('Period [d]')
     ax.set_title(f'Fit to Summed WWZ {text}')
@@ -181,6 +182,7 @@ def plot_cacf(j, fig, ax):
 
     ax.set_title("Smoothed Composite ACF for all Sectors")
     ax.set_ylabel('Normalised CACF')
+    ax.set_xlabel('Period [d]')
     ax.axhline(0.01, label='Detection threshold', c='k', ls='--', zorder=0)
     ax.legend(loc='upper right',ncol = int(np.ceil(len(j.sectors)/4)))
 
@@ -221,6 +223,7 @@ def plot_acf(j, fig, ax):
                 alpha=.5)
     ax.set_title("Smoothed Autocorrelation Function for all Sectors")
     ax.set_ylabel('Normalised ACF')
+    ax.set_xlabel('Period [d]')
     ax.axhline(0.01, label='Detection threshold', c='k', ls ='--', zorder=0)
     ax.legend(loc='upper right')
 

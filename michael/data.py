@@ -216,7 +216,7 @@ class data_class():
                 self.j.void[f'r_{sector}'] = r
                 # tess-sip can sometimes introduce major peaks at the ends of
                 # the light curve, so we remove these.
-                self.j.void[f'rlc_{sector}'] = r['corr_lc'].remove_outliers()
+                self.j.void[f'rlc_{sector}'] = r['corr_lc'].remove_nans().remove_outliers()
 
             else:
                 continue
@@ -254,7 +254,7 @@ class data_class():
             # Save corrected flux as a lightcurve object for this sector
             flux = cpm.get_aperture_lc(data_type="cpm_subtracted_flux",
                                         weighting='median')
-            self.j.void[f'cpmlc_{s}'] = lk.LightCurve(time = cpm.time, flux = flux) + 1.
+            self.j.void[f'cpmlc_{s}'] = lk.LightCurve(time = cpm.time, flux = flux).remove_nans().remove_outliers() + 1.
             self.j.void[f'cpm_{s}'] = cpm
 
         # And now we append the sectors that are consecutive
