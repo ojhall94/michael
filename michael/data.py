@@ -214,7 +214,9 @@ class data_class():
                 tpfs = lk.TargetPixelFileCollection(tpflist)
                 r = SIP(tpfs)
                 self.j.void[f'r_{sector}'] = r
-                self.j.void[f'rlc_{sector}'] = r['corr_lc']
+                # tess-sip can sometimes introduce major peaks at the ends of
+                # the light curve, so we remove these.
+                self.j.void[f'rlc_{sector}'] = r['corr_lc'].remove_outliers()
 
             else:
                 continue

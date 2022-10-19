@@ -74,22 +74,17 @@ def test_get_rotation():
     # Run through get_rotation() and assert outcomes.
     # Use a tess-sip run to hit all lines of code.
     # Using a known rotator from the Gaia catalogue
-    gaiaid = 4984094970441940864
-    ra = 20.457083
-    dec = -42.022861
+    gaiaid = 38329666836450304
+    ra = 59.560442
+    dec = 12.627969
 
     j = janet(gaiaid, ra, dec, pipeline = 'tess-sip', output_path = 'tests/data')
     data = data_class(j)
     data.check_eleanor_setup()
     data.build_tess_sip_lc()
-    j.get_rotation()
+    j.get_rotation(period_range = (2, 8))
 
     # Assert output
-    assert len(list(j.void)) == 60
-    assert all(list(j.results.index[:-1]) == j.sectors)
-
-
-
-
-
-    # Once for a `tess-sip` run and assert changes to sectorlislt
+    assert len(j.void) == 18
+    assert all(list(j.results.index) == j.sectors)
+    assert all(np.diff(j.sectorlist) == 1)

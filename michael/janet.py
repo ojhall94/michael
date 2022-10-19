@@ -169,10 +169,12 @@ class janet():
 
         # Only look at consecutive sectors if using tess-sip
         if self.pipeline == 'tess-sip':
-            lim = self.sectors[[len(a) > 1 for a in self.sectors]]
-            lim2 = np.where(self.sectorlist != self.sectors[self.sectors == lim])
-            self.sectorlist = np.delete(self.sectorlist, lim2)
+            lim = self.sectors[[len(a) > 2 for a in self.sectors]]
             self.sectors = self.sectors[self.sectors == lim]
+            self.sectorlist = []
+            for sector in self.sectors:
+                split = sector.split('-')
+                self.sectorlist += list(np.arange(int(split[0]), int(split[1])))
 
         sectorlist = list(self.sectors)
 
