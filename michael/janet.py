@@ -235,11 +235,11 @@ class janet():
 
     @staticmethod
     def boot(df, index, output_path = '/Users/oliver hall/Research/unicorn/data/eleanor',
-            use_prior = False, obs = None, pipeline = 'eleanor'):
+            pipeline = 'eleanor'):
         """
         Sets up Janet quickly.
         """
         return janet(
             gaiaid = df.loc[index, 'source_id'], ra = df.loc[index, 'ra'], dec = df.loc[index, 'dec'],
-            output_path = output_path, verbose=True, use_prior=use_prior, obs=obs, pipeline=pipeline
+            output_path = output_path, verbose=True, pipeline=pipeline
         )

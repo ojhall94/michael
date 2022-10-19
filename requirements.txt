@@ -8,3 +8,7 @@ astropy
 tqdm
 scipy
 jazz-hands
+emcee
+tess-sip
+scikit-learn
+statsmodels
