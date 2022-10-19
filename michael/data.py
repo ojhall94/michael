@@ -202,8 +202,12 @@ class data_class():
             if len(split) > 1:
                 sfiles = []
                 for s in np.arange(int(split[0]), int(split[1])+1):
+                    strlen = np.floor(np.log10(s)).astype(int)+1
+                    secstr = 's0000'[:-strlen] + str(s)
+
+
                     sfiles.append(glob.glob(
-                    f'{os.path.expanduser("~")}/.eleanor/tesscut/*-s*{s}-*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')[0])
+                    f'{os.path.expanduser("~")}/.eleanor/tesscut/*-{secstr}-*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')[0])
 
 
                 tpflist = [lk.TessTargetPixelFile(f).cutout([26,26],13) for f in sfiles]

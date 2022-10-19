@@ -5,6 +5,7 @@ sys.path.append('../')
 import numpy as np
 from numpy.testing import assert_almost_equal, assert_array_equal
 from michael import janet
+from michael.data import data_class
 import astropy.units as u
 
 """
@@ -69,3 +70,26 @@ def test_get_rotation():
     j.sectors = ['45-46']
     with pytest.raises(ValueError) as err:
         j.get_rotation(period_range = (2, 100))
+
+    # Run through get_rotation() and assert outcomes.
+    # Use a tess-sip run to hit all lines of code.
+    # Using a known rotator from the Gaia catalogue
+    gaiaid = 4984094970441940864
+    ra = 20.457083
+    dec = -42.022861
+
+    j = janet(gaiaid, ra, dec, pipeline = 'tess-sip', output_path = 'tests/data')
+    data = data_class(j)
+    data.check_eleanor_setup()
+    data.build_tess_sip_lc()
+    j.get_rotation()
+
+    # Assert output
+    assert len(list(j.void)) == 60
+    assert all(list(j.results.index[:-1]) == j.sectors)
+
+
+
+
+
+    # Once for a `tess-sip` run and assert changes to sectorlislt
