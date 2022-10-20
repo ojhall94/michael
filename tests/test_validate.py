@@ -91,9 +91,16 @@ def test_validate_ACF():
     # Check best value is for highest SNR, which is for sector 0
     assert gj.results.loc['best', 's_ACF'] == '1'
 
-def test_validate_sectors():
+def test_validate_best_pass():
     validate_best(gj)
 
+    assert np.isfinite(gj.results.loc['best', 'overall'])
+    assert np.isfinite(gj.results.loc['best', 'e_overall'])
+    assert type(gj.results.loc['best', 'method_overall']) == str
+    assert np.isfinite(gj.results.loc['best', 'p2p_overall'])
+    assert_almost_equal(gj.results.loc['best','overall'], gprot, decimal=1)
+
+def test_validate_sectors():
     # Make sure that a flag is added if all sectors disagree with one another
     methods = ['SLS', 'SW', 'CACF','ACF']
     for m in methods:
@@ -101,10 +108,10 @@ def test_validate_sectors():
     validate_sectors(gj)
 
     assert gj.results.loc['best','f_overall'] >= 8
-    gj.results.loc['1', m'] /= 5
 
-def test_validate_best_():
+def test_validate_best_fail():
     # Test passing case
 
     # Test failure modes
     ## Define values first
+    return 0

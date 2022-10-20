@@ -27,7 +27,7 @@ def _decode(flag):
     STRINGS = {
         1 : "1: None of the 3 estimates agreed with one another to within 1 "+
              "sigma. The estimate with highest SNR is assumed to be the best in"+
-             " this case."
+             " this case.",
         4 : "4: Only 2 of the 3 estimates of rotation agreed with one another " +
              "to within 1 sigma.",
         8 :  "8: One or more sectors disagrees strongly across all estimates with " +
