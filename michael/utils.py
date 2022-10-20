@@ -17,8 +17,8 @@ def _safety(janet):
 
 def _decode(flag):
     """
-    1 - No robust matches, CACF assumed best
-    2 - No robust matches, SW assumed best
+    1 - No robust agreement, highest SNR assumed best
+    2 - Empty
     4 - Only two out of three estimates agreed
     8 - One or more sectors disagree strongly across all estimates
     16 - P2P check isn't cleared for best overall target.
@@ -26,18 +26,16 @@ def _decode(flag):
 
     STRINGS = {
         1 : "1: None of the 3 estimates agreed with one another to within 1 "+
-             "sigma. The CACF estimate is assumed to be the best in this case, "+
-             "if it is available.",
-        2 : "1: None of the 3 estimates agreed with one another to within 1 "+
-              "sigma. The SW estimate is assumed to be the best in this case, "+
-              "if it is available.",
+             "sigma. The estimate with highest SNR is assumed to be the best in"+
+             " this case."
         4 : "4: Only 2 of the 3 estimates of rotation agreed with one another " +
              "to within 1 sigma.",
         8 :  "8: One or more sectors disagrees strongly across all estimates with " +
             "the others. This may indicate signal from a background star present " +
             "in those sectors.",
         16: "16: The best overal value does not have a peak-to-peak height that" +
-            " exceeds the scatter in the detrended light curve. Proceed with caution."
+            " exceeds the mean absolute deviation of the detrended light curve" +
+            ". Proceed with caution."
     }
 
     val = np.copy(flag)
