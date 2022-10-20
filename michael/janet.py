@@ -23,7 +23,7 @@ import astropy.units as u
 
 from .data import data_class
 from .methods import *
-from .validate import validator, longest_sector
+from .validate import validator, longest_sectors
 from .plotting import plot
 from .utils import _decode, _safety
 from .prior import priorclass
@@ -151,7 +151,9 @@ class janet():
         if period_range[1] <= period_range[0]:
             raise ValueError("It looks like you've got your period limits mixed up!")
 
-        longest = longest_sector(self)
+        longest = longest_sectors(self)
+        if len(longest) > 1:
+            longest = longest[0]
         if len(longest.split('-')) == 1:
             maxlen = 27
         else:

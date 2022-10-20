@@ -257,8 +257,8 @@ def composite_ACF(j, sector, period_range):
     norm_acf = acf/np.nanmax(acf)
     acflc = lk.LightCurve(time=lag, flux=norm_acf)
 
-    vizacf = acflc[(acflc.time.value <= period_range[1])]
-    vizacf = vizacf[(vizacf.time.value >= period_range[0])]
+    vizacf = acflc[(acflc.time.value <= np.nanmax(x))]
+    vizacf = vizacf[(vizacf.time.value >= np.nanmin(x))]
 
     # Calculate the composite ACF by interoplating the wavelet onto a new x axis
     xnew = vizacf.time.value

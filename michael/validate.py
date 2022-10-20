@@ -2,9 +2,10 @@ import pandas as pd
 import numpy as np
 import warnings
 from scipy.ndimage import gaussian_filter1d
+import scipy.stats
 from .utils import _safety
 
-def longest_sector(j):
+def longest_sectors(j):
     if len(j.sectors) == 1:
         return j.sectors[0]
 
@@ -14,16 +15,13 @@ def longest_sector(j):
         if np.isfinite(d):
             diffs[idx] = d
 
-    # Will pick the first longest
-    if any(diffs > 0):
-        return j.sectors[np.argmax(diffs)]
-    else:
-        return None
+    # Returns the longest sectors
+    dmax = np.nanmax(diffs)
+    sel = np.where(diffs == dmax)
+    return list(np.array(j.sectors)[sel])
 
 def validate_SLS(j):
     j.results['s_SLS'] = np.nan
-    # Validate LombScargle
-    longest = longest_sector(j)
 
     # Check for p2p-validated sectors
     indices = j.results[j.results['f_p2p_SLS'] == 1].index
@@ -32,19 +30,14 @@ def validate_SLS(j):
     if len(indices) == 0:
         indices = j.sectors
 
-    # If longest sector is in the positive p2p flags, assign that as the result
-    if longest in indices:
-        best = longest
+    # Peak the value with highest SNR on an unflagged value
+    s = j.results.loc[indices]['f_SLS'] == 0
+    if len(j.results.loc[indices][s]) > 0:
+        best = np.array(j.results.loc[indices][s]['snr_SLS'].idxmax())
+    # It may be the case that there are only flagged values. In this
+    # case, ignore the flags
     else:
-        # If onlys single-sector cases are available, pick the value with
-        # the highest peak height on an unflagged value,
-        s = j.results.loc[indices]['f_SLS'] == 0
-        if len(j.results.loc[indices][s]) > 0:
-            best = np.array(j.results.loc[indices][s]['h_SLS'].idxmax())
-        # It may be the case that there are only flagged values. In this
-        # case, ignore the flags
-        else:
-            best = np.array(j.results.loc[indices]['h_SLS'].idxmax())
+        best = np.array(j.results.loc[indices]['snr_SLS'].idxmax())
 
     j.results.loc['best', 'SLS'] = j.results.loc[best, 'SLS']
     j.results.loc['best', 'e_SLS'] = j.results.loc[best, 'e_SLS']
@@ -58,7 +51,7 @@ def validate_SLS(j):
 def validate_SW(j):
     j.results['s_SW'] = np.nan
 
-    longest = longest_sector(j)
+    longest = longest_sectors(j)
 
     # Check for p2p-validated sectors
     indices = j.results[j.results['f_p2p_SLS'] == 1].index
@@ -86,7 +79,7 @@ def validate_CACF(j):
     j.results['s_CACF'] = np.nan
 
     # find longest sector
-    longest = longest_sector(j)
+    longest = longest_sectors(j)
 
     # Check for p2p-validated sectors
     indices = j.results[j.results['f_p2p_SLS'] == 1].index
@@ -346,9 +339,14 @@ def validate_p2p(j):
     the `scipy.gaussian_filter1d` package, with a standard deviation of `sqrt(N)`
     where N is the number of cadences in the sector.
 
-    The p2p height is recorded. In cases where the p2p height exceeds the
-    standard deviation, the target is given a p2p flag of 1, indicating a good
-    detection.
+    The light curve is then divided by the smoothed light curve, and the median
+    absolute deviation (MAD) calculated. In cases where the p2p height exceeds
+    the MAD, the target is given a p2p flag of 1, indicating a good
+    detection. The Signal-to-noise ratio is cacluacted as
+
+    snr = p2p / MAD,
+
+    and recorded.
 
     This method is fairly sensitive to systematics or flares, as they will
     cause a large p2p signal. As always, validation should be taken with a grain
@@ -358,6 +356,7 @@ def validate_p2p(j):
     methods = ['SLS', 'SW','CACF','ACF']
     for m in methods:
         j.results[f'p2p_{m}'] = np.zeros(len(j.results)).astype(int)
+        j.results[f'snr_{m}']  = np.zeros(len(j.results)).astype(int)
         j.results[f'f_p2p_{m}'] = np.zeros(len(j.results)).astype(int)
 
         for s in j.sectors:
@@ -369,11 +368,13 @@ def validate_p2p(j):
             p2p = np.diff([np.nanmin(fsmoo), np.nanmax(fsmoo)])
             j.results.loc[s, f'p2p_{m}'] = p2p
 
-            std = np.std(lc.flux.value/gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'nearest'))
-            j.void[f'{m}_{s}_std'] = std
-
-            if p2p > 2*std:
+            mad = scipy.stats.median_abs_deviation(lc.flux.value /
+                                            gaussian_filter1d(lc.flux.value,
+                                                sigma = sd, mode = 'nearest'))
+            if p2p > 2*mad:
                 j.results.loc[s, f'f_p2p_{m}'] = int(1)
+
+            j.results.loc[s, f'snr_{m}'] = p2p/(2*mad)
 
     _safety(j)
 
