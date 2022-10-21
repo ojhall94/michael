@@ -48,3 +48,18 @@ def _decode(flag):
             val -= key
 
     return message
+
+def longest_sectors(j):
+    if len(j.sectors) == 1:
+        return j.sectors
+
+    diffs = np.zeros(len(j.sectors))
+    for idx, s in enumerate(j.sectors):
+        d = np.diff(np.array(s.split('-')).astype(int))
+        if np.isfinite(d):
+            diffs[idx] = d
+
+    # Returns the longest sectors
+    dmax = np.nanmax(diffs)
+    sel = np.where(diffs == dmax)
+    return list(np.array(j.sectors)[sel])

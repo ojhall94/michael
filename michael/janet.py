@@ -23,9 +23,9 @@ import astropy.units as u
 
 from .data import data_class
 from .methods import *
-from .validate import validator, longest_sectors
+from .validate import validator
 from .plotting import plot
-from .utils import _decode, _safety
+from .utils import _decode, _safety, longest_sectors
 from .prior import priorclass
 
 pipelines = {'eleanor' : 'c',
@@ -152,8 +152,7 @@ class janet():
             raise ValueError("It looks like you've got your period limits mixed up!")
 
         longest = longest_sectors(self)
-        if len(longest) > 1:
-            longest = longest[0]
+        longest = longest[0]
         if len(longest.split('-')) == 1:
             maxlen = 27
         else:
@@ -234,19 +233,11 @@ class janet():
     def run(self, period_range = (0.2, 27.4)):
         self.prepare_data()
 
-        # if self.use_prior:
-        #     self.prior = priorclass(self.obs, self.verbose)
-        #     self.void['samples'], self.prot_prior = self.prior()
-
         self.get_rotation(period_range = period_range)
         self.validate_rotation()
 
         if self.verbose:
             self.view()
-
-        # # Temporary hack for Unicorn project
-        # pg = self.void[f'pg_{self.results.loc["best", "s_SLS"]}']
-        # pg.to_table().to_pandas().to_csv(f'{self.output_path}/{self.gaiaid}/periodogram.csv')
 
         if self.verbose:
             self.decode(self.results.loc['best', 'f_overall'].astype(int))

@@ -5,21 +5,6 @@ from scipy.ndimage import gaussian_filter1d
 import scipy.stats
 from .utils import _safety
 
-def longest_sectors(j):
-    if len(j.sectors) == 1:
-        return j.sectors[0]
-
-    diffs = np.zeros(len(j.sectors))
-    for idx, s in enumerate(j.sectors):
-        d = np.diff(np.array(s.split('-')).astype(int))
-        if np.isfinite(d):
-            diffs[idx] = d
-
-    # Returns the longest sectors
-    dmax = np.nanmax(diffs)
-    sel = np.where(diffs == dmax)
-    return list(np.array(j.sectors)[sel])
-
 def validate_SLS(j):
     j.results['s_SLS'] = np.nan
 
@@ -45,6 +30,7 @@ def validate_SLS(j):
     j.results.loc['best', 's_SLS'] = best
     j.results.loc['best', 'f_SLS'] = j.results.loc[best, 'f_SLS']
     j.results.loc['best', 'p2p_SLS'] = j.results.loc[best, 'p2p_SLS']
+    j.results.loc['best', 'snr_SLS'] = j.results.loc[best, 'snr_SLS']
 
     _safety(j)
 
@@ -59,6 +45,7 @@ def validate_SW(j):
     j.results.loc['best', 'h_SW'] = j.results.loc[best, 'h_SW']
     j.results.loc['best', 's_SW'] = best
     j.results.loc['best', 'p2p_SW'] = j.results.loc[best, 'p2p_SW']
+    j.results.loc['best', 'snr_SW'] = j.results.loc[best, 'snr_SW']
 
     _safety(j)
 
@@ -72,6 +59,9 @@ def validate_CACF(j):
     j.results.loc['best', 'h_CACF'] = j.results.loc[best, 'h_CACF']
     j.results.loc['best', 's_CACF'] = best
     j.results.loc['best', 'p2p_CACF'] = j.results.loc[best, 'p2p_CACF']
+    j.results.loc['best', 'snr_CACF'] = j.results.loc[best, 'snr_CACF']
+
+
     _safety(j)
 
 def validate_ACF(j):
@@ -83,6 +73,7 @@ def validate_ACF(j):
     j.results.loc['best', 'ACF'] = j.results.loc[best, 'ACF']
     j.results.loc['best', 's_ACF'] = best
     j.results.loc['best', 'p2p_ACF'] = j.results.loc[best, 'p2p_ACF']
+    j.results.loc['best', 'snr_ACF'] = j.results.loc[best, 'snr_ACF']
 
     _safety(j)
 
@@ -98,7 +89,7 @@ def validate_best(j):
     j.results['f_overall'] = np.zeros(len(j.results)).astype(int)
 
     # If they agree, then pick the one with the highest snr value
-    if np.abs(np.diff(best.dropna(), len(best.dropna())-1)) < np.sqrt(np.nansum(ebest**2)):
+    if np.sum(np.abs(np.diff(best))) < np.sqrt(np.nansum(ebest**2)):
         s = np.argmax(snrs)
         j.results.loc['best', 'overall'] = best[s]
         j.results.loc['best', 'e_overall'] = ebest[s]
@@ -147,7 +138,7 @@ def validate_best(j):
             j.results.loc['best', 'e_overall'] = ebest[['e_SLS', 'e_SW']][s]
             j.results.loc['best', 'p2p_overall'] = p2ps[['p2p_SLS', 'p2p_SW']][s]
             j.results.loc['best', 'method_overall'] = ['SLS','SW'][s]
-            j.results.loc['best', 'f_overall'] += 4
+            j.results.loc['best', 'f_overall'] += int(4)
 
         # There is no agreement whatsover, pick the highest SNR
         else:
