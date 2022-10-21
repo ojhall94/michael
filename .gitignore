@@ -9,6 +9,10 @@ __pycache__/
 # Michael stuff
 *.fits
 */mastDownload/*
+tests/data/*/*.png
+tests/data/*/*.pdf
+tests/data/*/*.csv
+
 Examples/simtests
 Examples/PscEri
 Examples/investigate_outliers.ipynb
