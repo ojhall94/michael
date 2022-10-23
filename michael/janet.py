@@ -139,7 +139,7 @@ class janet():
     #     self.void['datum_all'] = None
     #     self.void['clc_all'] = clc
 
-    def get_rotation(self, period_range = (0.2, 13.7)):
+    def get_rotation(self, period_range = (0.2, 27.)):
         """
         This needs some polish to get multiple methods working.
         """
@@ -230,7 +230,7 @@ class janet():
     #         eleanor.Update(s)
     #     print(f'Updated eleanor Sectors {sectors}.')
 
-    def run(self, period_range = (0.2, 27.4)):
+    def run(self, period_range = (0.2, 27.)):
         self.prepare_data()
 
         self.get_rotation(period_range = period_range)
