@@ -209,7 +209,6 @@ class data_class():
                     sfiles.append(glob.glob(
                     f'{os.path.expanduser("~")}/.eleanor/tesscut/*-{secstr}-*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')[0])
 
-
                 tpflist = [lk.TessTargetPixelFile(f).cutout([26,26],13) for f in sfiles]
                 tpfs = lk.TargetPixelFileCollection(tpflist)
                 r = SIP(tpfs)
@@ -234,6 +233,9 @@ class data_class():
         step = len(decstr.split('.')[0])
         sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(6+step)]}*{decstr[:(6+step)]}*'))
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
+
+        if len(sfiles) == 0:
+            raise ValueError("No tesscut files could be found for this target.")
 
         # Set up a standard aperture based on the `eleanor` aperture for a 50x50
         # postcard.

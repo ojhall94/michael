@@ -172,32 +172,32 @@ def validate_sectors(j):
 
     warnings.warn("One or more sectors disagree strongly across all estimates. Please inspect the results carefully yourself.")
 
-def validate_prior(j):
-    # Check how the various measurements are consistent with the KDE prior
-    # Is the prior in disagreement with the 'best' result?
-    condition = (j.results.loc['best','overall'] + j.results.loc['best','e_overall']\
-                > j.prot_prior[0]) &\
-                (j.results.loc['best','overall'] - j.results.loc['best','e_overall']\
-                            < j.prot_prior[2])
-    if not condition:
-        j.results.loc['best', 'f_overall'] += 1024
-        warnings.warn("The prior on rotation disagrees with the best measured value. The prior is not necessarily correct and only a guide. Please inspect the results carefully yourself.")
-
-        # Is the prior an integer multiple of the best result overall?
-        protsamp = 10**j.samples[:,2]
-        res = np.random.randn(len(protsamp)) * j.results.loc['best','e_overall']\
-                + j.results.loc['best', 'overall']
-
-        if np.nanmean(res) > np.nanmean(protsamp):
-            div = res/protsamp
-        else:
-            div = protsamp/res
-        pars = np.nanpercentile(div, [16, 50, 84])
-        lim = np.round(pars[1], 0)
-        condition = (lim > pars[0]) & (lim < pars[1])
-        if condition:
-            j.results.loc['best', 'f_overall'] += 2048
-            warnings.warn("The prior on rotation agrees with an integer multiple of the best measured value. This may indicate that `michael` has measured a harmonic. Please inspect the results carefully yourself.")
+# def validate_prior(j):
+#     # Check how the various measurements are consistent with the KDE prior
+#     # Is the prior in disagreement with the 'best' result?
+#     condition = (j.results.loc['best','overall'] + j.results.loc['best','e_overall']\
+#                 > j.prot_prior[0]) &\
+#                 (j.results.loc['best','overall'] - j.results.loc['best','e_overall']\
+#                             < j.prot_prior[2])
+#     if not condition:
+#         j.results.loc['best', 'f_overall'] += 1024
+#         warnings.warn("The prior on rotation disagrees with the best measured value. The prior is not necessarily correct and only a guide. Please inspect the results carefully yourself.")
+#
+#         # Is the prior an integer multiple of the best result overall?
+#         protsamp = 10**j.samples[:,2]
+#         res = np.random.randn(len(protsamp)) * j.results.loc['best','e_overall']\
+#                 + j.results.loc['best', 'overall']
+#
+#         if np.nanmean(res) > np.nanmean(protsamp):
+#             div = res/protsamp
+#         else:
+#             div = protsamp/res
+#         pars = np.nanpercentile(div, [16, 50, 84])
+#         lim = np.round(pars[1], 0)
+#         condition = (lim > pars[0]) & (lim < pars[1])
+#         if condition:
+#             j.results.loc['best', 'f_overall'] += 2048
+#             warnings.warn("The prior on rotation agrees with an integer multiple of the best measured value. This may indicate that `michael` has measured a harmonic. Please inspect the results carefully yourself.")
 
 def validate_p2p(j):
     """

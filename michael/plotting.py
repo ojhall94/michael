@@ -319,8 +319,8 @@ def plot_fold(j, fig, ax):
         fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode='reflect')
         std = np.std(lc.flux.value/gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'nearest'))
 
-        check = 2*std > np.diff([np.nanmin(fsmoo), np.nanmax(fsmoo)])
-        if all(check):
+        check = 1 < j.results.loc['best',f"snr_{j.results.loc['best','method_overall']}"]
+        if not check:
             linecol = 'r'
         else:
             linecol = cmap[4]
