@@ -110,7 +110,7 @@ class data_class():
         step = len(rastr.split('.')[0])
         decstr = str(self.j.dec)
         step = len(decstr.split('.')[0])
-        sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*_{rastr[:(7+step)]}*{decstr[:(7+step)]}_*'))
+        sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*_{rastr[:(6+step)]}*{decstr[:(6+step)]}_*'))
 
         slabels = []
         for idx in range(len(sfiles)):
