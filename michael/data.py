@@ -33,12 +33,16 @@ class data_class():
         else:
             pass
 
-        # Check for existing data
-        if len(glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')) > 0:
-            if self.j.verbose:
-                print(f'Already have data downloaded for Gaia ID {self.j.gaiaid}.')
-        else:
+        # Check for existing data, unless a full update is demanded
+        if self.j.update:
             self.download_eleanor_data()
+
+        else:
+            if len(glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')) > 0:
+                if self.j.verbose:
+                    print(f'Already have data downloaded for Gaia ID {self.j.gaiaid}.')
+            else:
+                self.download_eleanor_data()
 
         # Check which sectors have been downloaded
         self.j.sfiles = glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')

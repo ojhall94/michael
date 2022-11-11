@@ -62,7 +62,7 @@ class janet():
     """
 
     def __init__(self, gaiaid, ra = None, dec = None, output_path = None,
-                pipeline = 'eleanor', verbose = True):
+                pipeline = 'eleanor', update = False, verbose = True):
             self.gaiaid = gaiaid
             self.ra = ra
             self.dec = dec
@@ -70,6 +70,7 @@ class janet():
             self.output_path = output_path
             self.verbose = verbose
             self.void = {}
+            self.update = update
             # self.override=False
             # self.use_prior = use_prior
             # self.obs = obs
@@ -222,14 +223,6 @@ class janet():
             print(_decode(flag))
             print('No other flags raised. \n')
 
-    # def update(self, sectors):
-    #     """
-    #     Updates `eleanor` for a list of sectors.
-    #     """
-    #     for idx, s in enumerate(sectors):
-    #         eleanor.Update(s)
-    #     print(f'Updated eleanor Sectors {sectors}.')
-
     def run(self, period_range = (0.2, 27.)):
         self.prepare_data()
 
@@ -254,11 +247,11 @@ class janet():
 
     @staticmethod
     def boot(df, index, output_path = '/Users/oliver hall/Research/unicorn/data/eleanor',
-            pipeline = 'eleanor'):
+            pipeline = 'eleanor',update=False):
         """
         Sets up Janet quickly.
         """
         return janet(
             gaiaid = df.loc[index, 'source_id'], ra = df.loc[index, 'ra'], dec = df.loc[index, 'dec'],
-            output_path = output_path, pipeline=pipeline, verbose=True
+            output_path = output_path, pipeline=pipeline, update= update, verbose=True
         )
