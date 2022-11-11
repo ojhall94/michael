@@ -233,6 +233,10 @@ class data_class():
         if len(sfiles) == 0:
             raise ValueError("No tesscut files could be found for this target.")
 
+        if len(sfiles) < len(self.j.sectorlist):
+            raise ValueError("There are more sectors available than have been "+
+                            "loaded into the sectorlist. Reset the data.")
+
         # Set up a standard aperture based on the `eleanor` aperture for a 50x50
         # postcard.
         for sfile, s in zip(sfiles, self.j.sectorlist):

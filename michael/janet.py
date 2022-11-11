@@ -105,6 +105,22 @@ class janet():
 
         # self.data.build_stitched_all_lc()
 
+    def reset_data(self):
+        """
+        Calling this function serves to delete all stored eleanor data
+        associated with a given target.
+
+        This is to be used in case there is a data corruption issue, or an
+        inconsistency between machines on which data is available.
+        """
+        rastr = str(j.ra)
+        step = len(rastr.split('.')[0])
+        decstr = str(j.dec)
+        step = len(decstr.split('.')[0])
+        sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(6+step)]}*{decstr[:(6+step)]}*'))
+        for s in sfiles:
+            os.system("rm "+s)
+
     # def flux_override(self, time, flux):
     #     """
     #     Michael is intended for use with `eleanor` light curves only. However for
