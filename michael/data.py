@@ -87,8 +87,14 @@ class data_class():
         """
 
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
-        star = eleanor.multi_sectors(coords = coords, sectors = 'all',
+
+        try:
+            star = eleanor.multi_sectors(coords = coords, sectors = 'all',
                                         tc = True, tesscut_size=50)
+        except SearchError:
+            print(f'Eleanor thinks your target has not been observed by TESS')
+            print('If you believe this to be in error, please get in touch.')
+            print('Moving on the next sector... \n')
 
         for s in star:
             try:
@@ -100,6 +106,8 @@ class data_class():
                 print('Try running eleanor.Update(), or raise an issue on the '
                         'Eleanor GitHub!')
                 print('Moving on the next sector... \n')
+
+
 
             except ValueError:
                 print(f'There may be an issue where eleanor is detecting multiple '
@@ -167,22 +175,6 @@ class data_class():
                         combo = combo.append(self.j.void[f'{pl}lc_{i}'])
 
                     self.j.void[f'{pl}lc_{s}'] = combo
-
-    # def build_stitched_all_lc(self):
-    #     """
-    #     Deprecated, data no longer needed.
-    #
-    #     Combine all available light curves of a given sector for the purposes of the ACF.
-    #
-    #     NOTE: We may want to change the ACF method to sector-by-sector due to changing spots.
-    #     """
-    #     pls = ['c','raw','pca','corn', 'cpm']
-    #
-    #     for pl in pls:
-    #         all = self.j.void[f'{pl}lc_{self.j.sectorlist[0]}']
-    #         for s in self.j.sectorlist[1:]:
-    #             all = all.append(self.j.void[f'{pl}lc_{s}'])
-    #         self.j.void[f'{pl}lc_all'] = all
 
     def build_tess_sip_lc(self):
         """

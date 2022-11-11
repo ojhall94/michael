@@ -238,20 +238,23 @@ def validate_p2p(j):
 
         for s in j.sectors:
             period = j.results.loc[s, m]
-            lc = j.void[f'{j.pl}lc_{s}'].fold(period = period)
-            sd = np.sqrt(len(lc))
-            fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'reflect')
+            if not np.isfinite(period):
+                continue
+            else:
+                lc = j.void[f'{j.pl}lc_{s}'].fold(period = period)
+                sd = np.sqrt(len(lc))
+                fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'reflect')
 
-            p2p = np.diff([np.nanmin(fsmoo), np.nanmax(fsmoo)])
-            j.results.loc[s, f'p2p_{m}'] = p2p
+                p2p = np.diff([np.nanmin(fsmoo), np.nanmax(fsmoo)])
+                j.results.loc[s, f'p2p_{m}'] = p2p
 
-            mad = scipy.stats.median_abs_deviation(lc.flux.value /
-                                            gaussian_filter1d(lc.flux.value,
-                                                sigma = sd, mode = 'nearest'))
-            if p2p > 2*mad:
-                j.results.loc[s, f'f_p2p_{m}'] = int(1)
+                mad = scipy.stats.median_abs_deviation(lc.flux.value /
+                                                gaussian_filter1d(lc.flux.value,
+                                                    sigma = sd, mode = 'nearest'))
+                if p2p > 2*mad:
+                    j.results.loc[s, f'f_p2p_{m}'] = int(1)
 
-            j.results.loc[s, f'snr_{m}'] = p2p/(2*mad)
+                j.results.loc[s, f'snr_{m}'] = p2p/(2*mad)
 
     _safety(j)
 
