@@ -19,6 +19,7 @@ import os, warnings
 import pandas as pd
 import numpy as np
 import eleanor
+import glob
 import astropy.units as u
 
 from .data import data_class
@@ -182,6 +183,7 @@ class janet():
                             "be more prone to harmonics."))
 
         if period_range[1] > maxlen:
+            print(f'Error on {self.gaiaid}\n')
             raise ValueError("Your upper period limit is longer than your "+
                             "longest set of consecutive TESS sectors.")
 
