@@ -111,8 +111,6 @@ class data_class():
                         'Eleanor GitHub!')
                 print('Moving on the next sector... \n')
 
-
-
             except ValueError:
                 print(f'There may be an issue where eleanor is detecting multiple '
                         'instances of a single sector. Skipping this sector.' )

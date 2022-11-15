@@ -9,6 +9,7 @@ import seaborn as sns
 import lightkurve as lk
 import seaborn as sns
 from scipy.ndimage import gaussian_filter1d
+import scipy.stats
 
 sns.set_palette('colorblind')
 sns.set_context('poster')
@@ -298,7 +299,9 @@ def plot_fold(j, fig, ax):
     xlabels = []
     xlocs = []
     for s in j.sectors:
-        lc = j.void[f'{j.pl}lc_{s}'].fold(period=j.results.loc['best', 'overall'])
+        period = j.results.loc['best', 'overall']
+
+        lc = j.void[f'{j.pl}lc_{s}'].fold(period=period)
         xvals = lc.time.value - lc.time.value.min() + xstep
         ax.scatter(xvals, lc.flux, s=2, label=f'Sector(s) {s} Folded')
         xstep = xvals.max()
@@ -307,25 +310,29 @@ def plot_fold(j, fig, ax):
         xlabels.append(np.round(np.nanpercentile(lc.time.value, [25, 50, 75]),2))
         xlocs.append(np.round(np.nanpercentile(xvals, [15, 50, 85]), 2))
 
-        # Plot the smothed version
-        # binned = lk.FoldedLightCurve(time=xvals, flux=lc.flux).bin(bins = int(len(lc)/binfactor))
+        # Plot the smoothed version
+        # Plot approval of the sector folded on the best result using colour
         if s == j.sectors[-1]:
             label = 'Smoothed LC'
         else:
             label = None
-        # binned.plot(ax=ax, zorder=104, lw=5, c=cmap[4], label=label)
-        # binned.plot(ax=ax, zorder=103, lw=10, c='w')
+
         sd = np.sqrt(len(lc))
         fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode='reflect')
-        std = np.std(lc.flux.value/gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'nearest'))
+        p2p = np.diff([np.nanmin(fsmoo), np.nanmax(fsmoo)])
+        mad = scipy.stats.median_abs_deviation(lc.flux.value /
+                                        gaussian_filter1d(lc.flux.value,
+                                            sigma = sd, mode = 'nearest'))
 
-        check = 1 < j.results.loc['best',f"snr_{j.results.loc['best','method_overall']}"]
-        if not check:
-            linecol = 'r'
-        else:
+        check = p2p > 2*mad
+        if check:
             linecol = cmap[4]
+            ls = '-'
+        else:
+            linecol = 'r'
+            ls = '--'
         ax.plot(xvals, fsmoo, lw=10, c='k', zorder=103)
-        ax.plot(xvals, fsmoo, lw=5, c=linecol, label=label, zorder=104)
+        ax.plot(xvals, fsmoo, lw=5, c=linecol, ls=ls, label=label, zorder=104)
 
     ax.set_xlim(0, xstep)
     ax.set_xticks(np.array(xlocs).flatten())
@@ -333,7 +340,7 @@ def plot_fold(j, fig, ax):
 
     ax.legend(loc='best')
     ax.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
-    ax.set_title(rf'All Sectors folded on Best Period: {j.results.loc["best", "overall"]:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
+    ax.set_title(rf'All Sectors folded on Best Period: {period:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
     ax.axhline(1.00, lw=5, ls='--', c='k', zorder=100)
 
 def plot(j):
