@@ -113,9 +113,9 @@ class janet():
         This is to be used in case there is a data corruption issue, or an
         inconsistency between machines on which data is available.
         """
-        rastr = str(j.ra)
+        rastr = str(self.ra)
         step = len(rastr.split('.')[0])
-        decstr = str(j.dec)
+        decstr = str(self.dec)
         step = len(decstr.split('.')[0])
         sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(6+step)]}*{decstr[:(6+step)]}*'))
         for s in sfiles:
