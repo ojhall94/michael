@@ -12,6 +12,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 import lightkurve as lk
 import eleanor
+from eleanor.utils import SearchError
 import tess_cpm
 
 class data_class():
@@ -198,7 +199,6 @@ class data_class():
                 for s in np.arange(int(split[0]), int(split[1])+1):
                     strlen = np.floor(np.log10(s)).astype(int)+1
                     secstr = 's0000'[:-strlen] + str(s)
-
 
                     sfiles.append(glob.glob(
                     f'{os.path.expanduser("~")}/.eleanor/tesscut/*-{secstr}-*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')[0])

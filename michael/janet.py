@@ -176,14 +176,14 @@ class janet():
             split = longest.split('-')
             maxlen = 27*(int(split[1]) - int(split[0])+1)
 
-        if period_range[1] > maxlen:
-            raise ValueError("Your upper period limit is longer than your "+
-                            "longest set of consecutive TESS sectors.")
-
         if period_range[1] > maxlen/2:
             warnings.warn(UserWarning("Your upper period limit is longer than half your "+
                             "longest set of consecutive TESS sectors. You'll "+
                             "be more prone to harmonics."))
+
+        if period_range[1] > maxlen:
+            raise ValueError("Your upper period limit is longer than your "+
+                            "longest set of consecutive TESS sectors.")
 
         # Only look at consecutive sectors if using tess-sip
         if self.pipeline == 'tess-sip':
