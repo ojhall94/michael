@@ -201,8 +201,15 @@ class data_class():
                     strlen = np.floor(np.log10(s)).astype(int)+1
                     secstr = 's0000'[:-strlen] + str(s)
 
-                    sfiles.append(glob.glob(
-                    f'{os.path.expanduser("~")}/.eleanor/tesscut/*-{secstr}-*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')[0])
+                    sfile = glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*-{secstr}-*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')
+
+                    if len(sfiles) == 0:
+                        try:
+                            sfile = glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(4+step)]}*{decstr[:(4+step)]}*')
+                        except ValueError:
+                            raise ValueError("No tesscut files could be found for this target.")
+
+                    sfiles.append(sfile[0])
 
                 tpflist = [lk.TessTargetPixelFile(f).cutout([26,26],13) for f in sfiles]
                 tpfs = lk.TargetPixelFileCollection(tpflist)
@@ -230,7 +237,10 @@ class data_class():
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
 
         if len(sfiles) == 0:
-            raise ValueError("No tesscut files could be found for this target.")
+            try:
+                sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(4+step)]}*{decstr[:(4+step)]}*'))
+            except ValueError:
+                raise ValueError("No tesscut files could be found for this target.")
 
         if len(sfiles) < len(self.j.sectorlist):
             raise ValueError("There are more sectors available than have been "+
