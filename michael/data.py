@@ -99,7 +99,8 @@ class data_class():
         except SearchError:
             print(f'Eleanor thinks your target has not been observed by TESS')
             print('If you believe this to be in error, please get in touch.')
-            print('Moving on the next sector... \n')
+            print('Exiting `michael`.')
+            raise
 
         for s in star:
             try:
