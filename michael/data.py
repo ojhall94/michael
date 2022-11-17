@@ -203,10 +203,9 @@ class data_class():
 
                     sfile = glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*-{secstr}-*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')
 
-                    if len(sfiles) == 0:
-                        try:
+                    if len(sfile) == 0:
                             sfile = glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(4+step)]}*{decstr[:(4+step)]}*')
-                        except ValueError:
+                        if len(sfile) == 0:
                             raise ValueError("No tesscut files could be found for this target.")
 
                     sfiles.append(sfile[0])
@@ -237,9 +236,8 @@ class data_class():
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
 
         if len(sfiles) == 0:
-            try:
-                sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(4+step)]}*{decstr[:(4+step)]}*'))
-            except ValueError:
+            sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(4+step)]}*{decstr[:(4+step)]}*'))
+            if len(sfiles) == 0:
                 raise ValueError("No tesscut files could be found for this target.")
 
         if len(sfiles) < len(self.j.sectorlist):
