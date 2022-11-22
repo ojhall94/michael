@@ -204,7 +204,7 @@ class data_class():
                     sfile = glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*-{secstr}-*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')
 
                     if len(sfile) == 0:
-                            sfile = glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(4+step)]}*{decstr[:(4+step)]}*')
+                        sfile = glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(4+step)]}*{decstr[:(4+step)]}*')
                         if len(sfile) == 0:
                             raise ValueError("No tesscut files could be found for this target.")
 
