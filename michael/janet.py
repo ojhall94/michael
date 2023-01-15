@@ -34,7 +34,8 @@ pipelines = {'eleanor' : 'c',
              'eleanor-pca' : 'pca',
              'eleanor-corner' : 'corn',
              'unpopular' : 'cpm',
-             'tess-sip': 'r'}
+             'tess-sip': 'r',
+             'tess-sip-detrended' : 'rdt'}
 
 class janet():
     """ Class managing all i/o for the `michael' package.
@@ -46,6 +47,7 @@ class janet():
     - eleanor-corner
     - unpopular
     - tess-sip
+    - tess-sip-detrended
 
     Examples
     --------
@@ -103,6 +105,9 @@ class janet():
 
         if self.pipeline == 'tess-sip':
             self.data.build_tess_sip_lc()
+
+        if self.pipeline == 'tess-sip-detrended':
+            self.data.build_tess_sip_lc(detrended=True)
 
         # self.data.build_stitched_all_lc()
 
@@ -187,8 +192,8 @@ class janet():
             raise ValueError("Your upper period limit is longer than your "+
                             "longest set of consecutive TESS sectors.")
 
-        # Only look at consecutive sectors if using tess-sip
-        if self.pipeline == 'tess-sip':
+        # Only look at consecutive sectors if using tess-sip or tess-sip-detrended
+        if (self.pipeline == 'tess-sip') or (self.pipeline == 'tess-sip-detrended'):
             lim = self.sectors[[len(a) > 2 for a in self.sectors]]
             self.sectors = self.sectors[self.sectors == lim]
             self.sectorlist = []

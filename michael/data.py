@@ -180,12 +180,16 @@ class data_class():
 
                     self.j.void[f'{pl}lc_{s}'] = combo
 
-    def build_tess_sip_lc(self):
+    def build_tess_sip_lc(self, detrended=False):
         """
         This function constructs a `Lightkurve` object output from the
         `tess_sip` technique by Hedges et al. (2021).
 
         Note: this only works on consecutive sectors of data.
+
+        If `detrended = True`, the `tess-sip` signal is smoothed with a long
+        baseline filter.
+
         """
         rastr = str(self.j.ra)
         step = len(rastr.split('.')[0])
@@ -217,6 +221,10 @@ class data_class():
                 # tess-sip can sometimes introduce major peaks at the ends of
                 # the light curve, so we remove these.
                 self.j.void[f'rlc_{sector}'] = r['corr_lc'].remove_nans().remove_outliers()
+
+                if detrended:
+                    self.j.void[f'rdtlc_{sector}'] = \
+                        r['corr_lc'].remove_nans().flatten(window_length = len(r['corr_lc'])).remove_outliers()
 
             else:
                 continue
