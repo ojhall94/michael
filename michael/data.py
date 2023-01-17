@@ -12,6 +12,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 import lightkurve as lk
 import eleanor
+from astroquery.mast import Tesscut
 from eleanor.utils import SearchError
 import tess_cpm
 
@@ -19,21 +20,54 @@ class data_class():
     def __init__(self, janet):
         self.j = janet
 
+    def check_local_setup(self):
+        """
+        Checks the local setup. If this is the first time downloading data
+        using michael, it will set up the `~/.michael/tesscut/`` directories, with
+        a subfolder for the target using its Gaia DR3 ID.
+        """
+
+        # Create michael folder
+        if not os.path.exists(f'{os.path.expanduser("~")}/.michael'):
+            if self.j.verbose:
+                print(f'Making folder {os.path.expanduser("~")}/.michael/...')
+            os.makedirs(f'{os.path.expanduser("~")}/.michael')
+
+        # Create tesscut folder
+        if not os.path.exists(f'{os.path.expanduser("~")}/.michael/tesscut'):
+            if self.j.verbose:
+                print(f'Making folder {os.path.expanduser("~")}/.michael/tesscut/...')
+            os.makedirs(f'{os.path.expanduser("~")}/.michael/tesscut')
+
+        # Create data folder for target
+        if not os.path.exists(f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}'):
+            if self.j.verbose:
+                print(f'Making folder {os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/...')
+            os.makedirs(f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}')
+
+    def download_tesscut(self):
+        """
+        Downloads a 50x50 TESS cutout around the targeted coordinates. This is
+        stored in the `~/.michael/tesscut/{target_id}` directory.
+        """
+        coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
+
+        # Check coordinates and sectors pulled up by tesscut.get_sectors
+
+        hdulist = Tesscut.get_cutouts(coordiantes = coords, size = 50)
+
+        # Download tesscut, store in local path
+        ## At later stage allow setup of an alternative folder?
+
     def check_eleanor_setup(self):
-        """ Check the Eleanor setup.
+        """
+        This function is being deprecated/altered for apure eleanor focus.
+
+        Check the Eleanor setup.
         This function checks that Eleanor data has already been prepared for the
         target star. If it has not, the function creates a directory and
         downloads and saves the data.
         """
-
-        # Create matching data folders
-        if not os.path.exists(f'{self.j.output_path}/{self.j.gaiaid}'):
-            if self.j.verbose:
-                print(f'Making folder {self.j.output_path}/{self.j.gaiaid}/...')
-            os.makedirs(f'{self.j.output_path}/{self.j.gaiaid}')
-        else:
-            pass
-
         # Check for existing data, unless a full update is demanded
         if self.j.update:
             self.download_eleanor_data()
