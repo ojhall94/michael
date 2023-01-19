@@ -53,6 +53,8 @@ class data_class():
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
 
         # Check coordinates and sectors pulled up by tesscut.get_sectors
+        reported_sectors = list(md['sector'])
+        print(f'Target DR3 ID {self.j.gaiaid} has data available for sectors '.join(sector for sector in reported_sectors))
 
         hdulist = Tesscut.get_cutouts(coordiantes = coords, size = 50)
 
