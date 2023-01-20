@@ -48,18 +48,17 @@ class data_class():
     def download_tesscut(self):
         """
         Downloads a 50x50 TESS cutout around the targeted coordinates. This is
-        stored in the `~/.michael/tesscut/{target_id}` directory.
+        stored in the `~/.michael/tesscut/{target_id}` directory. The cut is done using the 
+        `tesscut` Python package.
         """
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
 
         # Check coordinates and sectors pulled up by tesscut.get_sectors
+        md = Tesscut.get_sectors(coordinates=coords)
         reported_sectors = list(md['sector'])
-        print(f'Target DR3 ID {self.j.gaiaid} has data available for sectors '.join(sector for sector in reported_sectors))
-
-        hdulist = Tesscut.get_cutouts(coordiantes = coords, size = 50)
-
-        # Download tesscut, store in local path
-        ## At later stage allow setup of an alternative folder?
+        print(f'Target DR3 ID {self.j.gaiaid} has data available for sectors ' + ', '.join(reported_sectors))
+        Tesscut.download_cutouts(coordinates = coords, size = 50,
+                path = f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/')
 
     def check_eleanor_setup(self):
         """
