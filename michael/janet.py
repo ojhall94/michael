@@ -269,7 +269,7 @@ class janet():
 
 
     @staticmethod
-    def boot(df, index, output_path = '/Users/oliver hall/Research/unicorn/data/eleanor',
+    def boot(df, index, output_path = '/Users/oliver hall/Research/unicorn/data/output',
             pipeline = 'eleanor',update = False):
         """
         Sets up Janet quickly.
