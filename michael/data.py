@@ -79,15 +79,12 @@ class data_class():
                     path = f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/')
 
         # There are some instances of TESScut returning two observations in a single sector for a target
-        # We delete the second of the two entries for a given target and sector
+        # We delete the entry that does not appear in the `Tesscut.get_sectors` list.
         sfiles = np.sort(glob.glob(f'{self.path}/*'))
+        sectornames = md['sectorName']
 
-        slabels = []
-        for idx in range(len(sfiles)):
-            slabels.append(sfiles[idx].split('-')[1])
-        keep = np.unique(slabels, return_index=True)[1]
-        for idx, sfile in enumerate(sfiles):
-            if idx not in keep:
+        for sfile in sfiles:
+            if sfile.split('/')[-1].split('_')[0] not in sectornames:
                 os.remove(sfile)
 
     def setup_data(self):
@@ -150,7 +147,7 @@ class data_class():
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
 
         stars = eleanor.multi_sectors(coords = coords,
-                                sectors = self.j.sectorlist,
+                                sectors = self.j.sectorlist.tolist(),
                                 tc = True,
                                 post_dir = self.path,
                                 tesscut_size = 50)
