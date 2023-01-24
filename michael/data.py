@@ -241,7 +241,7 @@ class data_class():
 
                 if detrended:
                     self.j.void[f'rdtlc_{sector}'] = \
-                        r['corr_lc'].remove_nans().flatten(window_length = len(r['corr_lc'])).remove_outliers()
+                        r['corr_lc'].remove_nans().flatten(window_length = len(r['corr_lc'])).remove_outliers().remove_nans()
 
             else:
                 continue
