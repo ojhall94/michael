@@ -48,6 +48,14 @@ class data_class():
                 print(f'Making folder {os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/...')
             os.makedirs(f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}')
 
+        # Create output folder for target
+        if not os.path.exists(f'{self.j.output_path}/{self.j.gaiaid}'):
+            if self.j.verbose:
+                print(f'Making folder {self.j.output_path}/{self.j.gaiaid}/...')
+            os.makedirs(f'{self.j.output_path}/{self.j.gaiaid}')
+        else:
+            pass
+
         self.path = f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/'
 
     def download_tesscut(self):
