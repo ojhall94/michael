@@ -75,8 +75,8 @@ class janet():
             self.void = {}
 
             if pipeline not in pipelines:
-                raise ValueError("Requested pipeline not available, defaulting"+
-                                " to eleanor pipeline")
+                raise ValueError("Requested pipeline not available. The availible pipliens are: " +
+                            ", ".join(list(pipelines)))
                 pipeline = 'eleanor'
 
             self.pipeline = pipeline
@@ -91,6 +91,7 @@ class janet():
         self.data.setup_data()
 
         if self.pipeline == 'unpopular':
+            self.data.build_eleanor_lc() #To build the aperture for the unpopular code
             self.data.build_unpopular_lc()
 
         elif self.pipeline == 'tess-sip':

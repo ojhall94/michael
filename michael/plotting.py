@@ -24,14 +24,24 @@ binfactor = 20
 def plot_tpf(j, fig, ax):
     # Plot Sector 0 TPF
     # if not j.override:
-    sector0 = j.sectorlist[0]
-    ax.set_title(f'Frame 0 Sector {sector0}')
+
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
-    ax.imshow(np.log10(j.void[f'datum_{sector0}'].tpf[0]), zorder=1)
-    pix = np.where(j.void[f'datum_{sector0}'].aperture > 0)
-    ax.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
-    ax.legend(loc='upper left', fontsize=_label_fontsize)
+
+    if j.pipeline not in ['tess-sip','tess-sip-detrended']:
+        sector0 = j.sectorlist[0]
+        ax.set_title(f'Frame 0 Sector {sector0}')
+        ax.imshow(np.log10(j.void[f'datum_{sector0}'].tpf[0]), zorder=1, origin='lower')
+        pix = np.where(j.void[f'datum_{sector0}'].aperture > 0)
+        ax.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
+        ax.legend(loc='upper left', fontsize=_label_fontsize)
+
+    else:
+        sector0 = j.sectorlist[0]
+        s0 = j.sectors[0]
+        ax.set_title(f'Frame 0 Sector {sector0}')
+        ax.imshow(np.log10(j.void[f'tpfs_{s0}'][0].flux.value[0]), zorder=1, origin='lower')
+
 
 def plot_lcs(j, fig, ax):
     text = ''

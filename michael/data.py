@@ -230,6 +230,9 @@ class data_class():
 
                 tpflist = [lk.TessTargetPixelFile(f).cutout([26,26],13) for f in sfiles]
                 tpfs = lk.TargetPixelFileCollection(tpflist)
+
+                self.j.void[f'tpfs_{sector}'] = tpfs
+
                 r = SIP(tpfs)
                 self.j.void[f'r_{sector}'] = r
                 # tess-sip can sometimes introduce major peaks at the ends of
