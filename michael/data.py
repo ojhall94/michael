@@ -98,7 +98,10 @@ class data_class():
         self.download_tesscut()
 
         # Check which sectors have been downloaded
-        self.j.sfiles = glob.glob(f'{self.path}/*.fits')
+        sfiles = glob.glob(f'{self.path}/*.fits')
+        sort = np.argsort([f.split('/')[-1].split('-')[1][1:] for f in sfiles])  
+        self.j.sfiles = np.array(sfiles)[sort].tolist() 
+
         self.j.nullsectors = np.unique(np.sort([f.split('/')[-1].split('-')[1] for f in self.j.sfiles]))
         self.j.sectorlist = np.sort([int(f[1:]) for f in self.j.nullsectors])
 
@@ -140,10 +143,6 @@ class data_class():
         It also constructs light curves for raw data, PCA and corner corrected data,
         as well as the out-of-the-box eleanor corrected light curve.
         """
-        sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/*astrocut.fits'))
-        if len(sfiles) == 0:
-                raise ValueError("No tesscut files could be found for this target.")
-
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
 
         stars = eleanor.multi_sectors(coords = coords,

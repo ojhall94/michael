@@ -65,7 +65,7 @@ class janet():
     """
 
     def __init__(self, gaiaid, ra = None, dec = None, output_path = None,
-                pipeline = 'eleanor', update = False, verbose = True):
+                pipeline = 'eleanor', verbose = True):
             self.gaiaid = gaiaid
             self.ra = ra
             self.dec = dec
@@ -73,12 +73,7 @@ class janet():
             self.output_path = output_path
             self.verbose = verbose
             self.void = {}
-            self.update = update
-            # self.override=False
-            # self.use_prior = use_prior
-            # self.obs = obs
-            # self.prot_prior = np.array([np.nan, np.nan, np.nan])
-            # self.samples = None
+
             if pipeline not in pipelines:
                 raise ValueError("Requested pipeline not available, defaulting"+
                                 " to eleanor pipeline")
@@ -87,80 +82,25 @@ class janet():
             self.pipeline = pipeline
             self.pl = pipelines[pipeline]
 
-            # if use_prior and obs is None:
-            #     raise ValueError('When using the prior function you must provide '
-            #                      'observables as input.')
-
     def prepare_data(self):
         """
         This function calls the `data_class()`, which prepares the `eleanor`
         light curves.
         """
         self.data = data_class(self)
-        self.data.check_eleanor_setup()
-        self.data.build_eleanor_lc()
+        self.data.setup_data()
 
         if self.pipeline == 'unpopular':
             self.data.build_unpopular_lc()
 
-        if self.pipeline == 'tess-sip':
+        elif self.pipeline == 'tess-sip':
             self.data.build_tess_sip_lc()
 
-        if self.pipeline == 'tess-sip-detrended':
+        elif self.pipeline == 'tess-sip-detrended':
             self.data.build_tess_sip_lc(detrended=True)
 
-        # self.data.build_stitched_all_lc()
-
-    def reset_data(self):
-        """
-        Calling this function serves to delete all stored eleanor data
-        associated with a given target.
-
-        This is to be used in case there is a data corruption issue, or an
-        inconsistency between machines on which data is available.
-        """
-        rastr = str(self.ra)
-        step = len(rastr.split('.')[0])
-        decstr = str(self.dec)
-        step = len(decstr.split('.')[0])
-        sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(6+step)]}*{decstr[:(6+step)]}*'))
-        for s in sfiles:
-            os.system("rm "+s)
-
-    # def flux_override(self, time, flux):
-    #     """
-    #     Michael is intended for use with `eleanor` light curves only. However for
-    #     testing purposes, this `flux_override()` command allows input of a custom
-    #     light curve.
-    #
-    #     After calling this command, the user should call `get_rotation()`,
-    #     `validate_rotation()` and `view()` manually.
-    #
-    #     This lone light curve is treated as if it's an 'all' sectors light curve.
-    #
-    #     Parameters
-    #     ----------
-    #     time: ndarray
-    #         The time values in units of days.
-    #
-    #     flux: ndarray
-    #         The flux values in any units.
-    #     """
-    #     self.sectors = np.array(['all'])
-    #     self.gaps = False
-    #     self.override = True
-    #
-    #     # Create matching data folders
-    #     if not os.path.exists(f'{self.output_path}/{self.gaiaid}'):
-    #         print(f'Making folder {self.output_path}/{self.gaiaid}/...')
-    #         os.makedirs(f'{self.output_path}/{self.gaiaid}')
-    #     else:
-    #         pass
-    #
-    #     lc = lk.LightCurve(time = time, flux = flux)
-    #     clc = lc.normalize().remove_nans().remove_outliers()
-    #     self.void['datum_all'] = None
-    #     self.void['clc_all'] = clc
+        else:
+            self.data.build_eleanor_lc()
 
     def get_rotation(self, period_range = (0.2, 27.)):
         """
@@ -270,11 +210,11 @@ class janet():
 
     @staticmethod
     def boot(df, index, output_path = '/Users/oliver hall/Research/unicorn/data/output',
-            pipeline = 'eleanor', update=False):
+            pipeline = 'eleanor'):
         """
         Sets up Janet quickly.
         """
         return janet(
             gaiaid = df.loc[index, 'source_id'], ra = df.loc[index, 'ra'], dec = df.loc[index, 'dec'],
-            output_path = output_path, pipeline=pipeline, update= update, verbose=True
+            output_path = output_path, pipeline=pipeline, verbose=True
         )
