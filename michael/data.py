@@ -174,7 +174,7 @@ class data_class():
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
 
         stars = eleanor.multi_sectors(coords = coords,
-                                sectors = self.j.sectorlist.tolist(),
+                                sectors = self.j.sectorlist,
                                 tc = True,
                                 post_dir = self.path,
                                 tesscut_size = 50)

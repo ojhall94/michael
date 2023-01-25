@@ -107,6 +107,23 @@ class janet():
         """
         This needs some polish to get multiple methods working.
         """
+        longest = longest_sectors(self)
+        longest = longest[0]
+        if len(longest.split('-')) == 1:
+            maxlen = 27
+        else:
+            split = longest.split('-')
+            maxlen = 27*(int(split[1]) - int(split[0])+1)
+
+        # Set upper period range to be the longest continuous sector
+        if period_range == 'auto':
+            period_range = (0.2, np.float16(maxlen*0.75))
+            print('Period range automatically set to 0.75x the length of the longest baseline.')
+            print(f'For this target, this is {maxlen*0.75} days.')
+    
+        else:
+            pass
+
         # Assert the period range is positive and not longer than your longest
         # sector. Raise a warning if it is over half your longest sector.
         if any(np.array(period_range) <= 0):
@@ -115,13 +132,7 @@ class janet():
         if period_range[1] <= period_range[0]:
             raise ValueError("It looks like you've got your period limits mixed up!")
 
-        longest = longest_sectors(self)
-        longest = longest[0]
-        if len(longest.split('-')) == 1:
-            maxlen = 27
-        else:
-            split = longest.split('-')
-            maxlen = 27*(int(split[1]) - int(split[0])+1)
+
 
         if period_range[1] > maxlen/2:
             warnings.warn(UserWarning("Your upper period limit is longer than half your "+
@@ -132,6 +143,7 @@ class janet():
             print(f'Error on {self.gaiaid}\n')
             raise ValueError("Your upper period limit is longer than your "+
                             "longest set of consecutive TESS sectors.")
+
 
         # Only look at consecutive sectors if using tess-sip or tess-sip-detrended
         if (self.pipeline == 'tess-sip') or (self.pipeline == 'tess-sip-detrended'):
