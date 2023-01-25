@@ -12,6 +12,7 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 import lightkurve as lk
 import eleanor
+from tess_stars2px import tess_stars2px_function_entry as tess_stars2px
 from astroquery.mast import Tesscut
 from eleanor.utils import SearchError
 import tess_cpm
@@ -67,10 +68,20 @@ class data_class():
         coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
 
         # Check coordinates and sectors pulled up by tesscut.get_sectors
-        md = Tesscut.get_sectors(coordinates=coords)
-        reported_sectors = list(md['sector'])
+        mdr = Tesscut.get_sectors(coordinates=coords)
 
-        print(f'Target DR3 ID {self.j.gaiaid} has tesscut data available on MAST for Sectors ' + ', '.join(str(f) for f in reported_sectors))
+        # In rare cases, Tesscut mistakenly identifies a target cut where the target
+        # did not fall on silicone. To avoid this, we exclude it from the list here
+        # (to avoid a second download), and delete it further down.
+        on_silicone = tess_stars2px(0, coords.ra.deg, coords.dec.deg)[3]
+        keep = np.ones(len(mdr['sector']))
+        for idx, s in enumerate(mdr['sector']):
+            if s not in on_silicone:
+                keep[idx] = 0
+        md = mdr[keep.astype(bool)]
+
+        print(f'Target DR3 ID {self.j.gaiaid} has tesscut data available on MAST for Sectors ' +\
+                 ', '.join(str(f) for f in list(md['sector'])))
 
         # Check whether data is already downloaded, download missing sectors
         if len(glob.glob(f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/*')) != 0:
@@ -94,6 +105,15 @@ class data_class():
         for sfile in sfiles:
             if sfile.split('/')[-1].split('_')[0] not in sectornames:
                 os.remove(sfile)
+
+        # There are some rare cases of Tesscut downloading cutouts for targets that didnt' fall
+        # on silicone. We'll delete those here:
+        for s in mdr[~keep.astype(bool)]['sector']:
+            strlen = np.floor(np.log10(s)).astype(int)+1
+            secstr = 's0000'[:-strlen] + str(s)       
+            sfile = glob.glob(f'{self.path}/tess-{secstr}*')
+            if len(sfile) > 0:
+                os.remove(glob.glob(f'{self.path}/tess-{secstr}*')[0])
 
     def setup_data(self):
         """
