@@ -17,6 +17,14 @@ from astroquery.mast import Tesscut
 from eleanor.utils import SearchError
 import tess_cpm
 
+pipelines = {'eleanor' : 'c',
+             'eleanor-raw' : 'raw',
+             'eleanor-pca' : 'pca',
+             'eleanor-corner' : 'corn',
+             'unpopular' : 'cpm',
+             'tess-sip': 'r',
+             'tess-sip-detrended' : 'rdt'}
+
 # This hack is required to make the code compatible with Lightkurve
 np.float = np.float16
 
@@ -231,6 +239,11 @@ class data_class():
         baseline filter.
 
         """
+        if not any([len(a) > 2 for a in self.j.sectors]):
+            raise ValueError('This target does not have 2 or more consecutive sectors available.'+
+                'Please use a method other than `tess-sip` or `tess-sip-detrended`. The available methods are: '+
+                f'{", ".join(list(pipelines))}')
+
         sfiles = []
         for sector in self.j.sectors:
             split = sector.split('-')
