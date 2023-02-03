@@ -158,6 +158,10 @@ def _calculate_wavelet(clc, period_range, sector, j):
     if uplim > period_range[1]:
         uplim = period_range[1]
 
+    # Check if max_fit is > uplim. If it is, set it equal to uplim.
+    if max_p > uplim:
+        max_p == uplim
+
     popt, pcov = curve_fit(_gaussian_fn, p, w, p0 = [max_p, 0.1*max_p, max_w],
                             bounds = ([lolim, 0., 0.9*max_w],[uplim, 0.25*max_p, 1.1*max_w]))
     return popt, pcov

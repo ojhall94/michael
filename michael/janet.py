@@ -227,7 +227,7 @@ class janet():
         """
         Sets up Janet quickly.
         """
-        warnings.warn(f'RUNNING ON TARGET {index}, {df.loc[index, "source_id"]}')
+        warnings.warn(f'RUNNING ON TARGET {index}, {df.loc[index, "source_id"]}, {pipeline}')
 
         return janet(
             gaiaid = df.loc[index, 'source_id'], ra = df.loc[index, 'ra'], dec = df.loc[index, 'dec'],
