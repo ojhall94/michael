@@ -189,8 +189,10 @@ class data_class():
 
         # Looping and appending all sectors
         for s, star in zip(self.j.sectorlist, stars):
-            datum = eleanor.TargetData(star,
-                                        do_pca = True)
+            if self.j.pipeline == 'eleanor-pca':
+                datum = eleanor.TargetData(star, do_pca = True)
+            else:
+                datum = eleanor.TargetData(star)
 
             q = datum.quality == 0
             lc = lk.LightCurve(time = datum.time[q], flux = datum.corr_flux[q])
@@ -201,21 +203,30 @@ class data_class():
 
             # Save additional format light curves
             ## Raw light curve from eleanor aperture
-            self.j.void[f'rawlc_{s}'] = lk.LightCurve(time = datum.time[q], flux = datum.raw_flux[q])
-            self.j.void[f'rawlc_{s}'] = self.j.void[f'rawlc_{s}'].normalize().remove_nans().remove_outliers()
+            if self.j.pipeline == 'eleanor-raw':
+                self.j.void[f'rawlc_{s}'] = lk.LightCurve(time = datum.time[q], flux = datum.raw_flux[q])
+                self.j.void[f'rawlc_{s}'] = self.j.void[f'rawlc_{s}'].normalize().remove_nans().remove_outliers()
 
             ## PCA light curve from eleanor aperture
-            self.j.void[f'pcalc_{s}'] = lk.LightCurve(time = datum.time[q], flux = datum.pca_flux[q])
-            self.j.void[f'pcalc_{s}'] = self.j.void[f'pcalc_{s}'].normalize().remove_nans().remove_outliers()
+            if self.j.pipeline == 'eleanor-pca':
+                self.j.void[f'pcalc_{s}'] = lk.LightCurve(time = datum.time[q], flux = datum.pca_flux[q])
+                self.j.void[f'pcalc_{s}'] = self.j.void[f'pcalc_{s}'].normalize().remove_nans().remove_outliers()
 
             ## corner correction light curve from eleanor
-            cf = eleanor.TargetData.corrected_flux(datum, flux=datum.raw_flux, regressors='corner')
-            self.j.void[f'cornlc_{s}'] = lk.LightCurve(time = datum.time[q], flux = cf[q])
-            self.j.void[f'cornlc_{s}'] = self.j.void[f'cornlc_{s}'].normalize().remove_nans().remove_outliers()
+            if self.j.pipeline == 'eleanor-corner':
+                try:
+                    cf = eleanor.TargetData.corrected_flux(datum, flux=datum.raw_flux, regressors='corner')
+                except np.linalg.LinAlgError:
+                    raise UserWarning("eleanor is unable to succesfully perform a corner correction on this target.")
+                self.j.void[f'cornlc_{s}'] = lk.LightCurve(time = datum.time[q], flux = cf[q])
+                self.j.void[f'cornlc_{s}'] = self.j.void[f'cornlc_{s}'].normalize().remove_nans().remove_outliers()
 
 
         # Combine consecutive lightcurves
-        pls = ['c','raw','pca','corn']
+        if self.j.pipeline == 'unpopular':
+            pls = ['c']
+        else:
+            pls = ['c', self.j.pl]
         for pl in pls:
             for s in self.j.sectors:
                 if len(s.split('-')) > 1:
