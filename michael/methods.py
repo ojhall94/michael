@@ -271,6 +271,9 @@ def composite_ACF(j, sector, period_range):
     wnew = f(xnew)
     cacf = vizacf * (wnew/np.nanmax(wnew))
 
+    # Drop any inf or nans from cacf, in case there is division by zero
+    cacf = cacf[np.isfinite(cacf.flux)]
+
     # Smooth the  CACF
     sd = 2.
     cacfsmoo = gaussian_filter1d(cacf.flux.value, sigma = sd, mode='nearest')
