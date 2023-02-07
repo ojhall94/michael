@@ -59,6 +59,11 @@ def simple_astropy_lombscargle(j, sector, period_range):
     # Select the region around the highest peak
     max_period = pg.period_at_max_power.value
     max_power = pg.max_power.value
+
+    # Remove any nan or inf values
+    pg = pg[np.isfinite(pg.power)]
+
+    # Split up the periodogram to the area of interest
     s = (pg.period.value > 0.6*max_period) & (pg.period.value < 1.4*max_period)
     p = pg[s].period.value
     P = pg[s].power.value
@@ -145,6 +150,10 @@ def _calculate_wavelet(clc, period_range, sector, j):
     s = (p > 0.6*max_p) & (p < 1.4*max_p)
     w = w[s]
     p = p[s]
+
+    # Remove any infs or nans here
+    p = p[np.isfinite(w)]
+    w = w[np.isfinite(w)]
 
     # Fit a Gaussian
     ## Params are mu, sigma, Amplitude
