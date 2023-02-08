@@ -103,6 +103,15 @@ class janet():
         else:
             self.data.build_eleanor_lc()
 
+        # Only look at consecutive sectors if using tess-sip or tess-sip-detrended
+        if (self.pipeline == 'tess-sip') or (self.pipeline == 'tess-sip-detrended'):
+            lim = self.sectors[[len(a) > 2 for a in self.sectors]]
+            self.sectors = self.sectors[self.sectors == lim]
+            self.sectorlist = []
+            for sector in self.sectors:
+                split = sector.split('-')
+                self.sectorlist += list(np.arange(int(split[0]), int(split[1])))
+
     def get_rotation(self, period_range = 'auto'):
         """
         This needs some polish to get multiple methods working.
@@ -144,22 +153,10 @@ class janet():
             raise ValueError("Your upper period limit is longer than your "+
                             "longest set of consecutive TESS sectors.")
 
-
-        # Only look at consecutive sectors if using tess-sip or tess-sip-detrended
-        if (self.pipeline == 'tess-sip') or (self.pipeline == 'tess-sip-detrended'):
-            lim = self.sectors[[len(a) > 2 for a in self.sectors]]
-            self.sectors = self.sectors[self.sectors == lim]
-            self.sectorlist = []
-            for sector in self.sectors:
-                split = sector.split('-')
-                self.sectorlist += list(np.arange(int(split[0]), int(split[1])))
-
-        sectorlist = list(self.sectors)
-
-        # TO DO: Set period range based on longest baseline
         self.period_range = period_range
 
         # Loop over all sectors.
+        sectorlist = list(self.sectors) 
         for sector in sectorlist:
             simple_astropy_lombscargle(self, sector = sector, period_range = period_range)
             simple_wavelet(self, sector = sector, period_range = period_range)
