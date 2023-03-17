@@ -77,8 +77,6 @@ class data_class():
 
         # Check coordinates and sectors pulled up by tesscut.get_sectors
         mdr = Tesscut.get_sectors(coordinates=coords)
-        print(mdr)
-
 
         # In rare cases, Tesscut mistakenly identifies a target cut where the target
         # did not fall on silicone. To avoid this, we exclude it from the list here
@@ -89,7 +87,6 @@ class data_class():
             if s not in on_silicone:
                 keep[idx] = 0
 
-        print(on_silicone)        
         md = mdr[keep.astype(bool)]
 
         print(f'Target DR3 ID {self.j.gaiaid} has tesscut data available on MAST for Sectors ' +\
