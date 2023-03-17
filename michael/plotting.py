@@ -24,14 +24,24 @@ binfactor = 20
 def plot_tpf(j, fig, ax):
     # Plot Sector 0 TPF
     # if not j.override:
-    sector0 = j.sectorlist[0]
-    ax.set_title(f'Frame 0 Sector {sector0}')
+
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
-    ax.imshow(np.log10(j.void[f'datum_{sector0}'].tpf[0]), zorder=1)
-    pix = np.where(j.void[f'datum_{sector0}'].aperture > 0)
-    ax.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
-    ax.legend(loc='upper left', fontsize=_label_fontsize)
+
+    if j.pipeline not in ['tess-sip','tess-sip-detrended']:
+        sector0 = j.sectorlist[0]
+        ax.set_title(f'Frame 0 Sector {sector0}')
+        ax.imshow(np.log10(j.void[f'datum_{sector0}'].tpf[0]), zorder=1, origin='lower')
+        pix = np.where(j.void[f'datum_{sector0}'].aperture > 0)
+        ax.scatter(pix[0], pix[1], edgecolors='w', lw=5, marker=',', facecolors='none', s=600, zorder=2, label='Aperture')
+        ax.legend(loc='upper left', fontsize=_label_fontsize)
+
+    else:
+        sector0 = j.sectorlist[0]
+        s0 = j.sectors[0]
+        ax.set_title(f'Frame 0 Sector {sector0}')
+        ax.imshow(np.log10(j.void[f'tpfs_{s0}'][0].flux.value[0]), zorder=1, origin='lower')
+
 
 def plot_lcs(j, fig, ax):
     text = ''
@@ -65,7 +75,7 @@ def plot_lcs(j, fig, ax):
 
         sd = np.sqrt(len(lc))
         fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd/4, mode='reflect')
-        ax.plot(xvals, fsmoo, zorder=104, lw=5, c=cmap[4], label=label)
+        ax.plot(xvals, fsmoo, zorder=104, lw=5, color =cmap[4], label=label)
         ax.plot(xvals, fsmoo, zorder=103, lw=10, c='w')
 
     ax.set_xticks(np.array(xlocs).flatten())
@@ -81,7 +91,7 @@ def plot_periodograms(j, fig, ax):
     for s in j.sectors:
         j.void[f'pg_{s}'].plot(ax=ax, view='period',
         label=f'Sector(s) {s}', lw=2, zorder=2)
-    ax.axvline(j.results.loc["best", "SLS"], c=cmap[4], lw=5, ls='--', zorder=1, label=f'P = {j.results.loc["best", "SLS"]:.2f} d')
+    ax.axvline(j.results.loc["best", "SLS"], color=cmap[4], lw=5, ls='--', zorder=1, label=f'P = {j.results.loc["best", "SLS"]:.2f} d')
     ax.set_xlim(j.void[f'pg_{best_sls}'].period.min().value, j.void[f'pg_{best_sls}'].period.max().value)
     ax.set_ylim(0)
     ax.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
@@ -95,7 +105,7 @@ def plot_periodogram_fit(j, fig, ax):
 
     ax.get_yaxis().set_visible(False)
     ax.plot(j.void[f'p_{best_sls}'],
-            _gaussian_fn(j.void[f'p_{best_sls}'], *j.void[f'popt_{best_sls}']), ls='--', lw=10, c=cmap[5], zorder=2,
+            _gaussian_fn(j.void[f'p_{best_sls}'], *j.void[f'popt_{best_sls}']), ls='--', lw=10, color=cmap[5], zorder=2,
             label = rf'$\sigma$ = {j.results.loc["best", "e_SLS"]:.2f} d')
     ax.set_xlim(j.void[f'popt_{best_sls}'][0] - 5*j.void[f'popt_{best_sls}'][1],
                     j.void[f'popt_{best_sls}'][0] + 5*j.void[f'popt_{best_sls}'][1])

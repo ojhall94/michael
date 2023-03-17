@@ -65,7 +65,7 @@ class janet():
     """
 
     def __init__(self, gaiaid, ra = None, dec = None, output_path = None,
-                pipeline = 'eleanor', update = False, verbose = True):
+                pipeline = 'eleanor', verbose = True):
             self.gaiaid = gaiaid
             self.ra = ra
             self.dec = dec
@@ -73,23 +73,14 @@ class janet():
             self.output_path = output_path
             self.verbose = verbose
             self.void = {}
-            self.update = update
-            # self.override=False
-            # self.use_prior = use_prior
-            # self.obs = obs
-            # self.prot_prior = np.array([np.nan, np.nan, np.nan])
-            # self.samples = None
+
             if pipeline not in pipelines:
-                raise ValueError("Requested pipeline not available, defaulting"+
-                                " to eleanor pipeline")
+                raise ValueError("Requested pipeline not available. The availible pipliens are: " +
+                            ", ".join(list(pipelines)))
                 pipeline = 'eleanor'
 
             self.pipeline = pipeline
             self.pl = pipelines[pipeline]
-
-            # if use_prior and obs is None:
-            #     raise ValueError('When using the prior function you must provide '
-            #                      'observables as input.')
 
     def prepare_data(self):
         """
@@ -97,75 +88,51 @@ class janet():
         light curves.
         """
         self.data = data_class(self)
-        self.data.check_eleanor_setup()
-        self.data.build_eleanor_lc()
+        self.data.setup_data()
 
         if self.pipeline == 'unpopular':
+            self.data.build_eleanor_lc() #To build the aperture for the unpopular code
             self.data.build_unpopular_lc()
 
-        if self.pipeline == 'tess-sip':
+        elif self.pipeline == 'tess-sip':
             self.data.build_tess_sip_lc()
 
-        if self.pipeline == 'tess-sip-detrended':
+        elif self.pipeline == 'tess-sip-detrended':
             self.data.build_tess_sip_lc(detrended=True)
 
-        # self.data.build_stitched_all_lc()
+        else:
+            self.data.build_eleanor_lc()
 
-    def reset_data(self):
-        """
-        Calling this function serves to delete all stored eleanor data
-        associated with a given target.
+        # Only look at consecutive sectors if using tess-sip or tess-sip-detrended
+        if (self.pipeline == 'tess-sip') or (self.pipeline == 'tess-sip-detrended'):
+            lim = self.sectors[[len(a) > 2 for a in self.sectors]]
+            self.sectors = self.sectors[self.sectors == lim]
+            self.sectorlist = []
+            for sector in self.sectors:
+                split = sector.split('-')
+                self.sectorlist += list(np.arange(int(split[0]), int(split[1])))
 
-        This is to be used in case there is a data corruption issue, or an
-        inconsistency between machines on which data is available.
-        """
-        rastr = str(self.ra)
-        step = len(rastr.split('.')[0])
-        decstr = str(self.dec)
-        step = len(decstr.split('.')[0])
-        sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(6+step)]}*{decstr[:(6+step)]}*'))
-        for s in sfiles:
-            os.system("rm "+s)
-
-    # def flux_override(self, time, flux):
-    #     """
-    #     Michael is intended for use with `eleanor` light curves only. However for
-    #     testing purposes, this `flux_override()` command allows input of a custom
-    #     light curve.
-    #
-    #     After calling this command, the user should call `get_rotation()`,
-    #     `validate_rotation()` and `view()` manually.
-    #
-    #     This lone light curve is treated as if it's an 'all' sectors light curve.
-    #
-    #     Parameters
-    #     ----------
-    #     time: ndarray
-    #         The time values in units of days.
-    #
-    #     flux: ndarray
-    #         The flux values in any units.
-    #     """
-    #     self.sectors = np.array(['all'])
-    #     self.gaps = False
-    #     self.override = True
-    #
-    #     # Create matching data folders
-    #     if not os.path.exists(f'{self.output_path}/{self.gaiaid}'):
-    #         print(f'Making folder {self.output_path}/{self.gaiaid}/...')
-    #         os.makedirs(f'{self.output_path}/{self.gaiaid}')
-    #     else:
-    #         pass
-    #
-    #     lc = lk.LightCurve(time = time, flux = flux)
-    #     clc = lc.normalize().remove_nans().remove_outliers()
-    #     self.void['datum_all'] = None
-    #     self.void['clc_all'] = clc
-
-    def get_rotation(self, period_range = (0.2, 27.)):
+    def get_rotation(self, period_range = 'auto'):
         """
         This needs some polish to get multiple methods working.
         """
+        longest = longest_sectors(self)
+        longest = longest[0]
+        if len(longest.split('-')) == 1:
+            maxlen = 27
+        else:
+            split = longest.split('-')
+            maxlen = 27*(int(split[1]) - int(split[0])+1)
+
+        # Set upper period range to be the longest continuous sector
+        if period_range == 'auto':
+            period_range = (0.2, np.float16(maxlen*0.75))
+            print('Period range automatically set to 0.75x the length of the longest baseline.')
+            print(f'For this target, this is {maxlen*0.75} days.')
+    
+        else:
+            pass
+
         # Assert the period range is positive and not longer than your longest
         # sector. Raise a warning if it is over half your longest sector.
         if any(np.array(period_range) <= 0):
@@ -174,13 +141,7 @@ class janet():
         if period_range[1] <= period_range[0]:
             raise ValueError("It looks like you've got your period limits mixed up!")
 
-        longest = longest_sectors(self)
-        longest = longest[0]
-        if len(longest.split('-')) == 1:
-            maxlen = 27
-        else:
-            split = longest.split('-')
-            maxlen = 27*(int(split[1]) - int(split[0])+1)
+
 
         if period_range[1] > maxlen/2:
             warnings.warn(UserWarning("Your upper period limit is longer than half your "+
@@ -192,21 +153,10 @@ class janet():
             raise ValueError("Your upper period limit is longer than your "+
                             "longest set of consecutive TESS sectors.")
 
-        # Only look at consecutive sectors if using tess-sip or tess-sip-detrended
-        if (self.pipeline == 'tess-sip') or (self.pipeline == 'tess-sip-detrended'):
-            lim = self.sectors[[len(a) > 2 for a in self.sectors]]
-            self.sectors = self.sectors[self.sectors == lim]
-            self.sectorlist = []
-            for sector in self.sectors:
-                split = sector.split('-')
-                self.sectorlist += list(np.arange(int(split[0]), int(split[1])))
-
-        sectorlist = list(self.sectors)
-
-        # TO DO: Set period range based on longest baseline
         self.period_range = period_range
 
         # Loop over all sectors.
+        sectorlist = list(self.sectors) 
         for sector in sectorlist:
             simple_astropy_lombscargle(self, sector = sector, period_range = period_range)
             simple_wavelet(self, sector = sector, period_range = period_range)
@@ -246,7 +196,7 @@ class janet():
             print(_decode(flag))
             print('No other flags raised. \n')
 
-    def run(self, period_range = (0.2, 27.)):
+    def run(self, period_range = 'auto'):
         self.prepare_data()
 
         self.get_rotation(period_range = period_range)
@@ -269,12 +219,14 @@ class janet():
 
 
     @staticmethod
-    def boot(df, index, output_path = '/Users/oliver hall/Research/unicorn/data/eleanor',
-            pipeline = 'eleanor',update = False):
+    def boot(df, index, output_path = '/Users/oliver.hall/Research/unicorn/data/output',
+            pipeline = 'eleanor'):
         """
         Sets up Janet quickly.
         """
+        warnings.warn(f'RUNNING ON TARGET {index}, {df.loc[index, "source_id"]}, {pipeline}')
+
         return janet(
             gaiaid = df.loc[index, 'source_id'], ra = df.loc[index, 'ra'], dec = df.loc[index, 'dec'],
-            output_path = output_path, pipeline=pipeline, update= update, verbose=True
+            output_path = output_path, pipeline=pipeline, verbose=True
         )

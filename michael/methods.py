@@ -59,6 +59,11 @@ def simple_astropy_lombscargle(j, sector, period_range):
     # Select the region around the highest peak
     max_period = pg.period_at_max_power.value
     max_power = pg.max_power.value
+
+    # Remove any nan or inf values
+    pg = pg[np.isfinite(pg.power)]
+
+    # Split up the periodogram to the area of interest
     s = (pg.period.value > 0.6*max_period) & (pg.period.value < 1.4*max_period)
     p = pg[s].period.value
     P = pg[s].power.value
@@ -146,6 +151,10 @@ def _calculate_wavelet(clc, period_range, sector, j):
     w = w[s]
     p = p[s]
 
+    # Remove any infs or nans here
+    p = p[np.isfinite(w)]
+    w = w[np.isfinite(w)]
+
     # Fit a Gaussian
     ## Params are mu, sigma, Amplitude
     lolim = 0.8*max_p
@@ -157,6 +166,12 @@ def _calculate_wavelet(clc, period_range, sector, j):
         lolim = period_range[0]
     if uplim > period_range[1]:
         uplim = period_range[1]
+
+    # Check if max_fit is > uplim. If it is, set it equal to uplim.
+    if max_p > uplim:
+        max_p = uplim
+    if max_p < lolim:
+        max_p = lolim
 
     popt, pcov = curve_fit(_gaussian_fn, p, w, p0 = [max_p, 0.1*max_p, max_w],
                             bounds = ([lolim, 0., 0.9*max_w],[uplim, 0.25*max_p, 1.1*max_w]))
@@ -264,6 +279,9 @@ def composite_ACF(j, sector, period_range):
     xnew = vizacf.time.value
     wnew = f(xnew)
     cacf = vizacf * (wnew/np.nanmax(wnew))
+
+    # Drop any inf or nans from cacf, in case there is division by zero
+    cacf = cacf[np.isfinite(cacf.flux)]
 
     # Smooth the  CACF
     sd = 2.

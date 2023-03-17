@@ -12,21 +12,52 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 import lightkurve as lk
 import eleanor
+from tess_stars2px import tess_stars2px_function_entry as tess_stars2px
+from astroquery.mast import Tesscut
 from eleanor.utils import SearchError
 import tess_cpm
+
+pipelines = {'eleanor' : 'c',
+             'eleanor-raw' : 'raw',
+             'eleanor-pca' : 'pca',
+             'eleanor-corner' : 'corn',
+             'unpopular' : 'cpm',
+             'tess-sip': 'r',
+             'tess-sip-detrended' : 'rdt'}
+
+# This hack is required to make the code compatible with Lightkurve
+np.float = np.float16
 
 class data_class():
     def __init__(self, janet):
         self.j = janet
-
-    def check_eleanor_setup(self):
-        """ Check the Eleanor setup.
-        This function checks that Eleanor data has already been prepared for the
-        target star. If it has not, the function creates a directory and
-        downloads and saves the data.
+        
+    def build_local_folders(self):
+        """
+        Checks the local setup. If this is the first time downloading data
+        using michael, it will set up the `~/.michael/tesscut/`` directories, with
+        a subfolder for the target using its Gaia DR3 ID.
         """
 
-        # Create matching data folders
+        # Create michael folder
+        if not os.path.exists(f'{os.path.expanduser("~")}/.michael'):
+            if self.j.verbose:
+                print(f'Making folder {os.path.expanduser("~")}/.michael/...')
+            os.makedirs(f'{os.path.expanduser("~")}/.michael')
+
+        # Create tesscut folder
+        if not os.path.exists(f'{os.path.expanduser("~")}/.michael/tesscut'):
+            if self.j.verbose:
+                print(f'Making folder {os.path.expanduser("~")}/.michael/tesscut/...')
+            os.makedirs(f'{os.path.expanduser("~")}/.michael/tesscut')
+
+        # Create data folder for target
+        if not os.path.exists(f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}'):
+            if self.j.verbose:
+                print(f'Making folder {os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/...')
+            os.makedirs(f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}')
+
+        # Create output folder for target
         if not os.path.exists(f'{self.j.output_path}/{self.j.gaiaid}'):
             if self.j.verbose:
                 print(f'Making folder {self.j.output_path}/{self.j.gaiaid}/...')
@@ -34,20 +65,81 @@ class data_class():
         else:
             pass
 
-        # Check for existing data, unless a full update is demanded
-        if self.j.update:
-            self.download_eleanor_data()
+        self.path = f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/'
 
+    def download_tesscut(self):
+        """
+        Downloads a 50x50 TESS cutout around the targeted coordinates. This is
+        stored in the `~/.michael/tesscut/{target_id}` directory. The cut is done using the 
+        `tesscut` Python package.
+        """
+        coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
+
+        # Check coordinates and sectors pulled up by tesscut.get_sectors
+        mdr = Tesscut.get_sectors(coordinates=coords)
+
+        # In rare cases, Tesscut mistakenly identifies a target cut where the target
+        # did not fall on silicone. To avoid this, we exclude it from the list here
+        # (to avoid a second download), and delete it further down.
+        on_silicone = tess_stars2px(0, coords.ra.deg, coords.dec.deg)[3]
+        keep = np.ones(len(mdr['sector']))
+        for idx, s in enumerate(mdr['sector']):
+            if s not in on_silicone:
+                keep[idx] = 0
+        md = mdr[keep.astype(bool)]
+
+        print(f'Target DR3 ID {self.j.gaiaid} has tesscut data available on MAST for Sectors ' +\
+                 ', '.join(str(f) for f in list(md['sector'])))
+
+        # Check whether data is already downloaded, download missing sectors
+        if len(glob.glob(f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/*')) != 0:
+            for sfile, sec in zip(md['sectorName'], md['sector']):
+                if len(glob.glob(f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/{sfile}*')) == 1:
+                    print(f"Data already downloaded for Sector {sec}.")
+                else:
+                    print(f"Downloading data for Sector {sec}.")
+                    Tesscut.download_cutouts(coordinates = coords, size = 50, sector=sec,
+                            path = f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/')        
+        # Download all available sectors if nothing has been downloaded yet
         else:
-            if len(glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')) > 0:
-                if self.j.verbose:
-                    print(f'Already have data downloaded for Gaia ID {self.j.gaiaid}.')
-            else:
-                self.download_eleanor_data()
+            Tesscut.download_cutouts(coordinates = coords, size = 50,
+                    path = f'{os.path.expanduser("~")}/.michael/tesscut/{self.j.gaiaid}/')
+
+        # There are some instances of TESScut returning two observations in a single sector for a target
+        # We delete the entry that does not appear in the `Tesscut.get_sectors` list.
+        sfiles = np.sort(glob.glob(f'{self.path}/*'))
+        sectornames = md['sectorName']
+
+        for sfile in sfiles:
+            if sfile.split('/')[-1].split('_')[0] not in sectornames:
+                os.remove(sfile)
+
+        # There are some rare cases of Tesscut downloading cutouts for targets that didnt' fall
+        # on silicone. We'll delete those here:
+        for s in mdr[~keep.astype(bool)]['sector']:
+            strlen = np.floor(np.log10(s)).astype(int)+1
+            secstr = 's0000'[:-strlen] + str(s)       
+            sfile = glob.glob(f'{self.path}/tess-{secstr}*')
+            if len(sfile) > 0:
+                os.remove(glob.glob(f'{self.path}/tess-{secstr}*')[0])
+
+    def setup_data(self):
+        """
+        This function ensures all the available data is downloaded into the expected file structure.
+        """
+        # Check local file structure.
+        self.build_local_folders()
+
+        # Download data (will skip sectors we have already)
+        self.download_tesscut()
 
         # Check which sectors have been downloaded
-        self.j.sfiles = glob.glob(f'{self.j.output_path}/{self.j.gaiaid}/*.fits')
-        self.j.sectorlist = np.unique(np.sort([int(f.split('_')[-1][:-5]) for f in self.j.sfiles]))
+        sfiles = glob.glob(f'{self.path}/*.fits')
+        sort = np.argsort([f.split('/')[-1].split('-')[1][1:] for f in sfiles])  
+        self.j.sfiles = np.array(sfiles)[sort].tolist() 
+
+        self.j.nullsectors = np.unique(np.sort([f.split('/')[-1].split('-')[1] for f in self.j.sfiles]))
+        self.j.sectorlist = np.sort([int(f[1:]) for f in self.j.nullsectors])
 
         # Create sectorlabels that connect sectors together.
         sectors = []
@@ -81,71 +173,29 @@ class data_class():
                 sectors.append(label)
         self.j.sectors = np.array(sectors)
 
-    def download_eleanor_data(self):
-        """ Download Eleanor data.
-        Data may not always be available due to not being observed by TESS, or
-        errors in the download (which Im still trying to solve).
-
-        Eleanor will download the data as a tesscut of 50x50 pixels, which is
-        required for the `unpopular` method. For other methods, this is reduced
-        to a 13x13 postcard.
-        """
-
-        coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
-
-        try:
-            star = eleanor.multi_sectors(coords = coords, sectors = 'all',
-                                        tc = True, tesscut_size=50)
-        except SearchError:
-            print(f'Eleanor thinks your target has not been observed by TESS')
-            print('If you believe this to be in error, please get in touch.')
-            print('Exiting `michael`.')
-            raise
-
-        for s in star:
-            try:
-                datum = eleanor.TargetData(s, do_pca = True)
-                datum.save(output_fn = f'lc_sector_{s.sector}.fits',
-                        directory = f'{self.j.output_path}/{self.j.gaiaid}/')
-            except TypeError:
-                print(f'There is some kind of Eleanor error for Sector {s.sector}')
-                print('Try running eleanor.Update(), or raise an issue on the '
-                        'Eleanor GitHub!')
-                print('Moving on the next sector... \n')
-
-            except ValueError:
-                print(f'There may be an issue where eleanor is detecting multiple '
-                        'instances of a single sector. Skipping this sector.' )
-
-        # Eliminate the secondary duplicate sector from the TESSCuts
-        rastr = str(self.j.ra)
-        step = len(rastr.split('.')[0])
-        decstr = str(self.j.dec)
-        step = len(decstr.split('.')[0])
-        sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*_{rastr[:(6+step)]}*{decstr[:(6+step)]}_*'))
-
-        slabels = []
-        for idx in range(len(sfiles)):
-            slabels.append(sfiles[idx].split('-')[1])
-        keep = np.unique(slabels, return_index=True)[1]
-        for idx, sfile in enumerate(sfiles):
-            if idx not in keep:
-                os.remove(sfile)
-
     def build_eleanor_lc(self):
         """
-        This function constructs a `Lightkurve` object from downloaded `eleanor`
-        light curves. It also stores the light curve for each object it reads in,
-        a well as the full Eleanor Target Pixel File data.
+        This function constructs an eleanor datum object from a downloaded tesscut TPF.
+        It also constructs light curves for raw data, PCA and corner corrected data,
+        as well as the out-of-the-box eleanor corrected light curve.
         """
+        coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
+
+        stars = eleanor.multi_sectors(coords = coords,
+                                sectors = self.j.sectorlist,
+                                tc = True,
+                                post_dir = self.path,
+                                tesscut_size = 50)
+
         # Looping and appending all sectors
-        for s in self.j.sectorlist:
-            datum = eleanor.TargetData(eleanor.Source(fn=f'lc_sector_{s}.fits',
-                                                     fn_dir=f'{self.j.output_path}/{self.j.gaiaid}/'),
-                                                     do_pca = True)
+        for s, star in zip(self.j.sectorlist, stars):
+            if self.j.pipeline == 'eleanor-pca':
+                datum = eleanor.TargetData(star, do_pca = True)
+            else:
+                datum = eleanor.TargetData(star)
+
             q = datum.quality == 0
             lc = lk.LightCurve(time = datum.time[q], flux = datum.corr_flux[q])
-            # self.clc = self.clc.append(lc.normalize().remove_nans().remove_outliers())
 
             # Store the datum and light curve
             self.j.void[f'datum_{s}'] = datum
@@ -153,21 +203,30 @@ class data_class():
 
             # Save additional format light curves
             ## Raw light curve from eleanor aperture
-            self.j.void[f'rawlc_{s}'] = lk.LightCurve(time = datum.time[q], flux = datum.raw_flux[q])
-            self.j.void[f'rawlc_{s}'] = self.j.void[f'rawlc_{s}'].normalize().remove_nans().remove_outliers()
+            if self.j.pipeline == 'eleanor-raw':
+                self.j.void[f'rawlc_{s}'] = lk.LightCurve(time = datum.time[q], flux = datum.raw_flux[q])
+                self.j.void[f'rawlc_{s}'] = self.j.void[f'rawlc_{s}'].normalize().remove_nans().remove_outliers()
 
             ## PCA light curve from eleanor aperture
-            self.j.void[f'pcalc_{s}'] = lk.LightCurve(time = datum.time[q], flux = datum.pca_flux[q])
-            self.j.void[f'pcalc_{s}'] = self.j.void[f'pcalc_{s}'].normalize().remove_nans().remove_outliers()
+            if self.j.pipeline == 'eleanor-pca':
+                self.j.void[f'pcalc_{s}'] = lk.LightCurve(time = datum.time[q], flux = datum.pca_flux[q])
+                self.j.void[f'pcalc_{s}'] = self.j.void[f'pcalc_{s}'].normalize().remove_nans().remove_outliers()
 
             ## corner correction light curve from eleanor
-            cf = eleanor.TargetData.corrected_flux(datum, flux=datum.raw_flux, regressors='corner')
-            self.j.void[f'cornlc_{s}'] = lk.LightCurve(time = datum.time[q], flux = cf[q])
-            self.j.void[f'cornlc_{s}'] = self.j.void[f'cornlc_{s}'].normalize().remove_nans().remove_outliers()
+            if self.j.pipeline == 'eleanor-corner':
+                try:
+                    cf = eleanor.TargetData.corrected_flux(datum, flux=datum.raw_flux, regressors='corner')
+                except np.linalg.LinAlgError:
+                    raise UserWarning("eleanor is unable to succesfully perform a corner correction on this target.")
+                self.j.void[f'cornlc_{s}'] = lk.LightCurve(time = datum.time[q], flux = cf[q])
+                self.j.void[f'cornlc_{s}'] = self.j.void[f'cornlc_{s}'].normalize().remove_nans().remove_outliers()
 
 
         # Combine consecutive lightcurves
-        pls = ['c','raw','pca','corn']
+        if self.j.pipeline == 'unpopular':
+            pls = ['c']
+        else:
+            pls = ['c', self.j.pl]
         for pl in pls:
             for s in self.j.sectors:
                 if len(s.split('-')) > 1:
@@ -191,10 +250,10 @@ class data_class():
         baseline filter.
 
         """
-        rastr = str(self.j.ra)
-        step = len(rastr.split('.')[0])
-        decstr = str(self.j.dec)
-        step = len(decstr.split('.')[0])
+        if not any([len(a) > 2 for a in self.j.sectors]):
+            raise ValueError('This target does not have 2 or more consecutive sectors available.'+
+                'Please use a method other than `tess-sip` or `tess-sip-detrended`. The available methods are: '+
+                f'{", ".join(list(pipelines))}')
 
         sfiles = []
         for sector in self.j.sectors:
@@ -205,17 +264,19 @@ class data_class():
                     strlen = np.floor(np.log10(s)).astype(int)+1
                     secstr = 's0000'[:-strlen] + str(s)
 
-                    sfile = glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*-{secstr}-*{rastr[:(6+step)]}*{decstr[:(6+step)]}*')
+                    sfile = glob.glob(f'{self.path}'+
+                                        f'*{secstr}*astrocut.fits')
 
                     if len(sfile) == 0:
-                        sfile = glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(4+step)]}*{decstr[:(4+step)]}*')
-                        if len(sfile) == 0:
-                            raise ValueError("No tesscut files could be found for this target.")
+                        raise ValueError("No tesscut files could be found for this target.")
 
                     sfiles.append(sfile[0])
 
                 tpflist = [lk.TessTargetPixelFile(f).cutout([26,26],13) for f in sfiles]
                 tpfs = lk.TargetPixelFileCollection(tpflist)
+
+                self.j.void[f'tpfs_{sector}'] = tpfs
+
                 r = SIP(tpfs)
                 self.j.void[f'r_{sector}'] = r
                 # tess-sip can sometimes introduce major peaks at the ends of
@@ -224,7 +285,7 @@ class data_class():
 
                 if detrended:
                     self.j.void[f'rdtlc_{sector}'] = \
-                        r['corr_lc'].remove_nans().flatten(window_length = len(r['corr_lc'])).remove_outliers()
+                        r['corr_lc'].remove_nans().flatten(window_length = len(r['corr_lc'])).remove_outliers().remove_nans()
 
             else:
                 continue
@@ -236,29 +297,14 @@ class data_class():
 
         Note that this method does not work particularly well for fainter stars.
         """
-        rastr = str(self.j.ra)
-        step = len(rastr.split('.')[0])
-        decstr = str(self.j.dec)
-        step = len(decstr.split('.')[0])
-        sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(6+step)]}*{decstr[:(6+step)]}*'))
-        coords = SkyCoord(ra = self.j.ra, dec = self.j.dec, unit = (u.deg, u.deg))
-
-        if len(sfiles) == 0:
-            sfiles = np.sort(glob.glob(f'{os.path.expanduser("~")}/.eleanor/tesscut/*{rastr[:(4+step)]}*{decstr[:(4+step)]}*'))
-            if len(sfiles) == 0:
-                raise ValueError("No tesscut files could be found for this target.")
-
-        if len(sfiles) < len(self.j.sectorlist):
-            raise ValueError("There are more sectors available than have been "+
-                            "loaded into the sectorlist. Reset the data.")
 
         # Set up a standard aperture based on the `eleanor` aperture for a 50x50
         # postcard.
-        for sfile, s in zip(sfiles, self.j.sectorlist):
+        for sfile, s in zip(self.j.sfiles, self.j.sectorlist):
             cpm = tess_cpm.Source(sfile, remove_bad=True)
             aperture = self.j.void[f'datum_{s}'].aperture
-            rowlims = 20 + np.array([np.where(aperture)[0].min(), np.where(aperture)[0].max()])
-            collims = 20 + np.array([np.where(aperture)[1].min(), np.where(aperture)[1].max()])
+            rowlims = 19 + np.array([np.where(aperture)[0].min(), np.where(aperture)[0].max()])
+            collims = 19 + np.array([np.where(aperture)[1].min(), np.where(aperture)[1].max()])
             cpm.set_aperture(rowlims = rowlims, collims = collims)
 
             # We use 200 predictors for a stamp of this size. This is a rough
