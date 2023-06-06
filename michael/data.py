@@ -21,9 +21,7 @@ pipelines = {'eleanor' : 'c',
              'eleanor-raw' : 'raw',
              'eleanor-pca' : 'pca',
              'eleanor-corner' : 'corn',
-             'unpopular' : 'cpm',
-             'tess-sip': 'r',
-             'tess-sip-detrended' : 'rdt'}
+             'unpopular' : 'cpm'}
 
 # This hack is required to make the code compatible with Lightkurve
 np.float = np.float16
@@ -239,57 +237,6 @@ class data_class():
                         combo = combo.append(self.j.void[f'{pl}lc_{i}'])
 
                     self.j.void[f'{pl}lc_{s}'] = combo
-
-    def build_tess_sip_lc(self, detrended=False):
-        """
-        This function constructs a `Lightkurve` object output from the
-        `tess_sip` technique by Hedges et al. (2021).
-
-        Note: this only works on consecutive sectors of data.
-
-        If `detrended = True`, the `tess-sip` signal is smoothed with a long
-        baseline filter.
-
-        """
-        if not any([len(a) > 2 for a in self.j.sectors]):
-            raise ValueError('This target does not have 2 or more consecutive sectors available.'+
-                'Please use a method other than `tess-sip` or `tess-sip-detrended`. The available methods are: '+
-                f'{", ".join(list(pipelines))}')
-
-        sfiles = []
-        for sector in self.j.sectors:
-            split = sector.split('-')
-            if len(split) > 1:
-                sfiles = []
-                for s in np.arange(int(split[0]), int(split[1])+1):
-                    strlen = np.floor(np.log10(s)).astype(int)+1
-                    secstr = 's0000'[:-strlen] + str(s)
-
-                    sfile = glob.glob(f'{self.path}'+
-                                        f'*{secstr}*astrocut.fits')
-
-                    if len(sfile) == 0:
-                        raise ValueError("No tesscut files could be found for this target.")
-
-                    sfiles.append(sfile[0])
-
-                tpflist = [lk.TessTargetPixelFile(f).cutout([26,26],13) for f in sfiles]
-                tpfs = lk.TargetPixelFileCollection(tpflist)
-
-                self.j.void[f'tpfs_{sector}'] = tpfs
-
-                r = SIP(tpfs)
-                self.j.void[f'r_{sector}'] = r
-                # tess-sip can sometimes introduce major peaks at the ends of
-                # the light curve, so we remove these.
-                self.j.void[f'rlc_{sector}'] = r['corr_lc'].remove_nans().remove_outliers()
-
-                if detrended:
-                    self.j.void[f'rdtlc_{sector}'] = \
-                        r['corr_lc'].remove_nans().flatten(window_length = len(r['corr_lc'])).remove_outliers().remove_nans()
-
-            else:
-                continue
 
     def build_unpopular_lc(self):
         """

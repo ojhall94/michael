@@ -33,9 +33,7 @@ pipelines = {'eleanor' : 'c',
              'eleanor-raw' : 'raw',
              'eleanor-pca' : 'pca',
              'eleanor-corner' : 'corn',
-             'unpopular' : 'cpm',
-             'tess-sip': 'r',
-             'tess-sip-detrended' : 'rdt'}
+             'unpopular' : 'cpm'}
 
 class janet():
     """ Class managing all i/o for the `michael' package.
@@ -46,8 +44,6 @@ class janet():
     - eleanor-pca
     - eleanor-corner
     - unpopular
-    - tess-sip
-    - tess-sip-detrended
 
     Examples
     --------
@@ -94,23 +90,8 @@ class janet():
             self.data.build_eleanor_lc() #To build the aperture for the unpopular code
             self.data.build_unpopular_lc()
 
-        elif self.pipeline == 'tess-sip':
-            self.data.build_tess_sip_lc()
-
-        elif self.pipeline == 'tess-sip-detrended':
-            self.data.build_tess_sip_lc(detrended=True)
-
         else:
             self.data.build_eleanor_lc()
-
-        # Only look at consecutive sectors if using tess-sip or tess-sip-detrended
-        if (self.pipeline == 'tess-sip') or (self.pipeline == 'tess-sip-detrended'):
-            lim = self.sectors[[len(a) > 2 for a in self.sectors]]
-            self.sectors = self.sectors[self.sectors == lim]
-            self.sectorlist = []
-            for sector in self.sectors:
-                split = sector.split('-')
-                self.sectorlist += list(np.arange(int(split[0]), int(split[1])))
 
     def get_rotation(self, period_range = 'auto'):
         """
