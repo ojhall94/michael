@@ -30,24 +30,20 @@ from .utils import _decode, _safety, longest_sectors
 from .prior import priorclass
 
 pipelines = {'eleanor' : 'c',
-             'eleanor-raw' : 'raw',
              'eleanor-pca' : 'pca',
              'eleanor-corner' : 'corn',
              'unpopular' : 'cpm',
-             'tess-sip': 'r',
-             'tess-sip-detrended' : 'rdt'}
+             'tess-sip': 'r'}
 
 class janet():
     """ Class managing all i/o for the `michael' package.
 
     Pipeline options are:
     - eleanor
-    - eleanor-raw
     - eleanor-pca
     - eleanor-corner
     - unpopular
     - tess-sip
-    - tess-sip-detrended
 
     Examples
     --------
@@ -95,22 +91,10 @@ class janet():
             self.data.build_unpopular_lc()
 
         elif self.pipeline == 'tess-sip':
-            self.data.build_tess_sip_lc()
-
-        elif self.pipeline == 'tess-sip-detrended':
-            self.data.build_tess_sip_lc(detrended=True)
+            self.data.build_tess_sip_tpfs()
 
         else:
             self.data.build_eleanor_lc()
-
-        # Only look at consecutive sectors if using tess-sip or tess-sip-detrended
-        if (self.pipeline == 'tess-sip') or (self.pipeline == 'tess-sip-detrended'):
-            lim = self.sectors[[len(a) > 2 for a in self.sectors]]
-            self.sectors = self.sectors[self.sectors == lim]
-            self.sectorlist = []
-            for sector in self.sectors:
-                split = sector.split('-')
-                self.sectorlist += list(np.arange(int(split[0]), int(split[1])))
 
     def get_rotation(self, period_range = 'auto'):
         """
@@ -158,10 +142,13 @@ class janet():
         # Loop over all sectors.
         sectorlist = list(self.sectors) 
         for sector in sectorlist:
-            simple_astropy_lombscargle(self, sector = sector, period_range = period_range)
-            simple_wavelet(self, sector = sector, period_range = period_range)
-            composite_ACF(self, sector = sector, period_range = period_range)
-            simple_ACF(self, sector = sector, period_range = period_range)
+            if self.pipeline == 'tess-sip':
+                tess_sip_pg(self, sector=sector, period_range=period_range)
+            else:
+                simple_astropy_lombscargle(self, sector = sector, period_range = period_range)
+                simple_wavelet(self, sector = sector, period_range = period_range)
+                composite_ACF(self, sector = sector, period_range = period_range)
+                simple_ACF(self, sector = sector, period_range = period_range)
 
     def validate_rotation(self):
         validator(self)
