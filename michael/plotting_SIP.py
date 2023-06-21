@@ -81,7 +81,7 @@ def plot_periodograms(j, fig, ax):
         j.void[f'SIP_pg_{s}'].plot(ax=ax, view='period',
         label=f'Sector(s) {s}', lw=2, zorder=2)
     ax.axvline(j.results.loc["best", "SIP"], color=cmap[4], lw=5, ls='--', zorder=1, label=f'P = {j.results.loc["best", "SIP"]:.2f} d')
-    ax.set_xlim(j.void[f'SIP_pg_{best_SIP}'].period.min().value, j.void[f'SIP_pg_{best_SIP}'].period.max().value)
+    ax.set_xlim(j.void[f'SIP_pg_{best_SIP}'].period.min().value, j.void[f'SIP_pg_{best_S IP}'].period.max().value)
     ax.set_ylim(0)
     ax.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
     ax.set_xscale('log')
@@ -94,10 +94,10 @@ def plot_periodogram_fit(j, fig, ax):
 
     ax.get_yaxis().set_visible(False)
     ax.plot(j.void[f'p_{best_SIP}'],
-            _gaussian_fn(j.void[f'p_{best_SIP}'], *j.void[f'popt_{best_SIP}']), ls='--', lw=10, color=cmap[5], zorder=2,
+            _gaussian_fn(j.void[f'p_{best_SIP}'], *j.void[f'{best_SIP}_SIP_popt']), ls='--', lw=10, color=cmap[5], zorder=2,
             label = rf'$\sigma$ = {j.results.loc["best", "e_SIP"]:.2f} d')
-    ax.set_xlim(j.void[f'popt_{best_SIP}'][0] - 5*j.void[f'popt_{best_SIP}'][1],
-                    j.void[f'popt_{best_SIP}'][0] + 5*j.void[f'popt_{best_SIP}'][1])
+    ax.set_xlim(j.void[f'{best_SIP}_SIP_popt'][0] - 5*j.void[f'{best_SIP}_SIP_popt'][1],
+                    j.void[f'{best_SIP}_SIP_popt'][0] + 5*j.void[f'{best_SIP}_SIP_popt'][1])
 
     for s in j.sectors:
         j.void[f'SIP_pg_{s}'].plot(ax=ax,lw=2, zorder=0)
