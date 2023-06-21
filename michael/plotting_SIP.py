@@ -30,7 +30,7 @@ def plot_tpf(j, fig, ax):
     tpfs = j.void[f'tpfs_{sector0}']
 
     ax.set_title(f'Frame 0 Sector {sectorlist0}')
-    ax.imshow(np.log10(tpfs[0][0].flux.value), zorder=1, origin='lower')
+    ax.imshow(np.log10(tpfs[0][0].flux.value.T), zorder=1, origin='lower')
 
 def plot_lcs(j, fig, ax):
     text = ''
@@ -90,12 +90,12 @@ def plot_periodograms(j, fig, ax):
 def plot_periodogram_fit(j, fig, ax):
     best_SIP = j.results.loc['best', 's_SIP']
 
-    text = f'Sector(s) {best_sls}'
+    text = f'Sector(s) {best_SIP}'
 
     ax.get_yaxis().set_visible(False)
     ax.plot(j.void[f'p_{best_SIP}'],
             _gaussian_fn(j.void[f'p_{best_SIP}'], *j.void[f'popt_{best_SIP}']), ls='--', lw=10, color=cmap[5], zorder=2,
-            label = rf'$\sigma$ = {j.results.loc["best", "e_SLS"]:.2f} d')
+            label = rf'$\sigma$ = {j.results.loc["best", "e_SIP"]:.2f} d')
     ax.set_xlim(j.void[f'popt_{best_SIP}'][0] - 5*j.void[f'popt_{best_SIP}'][1],
                     j.void[f'popt_{best_SIP}'][0] + 5*j.void[f'popt_{best_SIP}'][1])
 
@@ -156,7 +156,7 @@ def plot_fold(j, fig, ax):
 
 def plot_SIP(j):
    
-    fig = plt.figure(figsize=(20, 22.5))
+    fig = plt.figure(figsize=(20, 18))
     gs = GridSpec(2,3, figure=fig)
 
     ax00 = fig.add_subplot(gs[0,0])
@@ -171,7 +171,7 @@ def plot_SIP(j):
     plot_periodograms(j, fig, ax10)
 
     # Plot Sector PG Fit
-    if np.isfinite(j.results.loc['best','SLS']):
+    if np.isfinite(j.results.loc['best','SIP']):
         ax11 = fig.add_subplot(gs[1, 2:], sharey=ax10)
         plot_periodogram_fit(j, fig, ax11)
         ax11.minorticks_on()
