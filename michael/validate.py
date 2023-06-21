@@ -49,6 +49,22 @@ def validate_SW(j):
 
     _safety(j)
 
+def validate_SIP(j):
+    j.results['s_SIP'] = np.nan
+
+    best = j.results.snr_SIP.idxmax()
+
+    #  Consider the longest sector the default best
+    j.results.loc['best', 'SIP'] = j.results.loc[best, 'SIP']
+    j.results.loc['best', 'e_SIP'] = j.results.loc[best, 'e_SIP']
+    j.results.loc['best', 'h_SIP'] = j.results.loc[best, 'h_SIP']
+    j.results.loc['best', 's_SIP'] = best
+    j.results.loc['best', 'p2p_SIP'] = j.results.loc[best, 'p2p_SIP']
+    j.results.loc['best', 'snr_SIP'] = j.results.loc[best, 'snr_SIP']
+
+    _safety(j)
+
+
 def validate_CACF(j):
     j.results['s_CACF'] = np.nan
 
@@ -229,8 +245,10 @@ def validate_p2p(j):
     cause a large p2p signal. As always, validation should be taken with a grain
     of salt!
     """
-
-    methods = ['SLS', 'SW','CACF','ACF']
+    if j.pipeline == 'tess-sip':
+        methods = ['SIP']
+    else:
+        methods = ['SLS', 'SW','CACF','ACF']
     for m in methods:
         j.results[f'p2p_{m}'] = np.zeros(len(j.results)).astype(int)
         j.results[f'snr_{m}']  = np.zeros(len(j.results)).astype(int)
@@ -274,30 +292,28 @@ def validator(j):
     # Peak-to-peak validation
     validate_p2p(j)
 
-    # Validate LombScargle
-    validate_SLS(j)
+    # Validate SIP if available
+    if j.pipeline == 'tess-sip':
+        validate_SIP(j)
 
-    # Validate Wavelet
-    validate_SW(j)
+    else:
+        # Validate LombScargle
+        validate_SLS(j)
 
-    # Validate Composite ACF
-    validate_CACF(j)
+        # Validate Wavelet
+        validate_SW(j)
 
-    # Validate regular ACF
-    validate_ACF(j)
+        # Validate Composite ACF
+        validate_CACF(j)
 
-    # Validate the three estimates
-    validate_best(j)
+        # Validate regular ACF
+        validate_ACF(j)
 
-    # Validate ACF vs the 'best' period
-    # validate_best_vs_ACF(j)
+        # Validate the three estimates
+        validate_best(j)
 
-    # Validate individual sectors
-    if len(j.sectors) > 1:
-        validate_sectors(j)
-
-    # if j.samples is not None:
-    #     validate_prior(j)
-
+        # Validate individual sectors
+        if len(j.sectors) > 1:
+            validate_sectors(j)
 
     _safety(j)

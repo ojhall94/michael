@@ -354,6 +354,7 @@ def plot_fold(j, fig, ax):
     ax.axhline(1.00, lw=5, ls='--', c='k', zorder=100)
 
 def plot(j):
+   
     fig = plt.figure(figsize=(20, 45))
     gs = GridSpec(6,3, figure=fig)
 

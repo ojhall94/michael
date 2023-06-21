@@ -26,6 +26,7 @@ from .data import data_class
 from .methods import *
 from .validate import validator
 from .plotting import plot
+from .plotting_SIP import plot_SIP
 from .utils import _decode, _safety, longest_sectors
 from .prior import priorclass
 
@@ -159,7 +160,10 @@ class janet():
 
         Eventually there will be some extra kwargs to add
         """
-        plot(self)
+        if self.pipeline == 'tess-sip':
+            plot_SIP(self)
+        else:
+          plot(self)
 
     def decode(self, flag):
         """

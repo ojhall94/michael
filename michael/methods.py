@@ -420,8 +420,9 @@ def tess_sip_pg(j, sector, period_range):
     # Select the region around the highest peak
     peaks, _ = find_peaks(pg.power.value, height = np.nanpercentile(pg.power.value, 97))
 
-    max_period = pg.period[np.argmax(pg.period.value[peaks])].value
-    max_power = pg.power[np.argmax(pg.period.value[peaks])].value
+    pgs = pg[peaks]
+    max_period = pgs.period[np.argmax(pgs.power.value)].value
+    max_power = pgs.power[np.argmax(pgs.power.value)].value
 
     # Split up the periodogram to the area of interest
     s = (pg.period.value > 0.6*max_period) & (pg.period.value < 1.4*max_period)
@@ -451,6 +452,9 @@ def tess_sip_pg(j, sector, period_range):
 
     # Save the gaussian fit
     j.void[f'{sector}_SIP_popt'] = popt
+
+    # Generate the light curve output
+    j.void[f'rlc_{sector}'] = SIP(tpfs, periods = [popt[0]])['corr_lc']
 
     if j.verbose:
         print(f'### Completed TESS SIP for Sector {sector} on star {j.gaiaid} ###')
