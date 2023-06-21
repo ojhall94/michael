@@ -263,18 +263,6 @@ class data_class():
 
                     sfiles.append(sfile[0])
 
-                # self.j.void[f'tpfs_{sector}'] = tpfs
-
-                # r = SIP(tpfs)
-                # self.j.void[f'r_{sector}'] = r
-                # # tess-sip can sometimes introduce major peaks at the ends of
-                # # the light curve, so we remove these.
-                # self.j.void[f'rlc_{sector}'] = r['corr_lc'].remove_nans().remove_outliers()
-
-                # if detrended:
-                #     self.j.void[f'rdtlc_{sector}'] = \
-                #         r['corr_lc'].remove_nans().flatten(window_length = len(r['corr_lc'])).remove_outliers().remove_nans()
-
             else:
                 strlen = np.floor(np.log10(sector)).astype(int)+1
                 secstr = 's0000'[:-strlen] + str(sector)

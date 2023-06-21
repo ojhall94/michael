@@ -9,6 +9,8 @@ from scipy.signal import find_peaks
 from scipy import interpolate
 from scipy.optimize import curve_fit
 from scipy.ndimage import gaussian_filter1d
+from tess_sip import SIP
+from lightkurve import periodogram
 import warnings
 
 import jazzhands
@@ -407,17 +409,19 @@ def tess_sip_pg(j, sector, period_range):
     tpfs = j.void[f'tpfs_{sector}']
 
     # Run the TESS-SIP
-    r = SIP(tpfs)
+    r = SIP(tpfs, min_period = j.period_range[0], max_period = j.period_range[1], nperiods=10000)
     j.void[f'r_{sector}'] = r
 
-    pg = lk.periodogram.Periodogram(1/r['periods']*(1/u.day), r['power']*u.meter/u.meter)
-
-    # Select the region around the highest peak
-    max_period = pg.period_at_max_power.value
-    max_power = pg.max_power.value
+    pg = periodogram.Periodogram(1/r['periods']*(1/u.day), r['power']*u.meter/u.meter)
 
     # Remove any nan or inf values
     pg = pg[np.isfinite(pg.power)]
+
+    # Select the region around the highest peak
+    peaks, _ = find_peaks(pg.power.value, height = np.nanpercentile(pg.power.value, 97))
+
+    max_period = pg.period[np.argmax(pg.period.value[peaks])].value
+    max_power = pg.power[np.argmax(pg.period.value[peaks])].value
 
     # Split up the periodogram to the area of interest
     s = (pg.period.value > 0.6*max_period) & (pg.period.value < 1.4*max_period)
@@ -425,7 +429,7 @@ def tess_sip_pg(j, sector, period_range):
     P = pg[s].power.value
 
     # Store the periodogram for plotting
-    j.void[f'pg_{sector}'] = pg
+    j.void[f'SIP_pg_{sector}'] = pg
     j.void[f'p_{sector}'] = p
     j.void[f'P_{sector}'] = P
 
@@ -444,43 +448,11 @@ def tess_sip_pg(j, sector, period_range):
     j.results.loc[sector, 'SIP'] = popt[0]
     j.results.loc[sector, 'e_SIP'] = popt[1]
     j.results.loc[sector, 'h_SIP'] = popt[2]
-    j.results.loc[sector, 'f_SIP'] = 0
-
-    # Perform quality checks
-    ## Condition (2)
-    if popt[1]*2.355 > 0.4*popt[0]:
-        j.results.loc[sector, 'f_SLS'] += 2
-
-    ## Condition (3)
-    peaks, _ = find_peaks(pg.power.value, height = 0.9*max_power)
-    if len(peaks) > 1:
-        j.results.loc[sector, 'f_SLS'] += 3
-
-        # Double check if the presence of a second peak has upset the fits
-        # If so, repeat the fit in a smaller range
-        peaks, _ = find_peaks(P, height=0.9*max_power)
-        if len(peaks) > 1:
-            s = (pg.period.value > 0.8*max_period) & (pg.period.value < 1.2*max_period)
-
-            popt, pcov = curve_fit(_gaussian_fn, pg[s].period.value, pg[s].power.value,
-                                    p0 = [max_period, 0.2*max_period, max_power],
-                                    bounds = ([lolim, 0., 0.9*max_power],[uplim, 0.25*max_period, 1.1*max_power]))
-
-            j.results.loc[sector, 'SLS'] = popt[0]
-            j.results.loc[sector, 'e_SLS'] = popt[1]
-            j.results.loc[sector, 'h_SLS'] = popt[2]
-
-
-    # Condition (4)
-    sig_rms = np.sqrt(np.mean((clc.flux.value - 1)**2))
-    sig_ps = 4 * sig_rms**2 / len(clc)
-    if popt[2] < 4 * sig_ps:
-        j.results.loc[sector, 'f_SLS'] += 4
 
     # Save the gaussian fit
-    j.void[f'popt_{sector}'] = popt
+    j.void[f'{sector}_SIP_popt'] = popt
 
     if j.verbose:
-        print(f'### Completed Simple Astropy Lomb-Scargle for Sector {sector} on star {j.gaiaid} ###')
+        print(f'### Completed TESS SIP for Sector {sector} on star {j.gaiaid} ###')
 
     _safety(j)
