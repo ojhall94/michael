@@ -264,13 +264,13 @@ class data_class():
                     sfiles.append(sfile[0])
 
             else:
-                strlen = np.floor(np.log10(sector)).astype(int)+1
+                strlen = np.floor(np.log10(sector.astype(int))).astype(int)+1
                 secstr = 's0000'[:-strlen] + str(sector)
 
                 sfiles = glob.glob(f'{self.path}'+
                                         f'*{secstr}*astrocut.fits')
 
-                if len(sfile) == 0:
+                if len(sfiles) == 0:
                     raise ValueError("No tesscut files could be found for this target.")
 
             # Create the tpflist

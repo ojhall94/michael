@@ -81,7 +81,7 @@ def plot_periodograms(j, fig, ax):
         j.void[f'SIP_pg_{s}'].plot(ax=ax, view='period',
         label=f'Sector(s) {s}', lw=2, zorder=2)
     ax.axvline(j.results.loc["best", "SIP"], color=cmap[4], lw=5, ls='--', zorder=1, label=f'P = {j.results.loc["best", "SIP"]:.2f} d')
-    ax.set_xlim(j.void[f'SIP_pg_{best_SIP}'].period.min().value, j.void[f'SIP_pg_{best_S IP}'].period.max().value)
+    ax.set_xlim(j.void[f'SIP_pg_{best_SIP}'].period.min().value, j.void[f'SIP_pg_{best_SIP}'].period.max().value)
     ax.set_ylim(0)
     ax.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
     ax.set_xscale('log')
@@ -96,12 +96,14 @@ def plot_periodogram_fit(j, fig, ax):
     ax.plot(j.void[f'p_{best_SIP}'],
             _gaussian_fn(j.void[f'p_{best_SIP}'], *j.void[f'{best_SIP}_SIP_popt']), ls='--', lw=10, color=cmap[5], zorder=2,
             label = rf'$\sigma$ = {j.results.loc["best", "e_SIP"]:.2f} d')
-    ax.set_xlim(j.void[f'{best_SIP}_SIP_popt'][0] - 5*j.void[f'{best_SIP}_SIP_popt'][1],
-                    j.void[f'{best_SIP}_SIP_popt'][0] + 5*j.void[f'{best_SIP}_SIP_popt'][1])
 
+    ax.set_xlim(j.void[f'{best_SIP}_SIP_popt'][0] - 5*j.void[f'{best_SIP}_SIP_popt'][1],
+                j.void[f'{best_SIP}_SIP_popt'][0] + 5*j.void[f'{best_SIP}_SIP_popt'][1])
+    
     for s in j.sectors:
-        j.void[f'SIP_pg_{s}'].plot(ax=ax,lw=2, zorder=0)
+        j.void[f'SIP_pg_{s}'].plot(view='period', ax=ax,lw=2, zorder=0)
     ax.legend(loc='best', fontsize=_label_fontsize)
+
     ax.set_xlabel('Period [d]')
     ax.set_title(f'Fit to SIP {text}')
 
@@ -151,13 +153,13 @@ def plot_fold(j, fig, ax):
 
     ax.legend(loc='best')
     ax.legend(loc='best', fontsize=_label_fontsize, ncol = int(np.ceil(len(j.sectors)/4)))
-    ax.set_title(rf'All Sectors folded on Best Period: {period:.2f} $\pm$ {j.results.loc["best", "e_overall"]:.2f} d')
+    ax.set_title(rf'All Sectors folded on Best Period: {period:.2f} $\pm$ {j.results.loc["best", "e_SIP"]:.2f} d')
     ax.axhline(1.00, lw=5, ls='--', c='k', zorder=100)
 
 def plot_SIP(j):
    
     fig = plt.figure(figsize=(20, 18))
-    gs = GridSpec(2,3, figure=fig)
+    gs = GridSpec(3,3, figure=fig)
 
     ax00 = fig.add_subplot(gs[0,0])
     plot_tpf(j, fig, ax00)
@@ -172,7 +174,7 @@ def plot_SIP(j):
 
     # Plot Sector PG Fit
     if np.isfinite(j.results.loc['best','SIP']):
-        ax11 = fig.add_subplot(gs[1, 2:], sharey=ax10)
+        ax11 = fig.add_subplot(gs[1, 2:])
         plot_periodogram_fit(j, fig, ax11)
         ax11.minorticks_on()
 
@@ -188,7 +190,7 @@ def plot_SIP(j):
     fig.tight_layout()
 
     fig.suptitle(f'Gaia ID: {j.gaiaid} - Pipeline: {j.pipeline}', fontsize=30)
-    plt.subplots_adjust(top=0.95)
+    plt.subplots_adjust(top=0.90)
 
     plt.savefig(f'{j.output_path}/{j.gaiaid}/{j.pl}_output.pdf')
     plt.savefig(f'{j.output_path}/{j.gaiaid}/{j.pl}_output.png', dpi = 300)
