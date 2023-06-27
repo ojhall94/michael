@@ -59,7 +59,7 @@ def validate_SIP(j):
     j.results.loc['best', 'e_SIP'] = j.results.loc[best, 'e_SIP']
     j.results.loc['best', 'h_SIP'] = j.results.loc[best, 'h_SIP']
     j.results.loc['best', 's_SIP'] = best
-    j.results.loc['best', 'f_SIP'] = 1 - j.results.loc[, f'f_p2p_SIP']
+    j.results.loc['best', 'f_SIP'] = 1 - j.results.loc[best, 'f_p2p_SIP']
     j.results.loc['best', 'p2p_SIP'] = j.results.loc[best, 'p2p_SIP']
     j.results.loc['best', 'snr_SIP'] = j.results.loc[best, 'snr_SIP']
 
