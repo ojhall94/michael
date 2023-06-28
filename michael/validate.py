@@ -260,7 +260,7 @@ def validate_p2p(j):
             if not np.isfinite(period):
                 continue
             else:
-                lc = j.void[f'{j.pl}lc_{s}'].fold(period = period)
+                lc = j.void[f'{j.pl}lc_{s}'].fold(period = period).remove_nans()
                 sd = np.sqrt(len(lc))
                 fsmoo = gaussian_filter1d(lc.flux.value, sigma = sd, mode = 'reflect')
 
