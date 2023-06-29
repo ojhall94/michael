@@ -196,8 +196,8 @@ class janet():
         if self.verbose:
             self.view()
 
-        if self.verbose:
-            self.decode(self.results.loc['best', 'f_overall'].astype(int))
+        # if self.verbose:
+        #     self.decode(self.results.loc['best', 'f_overall'].astype(int))
 
         _safety(self)
 
